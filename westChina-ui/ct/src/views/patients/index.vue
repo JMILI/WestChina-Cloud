@@ -114,7 +114,8 @@
         </el-table-column>
         <el-table-column label="身份证号" align="center" key="patCardId" prop="patCardId" min-width="120"
                          class-name="allowDrag" v-if="columns[1].visible"/>
-        <el-table-column label="病人姓名" align="center" key="patName" prop="patName" min-width="120" class-name="allowDrag"
+        <el-table-column label="病人姓名" align="center" key="patName" prop="patName" min-width="120"
+                         class-name="allowDrag"
                          v-if="columns[2].visible"/>
         <el-table-column label="病人手机号码" align="center" key="patPhone" prop="patPhone" min-width="120"
                          class-name="allowDrag" v-if="columns[3].visible"/>
@@ -446,6 +447,7 @@ export default {
       let that = this
       if (file.isFolder !== true) {
         let file_type = file.name.substring(file.name.lastIndexOf("."));
+        console.log("文件类型：", file_type)
         if (file_type === '.dcm') {
           let reader = new FileReader()
           let temp = file.file
@@ -524,423 +526,473 @@ export default {
             // }
             //  endregion
           }
-        }
-      }
-    },
-    onFilesAdded(files, fileList) {
-    },
-    // 上传错误触发，文件还未传输到后端
-    onFileError(rootFile, file, response, chunk) {
-      this.$modal.msgWarning("不能通过小箭头上传，因为还没有填写文件关联的病人信息")
-    },
-    onFilesRemoved(file) {
-      this.$nextTick(() => {
-        this.file_total = this.$refs['uploader'].files.length
-      });
-    },
-    //点击开始上传按钮
-    submitUpload() {
-      let that = this
-      // 上传禁止操作
-      if (that.uploadToPatient.patCardId !== '') {
-        const isFinishUpload = new Promise((resolve, reject) => {
-          //已经有了要上传的病人信息
-          //生成数据库字段,
-          if (that.ctDicomList.length > 0) {
-            that.ctDicomList.forEach(item => {
-              if (item.dicomCtBody === undefined) {
-                item.dicomCtBody = ''
-              }
-              item.patCardId = that.uploadToPatient.patCardId
-              item.dicomCtCount = that.studyUidList[item.dicomCtStudyUid][item.dicomCtSeriesUid]
-            })
-            resolve(that.ctDicomList)
-          } else {
-            reject("没有上传文件")
-          }
-        })
-        //数据库写入记录
-        isFinishUpload.then(ctDicomList => {
-          return new Promise((resolve, reject) => {
-            ctDicomList.forEach(item => {
-              addDicom(item).then(response => {
-                //  成功
-              }).catch(error => {
-                reject("数据库增加记录失败")
-              })
-            })
-            resolve(true)
-          })
-        }).then(isRecord => {
-          return new Promise((resolve, reject) => {
-            if (isRecord === true) {
-              that.$nextTick(() => {
-                that.$refs.uploader.files.forEach(item => {
-                  item.resume()
-                })
-              });
-              resolve(true)
-            }
-          })
-        }).then(isRecordAndResume => {
-          if (isRecordAndResume === true) {
-            that.uploadToPatient.patCardId = ''
-            //清理上传文件的记录信息
-            that.ctDicomList = []
-            //清除上传文件的统计信息
-            that.studyUidList = {}
-          }
-        }).catch(err => {
-          this.model.msgError(err)
-        })
-
-      } else {
-        this.openHit = true
-      }
-
-
-    },
-
-//关闭错误文件提示框口，知道上传对话框被关闭时才会被清空
-    closeErrorDialog() {
-      this.errorDialog = false;
-    }
-    ,
-// 上传弹框关闭
-    handleClose() {
-      this.clearCache()
-      this.thirdDialog = false
-    }
-    ,
-// 清除缓存
-    clearCache() {
-      this.file_total = 0;
-      this.errorFileList = []
-      this.controllerErrorFileDialog = false
-      this.$refs.uploader.uploader.cancel()
-    }
-    ,
-//取消上传
-    cancelUpload() {
-      this.thirdDialog = false;
-      this.clearCache();
-      //清楚绑定的标记
-      this.resetHit();
-    }
-    ,
-//  endregion
-    //region 上传提示
-    handleNodeClick(openTreeData) {
-      console.log(openTreeData);
-    },
-    canUp() {
-      this.treeInfoIsTrue = true;
-      this.openTree = false;
-    },
-    cancelUp() {
-      this.openTree = false;
-      this.treeInfoIsTrue = false;
-    },
-    //endregion
-    //region 搜索病人，选中
-    onCloseHit() {
-      let that = this
-      this.$nextTick(() => {
-        that.$refs['elFormPatient'].resetForm()
-      })
-    },
-    closeHit() {
-      this.openHit = false
-    },
-    okHit() {
-      let that = this
-      this.$modal.msgSuccess("您可以为该病人添加dicom文件了！或者上传了");
-      const aa = new Promise(resolve => {
-        that.uploadToPatient.patCardId = this.formHitSelect
-        resolve()
-      })
-      aa.then(res => {
-        that.openHit = false
-      })
-    },
-    searchHit() {
-      // 1.后台查找该病人数据，
-      // 临时使用页面顶部的搜身功能，借用的搜索一下
-      //设置搜索参数，准备搜索
-      this.queryParams.pageNum = 1
-      this.queryParams.pageSize = 10
-      this.queryParams.patCardId = this.formHit.patCardId
-      this.queryParams.patName = this.formHit.patName
-      this.queryParams.patPhone = this.formHit.patPhone
-      // 2.加载数据后
-      listPatients(this.queryParams).then(response => {
-        this.patientsList = response.data.items;
-        this.total = response.data.total;
-      });
-      // 3.将数据赋给多选框，提供医生选择
-      this.patientsList.forEach(item => {
-        let temp = {}
-        temp.label = item.patName
-        temp.value = []
-        temp.value.push(item.patCardId)
-        temp.value.push(item.patPhone)
-        temp.value.push(item.patName)
-        //先将之前的选择清空
-        this.patPhoneOptions = []
-        this.patPhoneOptions.push(temp)
-      })
-    },
-    //endregion
-    //region 病人列表
-    /** 查询病人信息列表 */
-    getList() {
-      this.loading = true;
-      listPatients(this.queryParams).then(response => {
-        this.patientsList = response.data.items;
-        this.total = response.data.total;
-        this.loading = false;
-      });
-    },
-    // 取消按钮
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        patId: null,
-        patCardId: null,
-        patName: null,
-        patPhone: null,
-      };
-      this.resetForm("form");
-      this.submitLoading = false;
-    },
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.queryParams.pageNum = 1;
-      this.getList();
-    },
-    /** 重置按钮操作 */
-    resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
-    },
-    // 多选框选中数据
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.patId)
-      this.single = selection.length !== 1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加病人信息";
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const patId = row.patId || this.ids[0]
-      getPatients({patId: patId}).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改病人信息";
-      });
-    },
-
-    /** 提交按钮 */
-    submitForm() {
-      this.submitLoading = true;
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.patId != null) {
-            updatePatients(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            }).catch(() => {
-              this.submitLoading = false
-            });
-          } else {
-            addPatients(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            }).catch(() => {
-              this.submitLoading = false
-            });
-          }
         } else {
-          this.submitLoading = false;
-        }
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const patIds = row.patId || this.ids;
-      let that = this;
-      this.$modal.confirm('是否确认删除病人信息编号为"' + patIds + '"的数据项?').then(function () {
-        return delPatients(that.updateParamIds(patIds));
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('ct/patients/export', {
-        ...this.queryParams
-      }, `病人信息_${new Date().getTime()}数据.xlsx`)
-    }
-
-
-    ,
-    /** 保存排序按钮操作 */
-    handleSort() {
-      this.$modal.confirm('是否确认保存新排序?').then(() => {
-        let params = this.sortOrderListOnlyDynamic(this.patientsList, this.oldPatientsList, "patId");
-        if (params.length > 0) {
-          return updatePatientsSort(this.updateParamIds(params));
-        }
-      }).then(() => {
-        this.getList();
-        this.sortVisible = false;
-        this.$modal.msgSuccess("保存成功");
-      }).catch(() => {
-      });
-    },
-    /** 排序开关 */
-    handleSortable(sortable) {
-      if (!this.isMobile()) {
-        this.sortable != null && this.sortable.destroy()
-        const el = this.$refs.dataTable.$el.querySelectorAll(".el-table__body-wrapper > table > tbody")[0]
-        this.sortable = Sortable.create(el, {
-          disabled: sortable,
-          handle: ".allowDrag",
-          onEnd: evt => {
-            const targetRow = this.patientsList.splice(evt.oldIndex, 1)[0];
-            this.patientsList.splice(evt.newIndex, 0, targetRow);
-            this.sortVisible = true
-          }
-        })
-      }
-    },
-    //  endregion
-    //region 跳转到阅片界面
-    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries']),
-    /**
-     * 跳转到阅片界面，并携带病人信息
-     * @param row
-     */
-    route2Patient(row) {
-      let that = this
-
-      const temp1 = new Promise(resolve => {
-        let patient = {
-          patCardId: row.patCardId,
-          patName: row.patName,
-          patPhone: row.patPhone,
-        }
-        that.changePatientInfo(patient)
-        console.log("1")
-        resolve()
-      })
-
-      const temp12 = new Promise((resolve, reject) => {
-        console.log("2")
-        getStudyListByPatCardId({patCardId: row.patCardId}).then(result => {
-          let studySeriesList = {}
-          if (result.data.length > 0) {
-            result.data.forEach(item => {
-              //归类
-              if (studySeriesList.hasOwnProperty(item.dicomCtStudyUid)) {
-                if (studySeriesList[item.dicomCtStudyUid].hasOwnProperty(item.dicomCtSeriesUid)) {
-                  //  无需任何操作
-                } else {
-                  studySeriesList[item.dicomCtStudyUid][item.dicomCtSeriesUid] = item
-                }
+          let reader = new FileReader()
+          let temp = file.file
+          reader.readAsArrayBuffer(temp)
+          reader.onloadend = function (temp) {
+            let arrayBuffer = reader.result;
+            let byteArray = new Uint8Array(arrayBuffer)
+            let dataSet = dicomParser.parseDicom(byteArray)
+            let seriesDate = dataSet.string('x00080021')
+            let studyUID = dataSet.string('x0020000d')
+            let seriesUID = dataSet.string('x0020000e')
+            let imageNumber = dataSet.string('x00200013')
+            let bodyPart = dataSet.string('x00080015')
+            //前缀得从后端获取
+            let path = studyUID + '/' + seriesUID + '/' + imageNumber + '.dcm'
+            file.name = path
+            console.log("-----------------------",path)
+            //统计信息，study,series信息
+            if (that.studyUidList.hasOwnProperty(studyUID)) {
+              if (that.studyUidList[studyUID].hasOwnProperty(seriesUID)) {
+                that.isFinishAnalysis = false
+                ++that.studyUidList[studyUID][seriesUID]
               } else {
-                studySeriesList[item.dicomCtStudyUid] = {}
-                studySeriesList[item.dicomCtStudyUid][item.dicomCtSeriesUid] = item
+                that.studyUidList[studyUID][seriesUID] = 1
               }
-              //  重写路径
-              item.imageIds=[]
-              for (let i = 1; i <= item.dicomCtCount; i++) {
-                let path = item.dicomCtPath.substring(0, item.dicomCtPath.lastIndexOf("/"));
-                let newPath = 'wadouri:' + path + '/' + i.toString() + '.dcm'
-                item.imageIds.push(newPath)
-              }
+              //没出现过得study序列
+            } else {
+              that.studyUidList[studyUID] = {}
+              that.studyUidList[studyUID][seriesUID] = 1
+            }
+            //将第一张图像记录存入数据库,有些不一定是从1开始的
+            if (imageNumber === '1') {
+              let ctDicomTemp = {}
+              ctDicomTemp.dicomCtTime = seriesDate
+              ctDicomTemp.dicomCtStudyUid = studyUID
+              ctDicomTemp.dicomCtSeriesUid = seriesUID
+              ctDicomTemp.dicomCtBody = bodyPart
+              ctDicomTemp.dicomCtPath = process.env.VUE_APP_MINIO_API + that.bucketNameOfMe + '/' + path
+              //后面要填写
+              ctDicomTemp.patCardId = ''
+              ctDicomTemp.dicomCtCount = 0
+              that.ctDicomList.push(ctDicomTemp)
+            }
+
+
+        }
+      }
+    }
+  },
+  onFilesAdded(files, fileList) {
+  },
+  // 上传错误触发，文件还未传输到后端
+  onFileError(rootFile, file, response, chunk) {
+    this.$modal.msgWarning("不能通过小箭头上传，因为还没有填写文件关联的病人信息")
+  },
+  onFilesRemoved(file) {
+    this.$nextTick(() => {
+      this.file_total = this.$refs['uploader'].files.length
+    });
+  },
+  //点击开始上传按钮
+  submitUpload() {
+    let that = this
+    // 上传禁止操作
+    if (that.uploadToPatient.patCardId !== '') {
+      const isFinishUpload = new Promise((resolve, reject) => {
+        //已经有了要上传的病人信息
+        //生成数据库字段,
+        if (that.ctDicomList.length > 0) {
+          that.ctDicomList.forEach(item => {
+            if (item.dicomCtBody === undefined) {
+              item.dicomCtBody = ''
+            }
+            item.patCardId = that.uploadToPatient.patCardId
+            item.dicomCtCount = that.studyUidList[item.dicomCtStudyUid][item.dicomCtSeriesUid]
+          })
+          resolve(that.ctDicomList)
+        } else {
+          reject("没有上传文件")
+        }
+      })
+      //数据库写入记录
+      isFinishUpload.then(ctDicomList => {
+        return new Promise((resolve, reject) => {
+          ctDicomList.forEach(item => {
+            addDicom(item).then(response => {
+              //  成功
+            }).catch(error => {
+              reject("数据库增加记录失败")
             })
-            that.updatePatientsStudySeries(studySeriesList)
-            resolve()
-          } else {
-            this.$modal.alertWarning("该病人可能没有ct影像，请先上传！")
-            reject()
+          })
+          resolve(true)
+        })
+      }).then(isRecord => {
+        return new Promise((resolve, reject) => {
+          if (isRecord === true) {
+            that.$nextTick(() => {
+              that.$refs.uploader.files.forEach(item => {
+                item.resume()
+              })
+            });
+            resolve(true)
           }
         })
-      })
-      Promise
-        .all([temp1, temp12])
-        .then(() => {
-          console.log("all")
-          that.$router.push({name: 'ct2'})
-        })
-    },
-
-    routeToLayout2() {
-      setTimeout("alert('对不起, 要你久候')", 5000)
-      console.log("21")
-      // const patId = row.patId || this.ids[0]
-      // this.$router.push('/Layout')
-    }
-    ,
-    //endregion
-    //region 获取该账号所对应的bucketNameOfMe
-    getBucketName() {
-      this.enterpriseName = Cookies.get("enterpriseName")
-      console.log("enterpriseName", this.enterpriseName)
-      getBucketName({enterpriseName: this.enterpriseName}).then(result => {
-        console.log(result)
-        if (result.data === '') {
-          //没有桶，不能上传文件
-          this.$modal.alertWarning(result.msg)
-        } else {
-          this.bucketNameOfMe = result.data;
-          this.haveBucket = true;
+      }).then(isRecordAndResume => {
+        if (isRecordAndResume === true) {
+          that.uploadToPatient.patCardId = ''
+          //清理上传文件的记录信息
+          that.ctDicomList = []
+          //清除上传文件的统计信息
+          that.studyUidList = {}
         }
       }).catch(err => {
-        console.log("get bucket name caused error: " + err)
+        this.model.msgError(err)
+      })
+
+    } else {
+      this.openHit = true
+    }
+
+
+  },
+
+//关闭错误文件提示框口，知道上传对话框被关闭时才会被清空
+  closeErrorDialog() {
+    this.errorDialog = false;
+  }
+  ,
+// 上传弹框关闭
+  handleClose() {
+    this.clearCache()
+    this.thirdDialog = false
+  }
+  ,
+// 清除缓存
+  clearCache() {
+    this.file_total = 0;
+    this.errorFileList = []
+    this.controllerErrorFileDialog = false
+    this.$refs.uploader.uploader.cancel()
+  }
+  ,
+//取消上传
+  cancelUpload() {
+    this.thirdDialog = false;
+    this.clearCache();
+    //清楚绑定的标记
+    this.resetHit();
+  }
+  ,
+//  endregion
+  //region 上传提示
+  handleNodeClick(openTreeData) {
+    console.log(openTreeData);
+  },
+  canUp() {
+    this.treeInfoIsTrue = true;
+    this.openTree = false;
+  },
+  cancelUp() {
+    this.openTree = false;
+    this.treeInfoIsTrue = false;
+  },
+  //endregion
+  //region 搜索病人，选中
+  onCloseHit() {
+    let that = this
+    this.$nextTick(() => {
+      that.$refs['elFormPatient'].resetForm()
+    })
+  },
+  closeHit() {
+    this.openHit = false
+  },
+  okHit() {
+    let that = this
+    this.$modal.msgSuccess("您可以为该病人添加dicom文件了！或者上传了");
+    const aa = new Promise(resolve => {
+      that.uploadToPatient.patCardId = this.formHitSelect
+      resolve()
+    })
+    aa.then(res => {
+      that.openHit = false
+    })
+  },
+  searchHit() {
+    // 1.后台查找该病人数据，
+    // 临时使用页面顶部的搜身功能，借用的搜索一下
+    //设置搜索参数，准备搜索
+    this.queryParams.pageNum = 1
+    this.queryParams.pageSize = 10
+    this.queryParams.patCardId = this.formHit.patCardId
+    this.queryParams.patName = this.formHit.patName
+    this.queryParams.patPhone = this.formHit.patPhone
+    // 2.加载数据后
+    listPatients(this.queryParams).then(response => {
+      this.patientsList = response.data.items;
+      this.total = response.data.total;
+    });
+    // 3.将数据赋给多选框，提供医生选择
+    this.patientsList.forEach(item => {
+      let temp = {}
+      temp.label = item.patName
+      temp.value = []
+      temp.value.push(item.patCardId)
+      temp.value.push(item.patPhone)
+      temp.value.push(item.patName)
+      //先将之前的选择清空
+      this.patPhoneOptions = []
+      this.patPhoneOptions.push(temp)
+    })
+  },
+  //endregion
+  //region 病人列表
+  /** 查询病人信息列表 */
+  getList() {
+    this.loading = true;
+    listPatients(this.queryParams).then(response => {
+      this.patientsList = response.data.items;
+      this.total = response.data.total;
+      this.loading = false;
+    });
+  },
+  // 取消按钮
+  cancel() {
+    this.open = false;
+    this.reset();
+  },
+  // 表单重置
+  reset() {
+    this.form = {
+      patId: null,
+      patCardId: null,
+      patName: null,
+      patPhone: null,
+    };
+    this.resetForm("form");
+    this.submitLoading = false;
+  },
+  /** 搜索按钮操作 */
+  handleQuery() {
+    this.queryParams.pageNum = 1;
+    this.getList();
+  },
+  /** 重置按钮操作 */
+  resetQuery() {
+    this.resetForm("queryForm");
+    this.handleQuery();
+  },
+  // 多选框选中数据
+  handleSelectionChange(selection) {
+    this.ids = selection.map(item => item.patId)
+    this.single = selection.length !== 1
+    this.multiple = !selection.length
+  },
+  /** 新增按钮操作 */
+  handleAdd() {
+    this.reset();
+    this.open = true;
+    this.title = "添加病人信息";
+  },
+  /** 修改按钮操作 */
+  handleUpdate(row) {
+    this.reset();
+    const patId = row.patId || this.ids[0]
+    getPatients({patId: patId}).then(response => {
+      this.form = response.data;
+      this.open = true;
+      this.title = "修改病人信息";
+    });
+  },
+
+  /** 提交按钮 */
+  submitForm() {
+    this.submitLoading = true;
+    this.$refs["form"].validate(valid => {
+      if (valid) {
+        if (this.form.patId != null) {
+          updatePatients(this.form).then(response => {
+            this.$modal.msgSuccess("修改成功");
+            this.open = false;
+            this.getList();
+          }).catch(() => {
+            this.submitLoading = false
+          });
+        } else {
+          addPatients(this.form).then(response => {
+            this.$modal.msgSuccess("新增成功");
+            this.open = false;
+            this.getList();
+          }).catch(() => {
+            this.submitLoading = false
+          });
+        }
+      } else {
+        this.submitLoading = false;
+      }
+    });
+  },
+  /** 删除按钮操作 */
+  handleDelete(row) {
+    const patIds = row.patId || this.ids;
+    let that = this;
+    this.$modal.confirm('是否确认删除病人信息编号为"' + patIds + '"的数据项?').then(function () {
+      return delPatients(that.updateParamIds(patIds));
+    }).then(() => {
+      this.getList();
+      this.$modal.msgSuccess("删除成功");
+    }).catch(() => {
+    });
+  },
+  /** 导出按钮操作 */
+  handleExport() {
+    this.download('ct/patients/export', {
+      ...this.queryParams
+    }, `病人信息_${new Date().getTime()}数据.xlsx`)
+  }
+
+
+  ,
+  /** 保存排序按钮操作 */
+  handleSort() {
+    this.$modal.confirm('是否确认保存新排序?').then(() => {
+      let params = this.sortOrderListOnlyDynamic(this.patientsList, this.oldPatientsList, "patId");
+      if (params.length > 0) {
+        return updatePatientsSort(this.updateParamIds(params));
+      }
+    }).then(() => {
+      this.getList();
+      this.sortVisible = false;
+      this.$modal.msgSuccess("保存成功");
+    }).catch(() => {
+    });
+  },
+  /** 排序开关 */
+  handleSortable(sortable) {
+    if (!this.isMobile()) {
+      this.sortable != null && this.sortable.destroy()
+      const el = this.$refs.dataTable.$el.querySelectorAll(".el-table__body-wrapper > table > tbody")[0]
+      this.sortable = Sortable.create(el, {
+        disabled: sortable,
+        handle: ".allowDrag",
+        onEnd: evt => {
+          const targetRow = this.patientsList.splice(evt.oldIndex, 1)[0];
+          this.patientsList.splice(evt.newIndex, 0, targetRow);
+          this.sortVisible = true
+        }
       })
     }
-    ,
-    //endregion
   },
-  mounted() {
-    this.handleSortable(false);
+  //  endregion
+  //region 跳转到阅片界面
+  ...mapActions(['changePatientInfo', 'updatePatientsStudySeries']),
+  /**
+   * 跳转到阅片界面，并携带病人信息
+   * @param row
+   */
+  route2Patient(row) {
+    let that = this
+
+    const temp1 = new Promise(resolve => {
+      let patient = {
+        patCardId: row.patCardId,
+        patName: row.patName,
+        patPhone: row.patPhone,
+      }
+      that.changePatientInfo(patient)
+      console.log("1")
+      resolve()
+    })
+
+    const temp12 = new Promise((resolve, reject) => {
+      console.log("2")
+      getStudyListByPatCardId({patCardId: row.patCardId}).then(result => {
+        let studySeriesList = {}
+        if (result.data.length > 0) {
+          result.data.forEach(item => {
+            //归类
+            if (studySeriesList.hasOwnProperty(item.dicomCtStudyUid)) {
+              if (studySeriesList[item.dicomCtStudyUid].hasOwnProperty(item.dicomCtSeriesUid)) {
+                //  无需任何操作
+              } else {
+                studySeriesList[item.dicomCtStudyUid][item.dicomCtSeriesUid] = item
+              }
+            } else {
+              studySeriesList[item.dicomCtStudyUid] = {}
+              studySeriesList[item.dicomCtStudyUid][item.dicomCtSeriesUid] = item
+            }
+            //  重写路径
+            item.imageIds = []
+            for (let i = 1; i <= item.dicomCtCount; i++) {
+              let path = item.dicomCtPath.substring(0, item.dicomCtPath.lastIndexOf("/"));
+              let newPath = 'wadouri:' + path + '/' + i.toString() + '.dcm'
+              item.imageIds.push(newPath)
+            }
+          })
+          that.updatePatientsStudySeries(studySeriesList)
+          resolve()
+        } else {
+          this.$modal.alertWarning("该病人可能没有ct影像，请先上传！")
+          reject()
+        }
+      })
+    })
+    Promise
+      .all([temp1, temp12])
+      .then(() => {
+        console.log("all")
+        that.$router.push({name: 'ct2'})
+      })
   },
-  watch: {
-    // 'target'(newVal, oldVal) {
-    //   if (newVal !== '') {
-    //
-    //   }
-    // }
-    // options.targetOfMe(value) {
-    //   if (value === true) {
-    //     return process.env.VUE_APP_BASE_API + "/ct/upload/ctFile"
-    //   } else {
-    //     return ''
-    //   }
-    // },
-  },
-  computed: {
-    // options: function (value) {
-    //   console.log("value:",value)
-    //   options.target=value
-    // }
+
+  routeToLayout2() {
+    setTimeout("alert('对不起, 要你久候')", 5000)
+    console.log("21")
+    // const patId = row.patId || this.ids[0]
+    // this.$router.push('/Layout')
   }
+  ,
+  //endregion
+  //region 获取该账号所对应的bucketNameOfMe
+  getBucketName() {
+    this.enterpriseName = Cookies.get("enterpriseName")
+    console.log("enterpriseName", this.enterpriseName)
+    getBucketName({enterpriseName: this.enterpriseName}).then(result => {
+      console.log(result)
+      if (result.data === '') {
+        //没有桶，不能上传文件
+        this.$modal.alertWarning(result.msg)
+      } else {
+        this.bucketNameOfMe = result.data;
+        this.haveBucket = true;
+      }
+    }).catch(err => {
+      console.log("get bucket name caused error: " + err)
+    })
+  }
+  ,
+  //endregion
+}
+,
+mounted()
+{
+  this.handleSortable(false);
+}
+,
+watch: {
+  // 'target'(newVal, oldVal) {
+  //   if (newVal !== '') {
+  //
+  //   }
+  // }
+  // options.targetOfMe(value) {
+  //   if (value === true) {
+  //     return process.env.VUE_APP_BASE_API + "/ct/upload/ctFile"
+  //   } else {
+  //     return ''
+  //   }
+  // },
+}
+,
+computed: {
+  // options: function (value) {
+  //   console.log("value:",value)
+  //   options.target=value
+  // }
+}
 
 
 }

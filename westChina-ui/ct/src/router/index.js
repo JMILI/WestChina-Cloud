@@ -62,7 +62,7 @@ export const constantRoutes = [
   {
     path: '/Layout',
     component: Layout,
-    redirect: 'patients',
+    redirect: 'ct',
     name: 'Layout',
     children: [
       {
@@ -84,12 +84,6 @@ export const constantRoutes = [
       {
         path: '/ct',
         component: (resolve) => require(['@/views/ct/ct'], resolve),
-      },
-      {
-        path: '/patients',
-        name: 'patients',
-        meta:{keepAlive: true},
-        component: (resolve) => require(['@/views/patients/index'], resolve),
       },
     ]
   },

@@ -38,12 +38,12 @@
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
                          :body-style="{ padding: '0px' }">
-                  <div
-                    :ref='studySeriesList[key][childrenKey].dicomId.toString()'
-                    class="ct-image1"
-                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
-                  >
-                  </div>
+<!--                  <div-->
+<!--                    :ref='studySeriesList[key][childrenKey].dicomId.toString()'-->
+<!--                    class="ct-image1"-->
+<!--                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"-->
+<!--                  >-->
+<!--                  </div>-->
                   <!--                <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
                   <div style="padding: 14px;">
                     <div>序列id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
@@ -749,6 +749,8 @@ export default {
     //  endregion
     // that.studySeriesList
     // studyList
+
+  // TODO 是否可以在这里将要展示的数据获取，然后，
   },
   computed: {
     getInvert() {
