@@ -1,0 +1,11 @@
+# 基础镜像
+FROM rabbitmq:management
+# author
+MAINTAINER westChina
+
+# 挂载目录
+VOLUME /home/westChina/rabbitmq
+# 创建目录
+RUN mkdir -p /home/westChina/rabbitmq
+# 指定路径
+WORKDIR /home/westChina/rabbitmq

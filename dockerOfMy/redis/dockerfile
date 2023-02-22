@@ -1,0 +1,13 @@
+# 基础镜像
+FROM redis
+# author
+MAINTAINER westChina
+
+# 挂载目录
+VOLUME /root/westChina/redis
+# 创建目录
+RUN mkdir -p /root/westChina/redis
+# 指定路径
+WORKDIR /root/westChina/redis
+# 复制conf文件到路径
+COPY ./conf/redis.conf /root/westChina/redis/redis.conf

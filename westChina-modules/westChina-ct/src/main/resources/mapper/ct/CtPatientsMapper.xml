@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.westChina.ct.mapper.CtPatientsMapper">
+
+    <resultMap type="CtPatients" id="patientsResult">
+        <id     property="patId"                    column="pat_id"                   />
+        <result property="patCardId"                column="pat_card_id"              />
+        <result property="patName"                  column="pat_name"                 />
+        <result property="patPhone"                 column="pat_phone"                />
+        <result property="sort"                     column="sort"                     />
+        <result property="createBy"                 column="create_by"                />
+        <result property="createName"               column="create_name"              />
+        <result property="createTime"               column="create_time"              />
+        <result property="updateBy"                 column="update_by"                />
+        <result property="updateName"               column="update_name"              />
+        <result property="updateTime"               column="update_time"              />
+        <result property="remark"                   column="remark"                   />
+    </resultMap>
+
+    <sql id="selectVo">
+        select e.pat_id, e.pat_card_id, e.pat_name, e.pat_phone, e.sort, e.create_by, e.create_time, e.update_by, e.update_time, e.remark
+
+        from ct_patients e
+    </sql>
+
+    <select id="selectPatientsList" parameterType="CtPatients" resultMap="patientsResult">
+        <include refid="selectVo"/>
+        where 1 = 1
+        <if test="patCardId != null  and patCardId != ''">                    and e.pat_card_id like concat('%', #{patCardId}, '%')     </if>
+        <if test="patName != null  and patName != ''">                        and e.pat_name like concat('%', #{patName}, '%')      </if>
+        <if test="patPhone != null  and patPhone != ''">                      and e.pat_phone like concat('%', #{patPhone}, '%')    </if>
+        <if test="sort != null ">                                             and e.sort = #{sort}                                   </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+        order by e.sort
+    </select>
+
+    <select id="selectPatientsByPatId" parameterType="CtPatients" resultMap="patientsResult">
+        <include refid="selectVo"/>
+        where e.pat_id = #{patId}
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <insert id="insertPatients" parameterType="CtPatients">
+        insert into ct_patients
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">                                                pat_id                  ,</if>
+            <if test="patCardId != null and patCardId != ''">                              pat_card_id             ,</if>
+            <if test="patName != null and patName != ''">                                  pat_name                ,</if>
+            <if test="patPhone != null and patPhone != ''">                                pat_phone               ,</if>
+            <if test="sort != null">                                                       sort                    ,</if>
+            <if test="createBy != null">                                                   create_by               ,</if>
+            <if test="remark != null">                                                     remark                  ,</if>
+            <if test="enterpriseId != null">                                               tenant_id               ,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">                                                #{snowflakeId}         ,</if>
+            <if test="patCardId != null and patCardId != ''">                              #{patCardId}            ,</if>
+            <if test="patName != null and patName != ''">                                  #{patName}              ,</if>
+            <if test="patPhone != null and patPhone != ''">                                #{patPhone}             ,</if>
+            <if test="sort != null">                                                       #{sort}                 ,</if>
+            <if test="createBy != null">                                                   #{createBy}             ,</if>
+            <if test="remark != null">                                                     #{remark}               ,</if>
+            <if test="enterpriseId != null">                                               #{enterpriseId}         ,</if>
+        </trim>
+    </insert>
+
+    <update id="updatePatients" parameterType="CtPatients">
+        update ct_patients
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="patCardId != null and patCardId != ''">                              pat_card_id = #{patCardId}            ,</if>
+            <if test="patName != null and patName != ''">                                  pat_name = #{patName}                 ,</if>
+            <if test="patPhone != null and patPhone != ''">                                pat_phone = #{patPhone}               ,</if>
+            <if test="sort != null">                                                       sort = #{sort}                        ,</if>
+            <if test="remark != null">                                                     remark = #{remark}                    ,</if>
+        </trim>
+        where pat_id = #{patId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <update id="updatePatientsSort" parameterType="CtPatients">
+        update ct_patients set sort =
+        <foreach collection="params.Ids" item="item" index="index" separator=" " open="case pat_id" close="end">
+            when #{item.patId} then #{item.sort}
+        </foreach>
+        where pat_id in
+        <foreach collection="params.Ids" item="item" index="index" separator="," open="(" close=")">
+            #{item.patId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <delete id="deletePatientsByPatId" parameterType="CtPatients">
+        update ct_patients
+        set del_flag = 1
+        where pat_id = #{patId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+    <delete id="deletePatientsByPatIds" parameterType="CtPatients">
+        update ct_patients
+        set del_flag = 1
+        where pat_id in
+        <foreach item="patId" collection="params.Ids" open="(" separator="," close=")">
+            #{patId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+    <select id="searchByFormHit" parameterType="FormHit" resultMap="patientsResult">
+        <include refid="selectVo"/>
+        where e.pat_card_id = #{patCardId} or e.pat_phone = #{patPhone}
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+</mapper>

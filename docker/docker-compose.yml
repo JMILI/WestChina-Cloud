@@ -1,0 +1,194 @@
+version: '3.8'
+services:
+  westChina-nacos:
+    container_name: westChina-nacos
+    image: nacos/nacos-server
+    build:
+      context: ./nacos
+    environment:
+      - MODE=standalone
+    volumes:
+      - ./nacos/logs/:/home/nacos/logs
+      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    depends_on:
+      - westChina-mysql
+    links:
+      - westChina-mysql
+  westChina-mysql:
+    container_name: westChina-mysql
+    image: mysql:8.0.26
+    build:
+      context: ./mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/logs:/logs
+      - ./mysql/data:/var/lib/mysql
+    command: [
+        'mysqld',
+        '--innodb-buffer-pool-size=80M',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+        '--default-time-zone=+8:00',
+        '--lower-case-table-names=1'
+    ]
+    environment:
+      MYSQL_DATABASE: 'xy-config'
+      MYSQL_ROOT_PASSWORD: "123456"
+  westChina-redis:
+    container_name: westChina-redis
+    image: redis
+    build:
+      context: ./redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/conf/redis.conf:/home/westChina/redis/redis.conf
+      - ./redis/data:/data
+    command: redis-server /home/westChina/redis/redis.conf
+  westChina-rabbit:
+    container_name: westChina-rabbit
+    image: rabbitmq:management
+    build:
+      context: ./rabbitmq
+    hostname: westChina-rabbit
+    environment:
+      RABBITMQ_DEFAULT_VHOST: "westChina-rabbit"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    ports:
+      - "15672:15672"
+      - "4369:4369"
+      - "5672:5672"
+      - "25672:25672"
+    volumes:
+      - ./rabbitmq/data:/home/westChina/rabbitmq/data
+      - ./rabbitmq/log:/home/westChina/rabbitmq/log
+  westChina-nginx:
+    container_name: westChina-nginx
+    image: nginx
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/html/main:/home/westChina/projects/westChina-ui/main
+      - ./nginx/html/administrator:/home/westChina/projects/westChina-ui/administrator
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/logs:/var/log/nginx
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - westChina-gateway
+    links:
+      - westChina-gateway
+  westChina-gateway:
+    container_name: westChina-gateway
+    build:
+      context: ./westChina/gateway
+      dockerfile: dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+    links:
+      - westChina-nacos
+      - westChina-redis
+  westChina-auth:
+    container_name: westChina-auth
+    build:
+      context: ./westChina/auth
+      dockerfile: dockerfile
+    ports:
+      - "9200:9200"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+    links:
+      - westChina-nacos
+      - westChina-redis
+  westChina-modules-tenant:
+    container_name: westChina-modules-tenant
+    build:
+      context: ./westChina/modules/tenant
+      dockerfile: dockerfile
+    ports:
+      - "9700:9700"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+      - westChina-rabbit
+    links:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+      - westChina-rabbit
+  westChina-modules-system:
+    container_name: westChina-modules-system
+    build:
+      context: ./westChina/modules/system
+      dockerfile: dockerfile
+    ports:
+      - "9600:9600"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+      - westChina-rabbit
+    links:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+      - westChina-rabbit
+  westChina-modules-gen:
+    container_name: westChina-modules-gen
+    build:
+      context: ./westChina/modules/gen
+      dockerfile: dockerfile
+    ports:
+      - "9400:9400"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+    links:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+  westChina-modules-job:
+    container_name: westChina-modules-job
+    build:
+      context: ./westChina/modules/job
+      dockerfile: dockerfile
+    ports:
+      - "9500:9500"
+    depends_on:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+    links:
+      - westChina-nacos
+      - westChina-redis
+      - westChina-mysql
+  westChina-modules-file:
+    container_name: westChina-modules-file
+    build:
+      context: ./westChina/modules/file
+      dockerfile: dockerfile
+    ports:
+      - "9300:9300"
+    volumes:
+      - ./westChina/uploadPath:/home/westChina/uploadPath
+  westChina-visual-monitor:
+    container_name: westChina-visual-monitor
+    build:
+      context: ./westChina/visual/monitor
+      dockerfile: dockerfile
+    ports:
+      - "9100:9100"

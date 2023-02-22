@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.westChina</groupId>
+        <artifactId>westChina</artifactId>
+        <version>4.2.4</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <modules>
+        <module>westChina-common-log</module>
+        <module>westChina-common-core</module>
+        <module>westChina-common-redis</module>
+        <module>westChina-common-socket</module>
+        <module>westChina-common-message</module>
+        <module>westChina-common-swagger</module>
+        <module>westChina-common-security</module>
+        <module>westChina-common-datascope</module>
+		<module>westChina-common-datasource</module>
+    </modules>
+
+    <artifactId>westChina-common</artifactId>
+    <packaging>pom</packaging>
+
+    <description>
+	    westChina-common通用模块
+    </description>
+
+</project>

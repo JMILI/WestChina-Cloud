@@ -1,0 +1,15 @@
+# 基础镜像
+FROM  openjdk:8-jre
+# author
+MAINTAINER westChina
+
+# 挂载目录
+VOLUME /home/westChina
+# 创建目录
+RUN mkdir -p /home/westChina
+# 指定路径
+WORKDIR /home/westChina
+# 复制jar文件到路径
+COPY ./jar/westChina-modules-gen.jar /home/westChina/westChina-modules-gen.jar
+# 启动代码生成服务
+ENTRYPOINT ["java","-jar","westChina-modules-gen.jar"]

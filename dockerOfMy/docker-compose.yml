@@ -1,0 +1,90 @@
+version: '3.8'
+services:
+  westChina-nacos:
+    container_name: westChina-nacos
+    image: nacos/nacos-server
+    build:
+      context: ./nacos
+    environment:
+      - MODE=standalone
+    restart: always
+    volumes:
+      - ./nacos/logs/:/home/nacos/logs
+      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    depends_on:
+      - westChina-mysql
+    links:
+      - westChina-mysql
+  westChina-mysql:
+    container_name: westChina-mysql
+    image: mysql:8.0.26
+    build:
+      context: ./mysql
+    ports:
+      - "3306:3306"
+    restart: always
+    volumes:
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/logs:/logs
+      - ./mysql/data:/var/lib/mysql
+    command: [
+      'mysqld',
+      '--innodb-buffer-pool-size=80M',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+8:00',
+      '--lower-case-table-names=1'
+    ]
+    environment:
+      MYSQL_DATABASE: "xy-config"
+      MYSQL_home_PASSWORD: "123456"
+  westChina-redis:
+    container_name: westChina-redis
+    image: redis
+    build:
+      context: ./redis
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - ./redis/conf/redis.conf:/home/westChina/redis/redis.conf
+      - ./redis/data:/data
+    command: redis-server /home/westChina/redis/redis.conf
+  westChina-rabbit:
+    container_name: westChina-rabbit
+    image: rabbitmq:management
+    build:
+      context: ./rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_VHOST: "westChina-rabbit"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    ports:
+      - "15672:15672"
+      - "4369:4369"
+      - "5672:5672"
+      - "25672:25672"
+    volumes:
+      - ./rabbitmq/data:/home/westChina/rabbitmq/data
+      - ./rabbitmq/log:/home/westChina/rabbitmq/log
+  westChina-minio:
+    container_name: westChina-minio
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    build:
+      context: ./minio
+    restart: always
+    command: server /home/westChina/minio/data --console-address ":9001" #对外暴露minio数据存储位置
+    environment:
+      MINIO_ACCESS_KEY: admin    #管理后台用户名
+      MINIO_SECRET_KEY: admin123456 #管理后台密码，最小8个字符
+    volumes:
+      - ./minio/data:/home/westChina/minio/data
+      - ./minio/config:/home/westChina/minio/.minio

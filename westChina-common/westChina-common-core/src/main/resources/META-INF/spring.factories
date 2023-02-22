@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.westChina.common.core.config.DemoProperties,\
+  com.westChina.common.core.utils.SpringUtils
+
+  

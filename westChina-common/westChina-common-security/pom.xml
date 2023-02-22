@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.westChina</groupId>
+        <artifactId>westChina-common</artifactId>
+        <version>4.2.4</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    
+    <artifactId>westChina-common-security</artifactId>
+
+    <description>
+        westChina-common-security安全模块
+    </description>
+
+    <dependencies>
+
+        <!-- Spring Web -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- WestChina Api System -->
+        <dependency>
+            <groupId>com.westChina</groupId>
+            <artifactId>westChina-api-system</artifactId>
+        </dependency>
+
+        <!-- WestChina Api Tenant -->
+        <dependency>
+            <groupId>com.westChina</groupId>
+            <artifactId>westChina-api-tenant</artifactId>
+        </dependency>
+
+        <!-- WestChina Common Redis-->
+        <dependency>
+            <groupId>com.westChina</groupId>
+            <artifactId>westChina-common-redis</artifactId>
+        </dependency>
+        
+    </dependencies>
+
+</project>

@@ -1,0 +1,44 @@
+{
+  "name": "common",
+  "version": "4.2.4",
+  "description": "公共资源",
+  "author": "JMILI",
+  "license": "Apache-2.0",
+  "scripts": {
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,vue}": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "keywords": [
+    "vue",
+    "admin",
+    "dashboard",
+    "element-ui",
+    "boilerplate",
+    "admin-template",
+    "management-system"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/westChinatiantang/westChina-Cloud.git"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=8.9",
+    "npm": ">= 3.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}
