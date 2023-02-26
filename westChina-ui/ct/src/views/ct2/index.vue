@@ -38,12 +38,12 @@
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
                          :body-style="{ padding: '0px' }">
-<!--                  <div-->
-<!--                    :ref='studySeriesList[key][childrenKey].dicomId.toString()'-->
-<!--                    class="ct-image1"-->
-<!--                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"-->
-<!--                  >-->
-<!--                  </div>-->
+                  <div
+                    :ref='studySeriesList[key][childrenKey].dicomId.toString()'
+                    class="ct-image1"
+                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
+                  >
+                  </div>
                   <!--                <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
                   <div style="padding: 14px;">
                     <div>序列id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
@@ -407,6 +407,97 @@ export default {
       divTempWidth2: 'calc(80vw - 200px)',
     }
   },
+  created() {
+    let that = this
+    //region 判断store中有没有阅片病人
+    // let patCardId = this.$store.getters.patCardId
+    // let patCardIdFromRoute = this.$routePatient.patCardId
+    // if (patCardId !== '') {
+    //   that.getPatientData(patCardId)
+    // } else {
+    //   that.$router.push({name: 'patients'})
+    // }
+    //  endregion
+    // that.studySeriesList
+    // studyList
+
+    // TODO 是否可以在这里将要展示的数据获取，然后，
+    let studyList = that.$store.getters.studySeriesList
+
+  },
+  mounted() {
+
+    const that = this
+    // let getImageIds = new Promise((resolve, reject) => {
+    //   this.getPatientData(this.routePatient.patCardId)
+    //   resolve()
+    // }).then(() => {
+    //   // that.canvasStack.imageIds = that.imageIds
+    // console.log(this.routePatient)
+    // this.emitPatientDate(this.routePatient)
+    // console.log("s------",that.studySeriesList)
+    // console.log(that.studySeriesList)
+    // let json = JSON.(that.studySeriesList)
+    // console.log(json)
+    // })
+    const canvas = this.$refs.canvas
+    //监听滚动事件
+    canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
+    new Promise(()=>{
+      //  TODO 渲染列表中的每一项
+      // that.initListCanvas()
+      // const canvasList = new Promise(resolve => {
+      let studyList = that.$store.getters.studySeriesList
+      for (let studyListKey in studyList) {
+        for (let studyListKeyKey in studyList[studyListKey]) {
+          for (let refsKey in that.$refs) {
+            if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
+              cornerstone.enable(that.$refs[refsKey][0])
+              let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
+              that.initTools(that.$refs[refsKey][0])
+              cornerstone.loadImage(tempPath)
+                .then(function (image) {
+                  console.log(image)
+                  // that.$refs[refsKey][0].style.width = "19.9vw"
+                  // that.$refs[refsKey][0].style.height = "300px"
+                  // cornerstone.resize(that.$refs[refsKey][0])
+                  let tempCanvas = that.$refs[refsKey][0]
+                  //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
+                  // cornerstone.displayImage(tempCanvas, image)
+                  cornerstone.displayImage(tempCanvas, image)
+                  // studyList[studyListKey][studyListKeyKey].defaultImage = image
+                })
+            }
+          }
+        }
+      }
+    }).then(resolve=>{
+      that.initCanvas()
+    })
+
+
+
+    // that.updatePatientsStudySeries(studyList)
+    //   resolve()
+    // })
+    // canvasList.then(()=>{
+    //   let newList = that.$store.getters.studySeriesList
+    //   console.log(newList)
+    //   for (let studyListKey in studyList) {
+    //     for (let studyListKeyKey in studyList[studyListKey]) {
+    //       for (let refsKey in that.$refs) {
+    //         if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
+    //           cornerstone.displayImage(that.$refs[refsKey][0], studyList[studyListKey][studyListKeyKey].defaultImage)
+    //         }
+    //       }
+    //     }
+    //   }
+    // })
+  },
+  upload() {
+    debugger
+    console.log("upload")
+  },
   methods: {
 
 
@@ -649,9 +740,6 @@ export default {
       }
       that.showDicom()
     },
-    initListCanvas() {
-
-    },
     ownData(row) {
       // console.log('---', row)
     },
@@ -666,91 +754,6 @@ export default {
     },
     ...mapActions(['updatePatientsStudySeries']),
 
-  },
-
-  mounted() {
-
-    const that = this
-    // let getImageIds = new Promise((resolve, reject) => {
-    //   this.getPatientData(this.routePatient.patCardId)
-    //   resolve()
-    // }).then(() => {
-    //   // that.canvasStack.imageIds = that.imageIds
-    // console.log(this.routePatient)
-    // this.emitPatientDate(this.routePatient)
-    // console.log("s------",that.studySeriesList)
-    // console.log(that.studySeriesList)
-    // let json = JSON.(that.studySeriesList)
-    // console.log(json)
-    // })
-    const canvas = this.$refs.canvas
-    //监听滚动事件
-    canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
-    that.initCanvas()
-
-    //  TODO 渲染列表中的每一项
-    // that.initListCanvas()
-    // const canvasList = new Promise(resolve => {
-    let studyList = that.$store.getters.studySeriesList
-    for (let studyListKey in studyList) {
-      for (let studyListKeyKey in studyList[studyListKey]) {
-        for (let refsKey in that.$refs) {
-          if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-            cornerstone.enable(that.$refs[refsKey][0])
-            let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
-            cornerstone.loadImage(tempPath)
-              .then(function (image) {
-                console.log(image)
-                // that.$refs[refsKey][0].style.width = "19.9vw"
-                // that.$refs[refsKey][0].style.height = "300px"
-                // cornerstone.resize(that.$refs[refsKey][0])
-                let tempCanvas = that.$refs[refsKey][0]
-                //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
-                // cornerstone.displayImage(tempCanvas, image)
-                cornerstone.displayImage(tempCanvas, image)
-                // studyList[studyListKey][studyListKeyKey].defaultImage = image
-              })
-          }
-        }
-      }
-    }
-    // that.updatePatientsStudySeries(studyList)
-    //   resolve()
-    // })
-    // canvasList.then(()=>{
-    //   let newList = that.$store.getters.studySeriesList
-    //   console.log(newList)
-    //   for (let studyListKey in studyList) {
-    //     for (let studyListKeyKey in studyList[studyListKey]) {
-    //       for (let refsKey in that.$refs) {
-    //         if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-    //           cornerstone.displayImage(that.$refs[refsKey][0], studyList[studyListKey][studyListKeyKey].defaultImage)
-    //         }
-    //       }
-    //     }
-    //   }
-    // })
-
-  },
-  upload() {
-    debugger
-    console.log("upload")
-  },
-  created() {
-    let that = this
-    //region 判断store中有没有阅片病人
-    // let patCardId = this.$store.getters.patCardId
-    // let patCardIdFromRoute = this.$routePatient.patCardId
-    // if (patCardId !== '') {
-    //   that.getPatientData(patCardId)
-    // } else {
-    //   that.$router.push({name: 'patients'})
-    // }
-    //  endregion
-    // that.studySeriesList
-    // studyList
-
-  // TODO 是否可以在这里将要展示的数据获取，然后，
   },
   computed: {
     getInvert() {

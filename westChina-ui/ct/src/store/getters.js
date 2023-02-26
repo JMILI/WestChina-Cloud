@@ -44,7 +44,9 @@ const getters = {
   patCardId:state=>state.ctPatientInfo.patCardId,
   patName:state=>state.ctPatientInfo.patName,
   patPhone:state=>state.ctPatientInfo.patPhone,
-  studySeriesList:state=>state.ctPatientInfo.studySeriesList
+  studySeriesList:state=>state.ctPatientInfo.studySeriesList,
   // patientInfo:state=> state.ctPatientInfo.patient
+
+  dicomPatCardId:state=>state.dicom.dicomPatCardId,
 }
 export default getters

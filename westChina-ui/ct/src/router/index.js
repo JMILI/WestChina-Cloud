@@ -60,6 +60,12 @@ export const constantRoutes = [
     component: (resolve) => require(['@/views/patients/index'], resolve),
   },
   {
+    path: 'dicom',
+    name: 'dicom',
+    component: (resolve) => require(['@/views/dicom/index'], resolve),
+    meta: {title: homePageName, icon: homePageIcon, affix: true}
+  },
+  {
     path: '/Layout',
     component: Layout,
     redirect: 'ct',

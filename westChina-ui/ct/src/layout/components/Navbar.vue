@@ -6,10 +6,14 @@
                style="background-color:#282c34;border: 0px;margin-top: 7px;margin-bottom: 5px;padding-left: 5px;"
                @click="openStudySeries"
     ></el-button>
-<!--    <div style="text-align: center;color: white;font-size:15px; float: left;">病人图像</div>-->
+    <el-button icon="el-icon-success"
+               style="background-color:#282c34;border: 0px;margin-top: 7px;margin-bottom: 5px;padding-left: 0px;"
+               @click="routeReturn"
+    ></el-button>
+    <!--    <div style="text-align: center;color: white;font-size:15px; float: left;">病人图像</div>-->
     <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
-<!--    <hamburger id="hamburger-container"  class="hamburger-container"-->
-<!--               />-->
+    <!--    <hamburger id="hamburger-container"  class="hamburger-container"-->
+    <!--               />-->
     <div class="right-menu">
       <template v-if="device!=='mobile'">
         <!--        这里放顶部的菜单工具 start jm-->
@@ -158,14 +162,17 @@ export default {
       window.location.href = url  //在本页面打开外部链接
     },
     //病人信息展示状态改变
-    ...mapActions(['changeShowInfo','openStudy']),
+    ...mapActions(['changeShowInfo', 'openStudy']),
     changeShowInfos(value) {
       console.log(value)
       this.changeShowInfo(value)
     },
-    openStudySeries(){
+    openStudySeries() {
       this.openStudy()
     },
+    routeReturn(){
+      this.$router.back()
+    }
   }
 }
 </script>

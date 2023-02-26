@@ -1,83 +1,92 @@
 <template>
   <div class="app-container">
-    <div class="wrapper-container" v-show="showSearch">
-      <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
-        <el-form-item label="身份证号" prop="patCardId">
-          <el-input
-            v-model="queryParams.patCardId"
-            placeholder="请输入身份证号"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="ct拍摄时间" prop="dicomCtTime">
-          <el-input
-            v-model="queryParams.dicomCtTime"
-            placeholder="请输入ct拍摄时间"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="研究UId" prop="dicomCtStudyUid">
-          <el-input
-            v-model="queryParams.dicomCtStudyUid"
-            placeholder="请输入研究UId"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="序列UId" prop="dicomCtSeriesUid">
-          <el-input
-            v-model="queryParams.dicomCtSeriesUid"
-            placeholder="请输入序列UId"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="检查的身体部位" prop="dicomCtBody">
-          <el-input
-            v-model="queryParams.dicomCtBody"
-            placeholder="请输入检查的身体部位"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="序列第一张的存储地址" prop="dicomCtPath">
-          <el-input
-            v-model="queryParams.dicomCtPath"
-            placeholder="请输入序列第一张的存储地址"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item label="一个序列的dicom数量" prop="dicomCtCount">
-          <el-input
-            v-model="queryParams.dicomCtCount"
-            placeholder="请输入一个序列的dicom数量"
-            clearable
-            size="small"
-            @keyup.enter.native="handleQuery"/>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+<!--    <div class="wrapper-container" v-show="showSearch">-->
+<!--      <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">-->
+<!--        <el-form-item label="身份证号" prop="patCardId">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.patCardId"-->
+<!--            placeholder="请输入身份证号"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="ct拍摄时间" prop="dicomCtTime">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtTime"-->
+<!--            placeholder="请输入ct拍摄时间"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="研究UId" prop="dicomCtStudyUid">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtStudyUid"-->
+<!--            placeholder="请输入研究UId"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="序列UId" prop="dicomCtSeriesUid">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtSeriesUid"-->
+<!--            placeholder="请输入序列UId"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="检查的身体部位" prop="dicomCtBody">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtBody"-->
+<!--            placeholder="请输入检查的身体部位"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="序列第一张的存储地址" prop="dicomCtPath">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtPath"-->
+<!--            placeholder="请输入序列第一张的存储地址"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item label="一个序列的dicom数量" prop="dicomCtCount">-->
+<!--          <el-input-->
+<!--            v-model="queryParams.dicomCtCount"-->
+<!--            placeholder="请输入一个序列的dicom数量"-->
+<!--            clearable-->
+<!--            size="small"-->
+<!--            @keyup.enter.native="handleQuery"/>-->
+<!--        </el-form-item>-->
+<!--        <el-form-item>-->
+<!--          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>-->
+<!--          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>-->
+<!--        </el-form-item>-->
+<!--      </el-form>-->
+<!--    </div>-->
 
     <div class="wrapper-container">
       <el-row :gutter="10" class="mb8">
-        <el-col :span="1.5">
-          <el-button
-            type="primary"
-            plain
-            icon="el-icon-plus"
-            size="mini"
-            @click="handleAdd"
-            v-hasPermi="['dicom:dicom:add']"
-          >新增
-          </el-button>
-        </el-col>
+<!--        <el-col :span="1.5">-->
+<!--          <el-button-->
+<!--            type="primary"-->
+<!--            plain-->
+<!--            icon="el-icon-plus"-->
+<!--            size="mini"-->
+<!--            @click="handleAdd"-->
+<!--            v-hasPermi="['dicom:dicom:add']"-->
+<!--          >新增-->
+<!--          </el-button>-->
+<!--        </el-col>-->
+                <el-col :span="1.5">
+                  <el-button
+                    type="warning"
+                    plain
+                    size="mini"
+                    @click="handleReturn"
+                  >返回
+                  </el-button>
+                </el-col>
         <el-col :span="1.5">
           <el-button
             type="success"
@@ -102,17 +111,17 @@
           >删除
           </el-button>
         </el-col>
-        <el-col :span="1.5">
-          <el-button
-            type="warning"
-            plain
-            icon="el-icon-download"
-            size="mini"
-            @click="handleExport"
-            v-hasPermi="['dicom:dicom:export']"
-          >导出
-          </el-button>
-        </el-col>
+<!--        <el-col :span="1.5">-->
+<!--          <el-button-->
+<!--            type="warning"-->
+<!--            plain-->
+<!--            icon="el-icon-download"-->
+<!--            size="mini"-->
+<!--            @click="handleExport"-->
+<!--            v-hasPermi="['dicom:dicom:export']"-->
+<!--          >导出-->
+<!--          </el-button>-->
+<!--        </el-col>-->
 
 
         <el-col :span="1.5">
@@ -189,25 +198,25 @@
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body v-dialogDrag v-dialogDragHeight>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="身份证号" prop="patCardId">
-          <el-input v-model="form.patCardId" placeholder="请输入身份证号"/>
+          <el-input v-model="form.patCardId" disabled placeholder="请输入身份证号"/>
         </el-form-item>
         <el-form-item label="ct拍摄时间" prop="dicomCtTime">
-          <el-input v-model="form.dicomCtTime" placeholder="请输入ct拍摄时间"/>
+          <el-input v-model="form.dicomCtTime" disabled placeholder="请输入ct拍摄时间"/>
         </el-form-item>
         <el-form-item label="研究UId" prop="dicomCtStudyUid">
-          <el-input v-model="form.dicomCtStudyUid" placeholder="请输入研究UId"/>
+          <el-input v-model="form.dicomCtStudyUid"disabled  placeholder="请输入研究UId"/>
         </el-form-item>
         <el-form-item label="序列UId" prop="dicomCtSeriesUid">
-          <el-input v-model="form.dicomCtSeriesUid" placeholder="请输入序列UId"/>
+          <el-input v-model="form.dicomCtSeriesUid"disabled placeholder="请输入序列UId"/>
         </el-form-item>
         <el-form-item label="检查的身体部位" prop="dicomCtBody">
           <el-input v-model="form.dicomCtBody" placeholder="请输入检查的身体部位"/>
         </el-form-item>
         <el-form-item label="序列第一张的存储地址" prop="dicomCtPath">
-          <el-input v-model="form.dicomCtPath" placeholder="请输入序列第一张的存储地址"/>
+          <el-input v-model="form.dicomCtPath"disabled placeholder="请输入序列第一张的存储地址"/>
         </el-form-item>
         <el-form-item label="一个序列的dicom数量" prop="dicomCtCount">
-          <el-input v-model="form.dicomCtCount" placeholder="请输入一个序列的dicom数量"/>
+          <el-input v-model="form.dicomCtCount"disabled placeholder="请输入一个序列的dicom数量"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -221,6 +230,7 @@
 <script>
 import {listDicom, getDicom, delDicom, addDicom, updateDicom, updateDicomSort} from "@/api/ct/dicom";
 import Sortable from "sortablejs";
+import {getDicomListByPatCardId} from "../../api/ct/dicom";
 
 export default {
   name: "Dicom",
@@ -310,11 +320,14 @@ export default {
   },
   methods: {
     /** 查询病人dicom存储记录列表 */
+    //TODO 获取某人的dicom信息
+
     getList() {
       this.loading = true;
-      listDicom(this.queryParams).then(response => {
+      getDicomListByPatCardId((this.$store.getters.dicomPatCardId)).then(response => {
         this.dicomList = response.data.items;
         this.total = response.data.total;
+        debugger
         this.loading = false;
       });
     },
@@ -377,6 +390,10 @@ export default {
         this.open = true;
         this.title = "修改病人dicom存储记录";
       });
+    },
+    /** 返回上一页 */
+    handleReturn(){
+      this.$router.back()
     },
     /** 提交按钮 */
     submitForm() {
@@ -458,10 +475,20 @@ export default {
     }
 
 
-  }
-
-
-  ,
+  },
+  // updated() {
+  //   this.getList()
+  // },
+  // computed: {
+  //   dicomList() {
+  //     return this.dicomList
+  //   },
+  // },
+  // watch:{
+  //   dicomList: function () {
+  //     this.getList()
+  //   },
+  // },
   mounted() {
     this.handleSortable(false);
   }
