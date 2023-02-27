@@ -41,6 +41,7 @@ public class CtDicomController extends BaseController {
         startPage();
         List<CtDicom> list = dicomService.selectDicomList(dicom);
         return getDataTable(list);
+
     }
 
     /**
