@@ -4,7 +4,7 @@
  Source Server         : huaxi
  Source Server Type    : MySQL
  Source Server Version : 80032 (8.0.32-0ubuntu0.20.04.2)
- Source Host           : tune01:3306
+ Source Host           : westChinaBackend:3306
  Source Schema         : xy-config
 
  Target Server Type    : MySQL

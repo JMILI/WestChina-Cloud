@@ -55,13 +55,13 @@ public class IpUtils
         {
             ip = request.getRemoteAddr();
         }
-        return ip.equals("0:0:0:0:0:0:0:1") ? "tune01" : ip;
+        return ip.equals("0:0:0:0:0:0:0:1") ? "westChinaBackend" : ip;
     }
 
     public static boolean internalIp(String ip)
     {
         byte[] addr = textToNumericFormatV4(ip);
-        return internalIp(addr) || "tune01".equals(ip);
+        return internalIp(addr) || "westChinaBackend".equals(ip);
     }
 
     private static boolean internalIp(byte[] addr)
@@ -192,7 +192,7 @@ public class IpUtils
         catch (UnknownHostException e)
         {
         }
-        return "tune01";
+        return "westChinaBackend";
     }
 
     public static String getHostName()

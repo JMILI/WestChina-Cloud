@@ -179,7 +179,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 #if($column.javaField == 'ancestors')
     <select id="selectChildrenBy${pkColumn.capJavaField}" parameterType="${ClassName}" resultMap="${classNameNoPrefix}Result">
         <include refid="selectVo"/>
-        where find_in_set( #{${pkColumn.javaField}} , e.ancestors )
+        where find_in_set( #{${pkColumn.javaField}} , e.ancestors ) and e.del_flag = 0
         <!-- 数据范围过滤 -->
         ${params.dataScope}
     </select>
@@ -189,7 +189,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 #end
     <select id="select${ClassNameNoPrefix}By${pkColumn.capJavaField}" parameterType="${ClassName}" resultMap="${classNameNoPrefix}Result">
         <include refid="selectVo"/>
-        where e.${pkColumn.columnName} = #{${pkColumn.javaField}}
+        where e.${pkColumn.columnName} = #{${pkColumn.javaField}}  and e.del_flag = 0
         <!-- 数据范围过滤 -->
         ${params.dataScope}
     </select>

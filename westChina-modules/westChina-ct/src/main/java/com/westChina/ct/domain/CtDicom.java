@@ -8,7 +8,7 @@ import com.westChina.common.core.web.domain.BaseEntity;
 /**
  * 病人dicom存储记录对象 ct_dicom
  *
- * @author jm
+ * @author westChina
  */
 public class CtDicom extends BaseEntity {
 
@@ -60,6 +60,12 @@ public class CtDicom extends BaseEntity {
      */
     @Excel(name = "一个序列的dicom数量")
     private Long dicomCtCount;
+
+    /**
+     * 备注
+     */
+    @Excel(name = "备注")
+    private String dicomCtDescription;
 
 
     public CtDicom() {
@@ -133,6 +139,14 @@ public class CtDicom extends BaseEntity {
         return dicomCtCount;
     }
 
+    public void setDicomCtDescription(String dicomCtDescription) {
+        this.dicomCtDescription = dicomCtDescription;
+    }
+
+    public String getDicomCtDescription() {
+        return dicomCtDescription;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -144,6 +158,7 @@ public class CtDicom extends BaseEntity {
                 .append("dicomCtBody", getDicomCtBody())
                 .append("dicomCtPath", getDicomCtPath())
                 .append("dicomCtCount", getDicomCtCount())
+                .append("dicomCtDescription", getDicomCtDescription())
                 .append("sort", getSort())
                 .append("createBy", getCreateBy())
                 .append("createName", getCreateName())

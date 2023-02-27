@@ -7,38 +7,38 @@ cd %~dp0
 cd ../runall
 @REM start taskkill /f /im java.exe
 start redis
-ping tune01 -n 1
+ping westChinaBackend -n 1
 start nacos
 @REM
-ping tune01 -n 30
+ping westChinaBackend -n 30
 @REM
 set JAVA_OPTS=-Xms512m -Xmx1024m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=512m
 
 @REM @REM
 start cmd /c "title auth && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-auth.jar &"
-ping tune01 -n 2
+ping westChinaBackend -n 2
 start cmd /c "title gateway && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-gateway.jar &"
-ping tune01 -n 2
+ping westChinaBackend -n 2
 start cmd /c  "title system && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-system.jar &"
-ping tune01 -n 2
+ping westChinaBackend -n 2
 
-@REM ping tune01 -n 20
+@REM ping westChinaBackend -n 20
 @REM
 start cmd /c "title ct && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-ct.jar &"
-@REM ping tune01 -n 2
+@REM ping westChinaBackend -n 2
 
 start cmd /c "title file && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-file.jar &"
-@REM ping tune01 -n 2
+@REM ping westChinaBackend -n 2
 start cmd /c  "title tenant && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-tenant.jar &"
-ping tune01 -n 2
+ping westChinaBackend -n 2
 @REM
 @REM @REM
 start cmd /c "title gen && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-gen.jar &"
-ping tune01 -n 2
+ping westChinaBackend -n 2
 @REM start cmd /c  "title job && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-modules-job.jar &"
-@REM ping tune01 -n 2
+@REM ping westChinaBackend -n 2
 @REM start cmd /c "title monitor && java -jar -Dfile.encoding=utf-8 %JAVA_OPTS% -jar westChina-visual-monitor.jar &"
-@REM ping tune01 -n 2
+@REM ping westChinaBackend -n 2
 
 cd ../bin
 pause

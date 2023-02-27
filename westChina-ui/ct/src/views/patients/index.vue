@@ -266,13 +266,13 @@ import {
   listPatients,
   updatePatients,
   updatePatientsSort
-} from "@/api/ct/patients";
+} from "../../api/ct/patients";
 import Sortable from "sortablejs";
 import {getToken} from "common/src/utils/auth";
 import dicomParser from "dicom-parser";
-import {getBucketName} from "@/api/ct/ctMinio";
+import {getBucketName} from "../../api/ct/ctMinio";
 import Cookies from "~../../js-cookie";
-import {addDicom, getStudyListByPatCardId} from "@/api/ct/dicom";
+import {addDicom, getStudyListByPatCardId} from "../../api/ct/dicom";
 import {mapActions} from "vuex"
 //endregion
 
@@ -413,8 +413,10 @@ export default {
         dicomCtBody: '',
         dicomCtPath: '',
         dicomCtCount: 0,
+        dicomCtDescription:'',
       },
       ctDicomList: [],
+
       //  endregion
     };
   },
@@ -495,6 +497,7 @@ export default {
               //后面要填写
               ctDicomTemp.patCardId = ''
               ctDicomTemp.dicomCtCount = 0
+              ctDicomTemp.dicomCtDescription=''
               that.ctDicomList.push(ctDicomTemp)
             }
             //region 数组的
@@ -533,53 +536,53 @@ export default {
             // }
             //  endregion
           }
-        } else {
-          let reader = new FileReader()
-          let temp = file.file
-          reader.readAsArrayBuffer(temp)
-          reader.onloadend = function (temp) {
-            let arrayBuffer = reader.result;
-            let byteArray = new Uint8Array(arrayBuffer)
-            let dataSet = dicomParser.parseDicom(byteArray)
-            let seriesDate = dataSet.string('x00080021')
-            let studyUID = dataSet.string('x0020000d')
-            let seriesUID = dataSet.string('x0020000e')
-            let imageNumber = dataSet.string('x00200013')
-            let bodyPart = dataSet.string('x00080015')
-            //前缀得从后端获取
-            let path = studyUID + '/' + seriesUID + '/' + imageNumber + '.dcm'
-            file.name = path
-            console.log("-----------------------", path)
-            //统计信息，study,series信息
-            if (that.studyUidList.hasOwnProperty(studyUID)) {
-              if (that.studyUidList[studyUID].hasOwnProperty(seriesUID)) {
-                that.isFinishAnalysis = false
-                ++that.studyUidList[studyUID][seriesUID]
-              } else {
-                that.studyUidList[studyUID][seriesUID] = 1
-              }
-              //没出现过得study序列
-            } else {
-              that.studyUidList[studyUID] = {}
-              that.studyUidList[studyUID][seriesUID] = 1
-            }
-            //将第一张图像记录存入数据库,有些不一定是从1开始的
-            if (imageNumber === '1') {
-              let ctDicomTemp = {}
-              ctDicomTemp.dicomCtTime = seriesDate
-              ctDicomTemp.dicomCtStudyUid = studyUID
-              ctDicomTemp.dicomCtSeriesUid = seriesUID
-              ctDicomTemp.dicomCtBody = bodyPart
-              ctDicomTemp.dicomCtPath = process.env.VUE_APP_MINIO_API + that.bucketNameOfMe + '/' + path
-              //后面要填写
-              ctDicomTemp.patCardId = ''
-              ctDicomTemp.dicomCtCount = 0
-              that.ctDicomList.push(ctDicomTemp)
-            }
-
-
-          }
         }
+        // else {
+        //   let reader = new FileReader()
+        //   let temp = file.file
+        //   reader.readAsArrayBuffer(temp)
+        //   reader.onloadend = function (temp) {
+        //     let arrayBuffer = reader.result;
+        //     let byteArray = new Uint8Array(arrayBuffer)
+        //     let dataSet = dicomParser.parseDicom(byteArray)
+        //     let seriesDate = dataSet.string('x00080021')
+        //     let studyUID = dataSet.string('x0020000d')
+        //     let seriesUID = dataSet.string('x0020000e')
+        //     let imageNumber = dataSet.string('x00200013')
+        //     let bodyPart = dataSet.string('x00080015')
+        //     //前缀得从后端获取
+        //     let path = studyUID + '/' + seriesUID + '/' + imageNumber + '.dcm'
+        //     file.name = path
+        //     console.log("-----------------------", path)
+        //     //统计信息，study,series信息
+        //     if (that.studyUidList.hasOwnProperty(studyUID)) {
+        //       if (that.studyUidList[studyUID].hasOwnProperty(seriesUID)) {
+        //         that.isFinishAnalysis = false
+        //         ++that.studyUidList[studyUID][seriesUID]
+        //       } else {
+        //         that.studyUidList[studyUID][seriesUID] = 1
+        //       }
+        //       //没出现过得study序列
+        //     } else {
+        //       that.studyUidList[studyUID] = {}
+        //       that.studyUidList[studyUID][seriesUID] = 1
+        //     }
+        //     //将第一张图像记录存入数据库,有些不一定是从1开始的
+        //     if (imageNumber === '1') {
+        //       let ctDicomTemp = {}
+        //       ctDicomTemp.dicomCtTime = seriesDate
+        //       ctDicomTemp.dicomCtStudyUid = studyUID
+        //       ctDicomTemp.dicomCtSeriesUid = seriesUID
+        //       ctDicomTemp.dicomCtBody = bodyPart
+        //       ctDicomTemp.dicomCtPath = process.env.VUE_APP_MINIO_API + that.bucketNameOfMe + '/' + path
+        //       //后面要填写
+        //       ctDicomTemp.patCardId = ''
+        //       ctDicomTemp.dicomCtCount = 0
+        //       ctDicomTemp.dicomCtDescription=''
+        //       that.ctDicomList.push(ctDicomTemp)
+        //     }
+        //   }
+        // }
       }
     },
     onFilesAdded(files, fileList) {
@@ -618,6 +621,7 @@ export default {
         isFinishUpload.then(ctDicomList => {
           return new Promise((resolve, reject) => {
             ctDicomList.forEach(item => {
+              debugger
               addDicom(item).then(response => {
                 //  成功
               }).catch(error => {
@@ -885,12 +889,11 @@ export default {
     },
     //  endregion
     //region 跳转到阅片界面
-    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries','dicomPatCardId']),
+    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries','dicomOfPatCardId']),
     manage(row) {
-      let dicomPatCardId = row.patCardId
       //将需要查看的病人patCardId，存储起来
       new Promise(resolve => {
-        this.dicomPatCardId(dicomPatCardId)
+        this.dicomOfPatCardId(row.patCardId)
         resolve()
       }).then(resolve=>{
         this.$router.push({name: 'dicom'})

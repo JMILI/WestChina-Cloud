@@ -361,7 +361,7 @@ export default {
         databaseType: DATABASE_TYPE.SLAVE_SOURCE,
         driverClassName: 'com.mysql.cj.jdbc.Driver',
         url: null,
-        urlPrepend: 'jdbc:mysql://tune01:3306/',
+        urlPrepend: 'jdbc:mysql://westChinaBackend:3306/',
         urlAppend: '?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8',
         username: null,
         password: null,

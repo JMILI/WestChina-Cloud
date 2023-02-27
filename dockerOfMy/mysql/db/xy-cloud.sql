@@ -4,7 +4,7 @@
  Source Server         : huaxi
  Source Server Type    : MySQL
  Source Server Version : 50735
- Source Host           : tune01:3306
+ Source Host           : westChinaBackend:3306
  Source Schema         : xy-cloud
 
  Target Server Type    : MySQL
@@ -1081,16 +1081,16 @@ INSERT INTO `sys_menu`
 VALUES (20200, 0, '系统监控', 'monitor', NULL, '', 'N', 'N', 'N', 'N', 'M', 'Y', '', 'xy_monitor', 4, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '系统监控目录', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20210, 20200, 'Sentinel控制台', 'http://tune01:8718', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20210, 20200, 'Sentinel控制台', 'http://westChinaBackend:8718', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:sentinel:list', 'xy_sentinel', 1, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '流量控制菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20220, 20200, 'Nacos控制台', 'http://tune01:8848/nacos', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20220, 20200, 'Nacos控制台', 'http://westChinaBackend:8848/nacos', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:nacos:list', 'xy_nacos', 2, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '服务治理菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
 VALUES (20230, 20200, 'Admin控制台', 'http://localhost:9100/login', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:server:list', 'xy_server', 3, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '服务监控菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20240, 20200, 'rabbit控制台', 'http://tune01:15672/#/', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20240, 20200, 'rabbit控制台', 'http://westChinaBackend:15672/#/', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:rabbitmq:list', 'xy_rabbit', 4, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '消息队列菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
 VALUES (20300, 0, '系统工具', 'tool', NULL, '', 'N', 'N', 'N', 'N', 'M', 'Y', '', 'xy_tool', 5, '0', 0,
@@ -1120,7 +1120,7 @@ INSERT INTO `sys_menu`
 VALUES (20326, 20320, '生成代码', '#', '', '', 'N', 'N', 'N', 'N', 'F', 'N', 'tool:gen:code', '#', 6, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20330, 20300, '系统接口', 'http://tune01:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20330, 20300, '系统接口', 'http://westChinaBackend:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'tool:swagger:list', 'xy_swagger', 3, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '系统接口菜单', 0, 2, -1);
 
 -- ----------------------------
@@ -1596,7 +1596,7 @@ CREATE TABLE `xy_tenant_source`
 -- Records of xy_tenant_source
 -- ----------------------------
 INSERT INTO `xy_tenant_source`
-VALUES (1, '华西运维数据源', '0', 'Y', 'slave', 'com.mysql.cj.jdbc.Driver', 'jdbc:mysql://tune01:3306/xy-cloud',
+VALUES (1, '华西运维数据源', '0', 'Y', 'slave', 'com.mysql.cj.jdbc.Driver', 'jdbc:mysql://westChinaBackend:3306/xy-cloud',
         '?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8',
         'root', '123456', '0', 0, '0', NULL, '2022-03-06 13:19:50', NULL, '2022-03-06 13:29:47', 0);
 

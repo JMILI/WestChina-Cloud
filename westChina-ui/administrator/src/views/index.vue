@@ -63,7 +63,7 @@ export default {
   },
   data() {
     return {
-      list:[ { "materialId": "1376349123774660608", "materialNick": "5efb19cb-cadc-4110-aba5-35158f547a2c.jpg", "materialUrl": "http://tune01:9300/statics/2021/03/29/5efb19cb-cadc-4110-aba5-35158f547a2c.jpg", "materialOriginalUrl": "http://tune01:9300/statics/2021/03/29/76b63f36-b232-4834-a269-d173d6eefad4.jpg" } ],
+      list:[ { "materialId": "1376349123774660608", "materialNick": "5efb19cb-cadc-4110-aba5-35158f547a2c.jpg", "materialUrl": "http://westChinaBackend:9300/statics/2021/03/29/5efb19cb-cadc-4110-aba5-35158f547a2c.jpg", "materialOriginalUrl": "http://westChinaBackend:9300/statics/2021/03/29/76b63f36-b232-4834-a269-d173d6eefad4.jpg" } ],
       lineChartData: lineChartData.newVisitis
     }
   },

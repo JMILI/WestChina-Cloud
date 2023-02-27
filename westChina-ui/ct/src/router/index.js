@@ -68,7 +68,7 @@ export const constantRoutes = [
   {
     path: '/Layout',
     component: Layout,
-    redirect: 'ct',
+    redirect: 'ct2',
     name: 'Layout',
     children: [
       {
@@ -86,10 +86,6 @@ export const constantRoutes = [
       {
         path: '/swiftUpload',
         component: (resolve) => require(['@/views/swiftUpload/swiftUpload'], resolve),
-      },
-      {
-        path: '/ct',
-        component: (resolve) => require(['@/views/ct/ct'], resolve),
       },
     ]
   },

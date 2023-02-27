@@ -37,22 +37,25 @@
                 <!--                series-->
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
-                         :body-style="{ padding: '0px' }">
+                         :body-style="{ padding: '0px' }"
+                >
                   <div
                     :ref='studySeriesList[key][childrenKey].dicomId.toString()'
                     class="ct-image1"
                     @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
                   </div>
-                  <!--                <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
-                  <div style="padding: 14px;">
-                    <div>序列id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
-                    <div>序列真实id：{{ studySeriesList[key][childrenKey].dicomCtSeriesUid }}</div>
+                  <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
+                  <div style="padding: 14px;" class="left-study-collapse-item"
+                  >
+                    <div>id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
+                    <div>研究id：{{ studySeriesList[key][childrenKey].dicomCtStudyUid }}</div>
+                    <div>序列id：{{ studySeriesList[key][childrenKey].dicomCtSeriesUid }}</div>
                     <div>检查部位：{{ studySeriesList[key][childrenKey].dicomCtBody }}</div>
                     <div class="bottom clearfix">
                       <span class="time">日期:{{ studySeriesList[key][childrenKey].dicomCtTime }}</span>
-                      <el-button type="text" class="button" @click="ownData(studySeriesList[key][childrenKey])">操作按钮
-                      </el-button>
+                      <!--                      <el-button type="text" class="button" @click="ownData(studySeriesList[key][childrenKey])">操作按钮-->
+                      <!--                      </el-button>-->
                     </div>
                   </div>
                 </el-card>
@@ -304,7 +307,6 @@ import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from 'cornerstone-tools'
 import upload from "element-ui/packages/upload/src/ajax";
 import eventBus from "@/eventBus";
-import {getDicom, getDicomListByPatCardId} from "@/api/ct/dicom";
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -321,15 +323,7 @@ export default {
     return {
       routePatient: this.$route.params.patient,
       imageIds: [
-        'wadouri:http://tune01:9000/dicom/7/1_0.dcm',
-        'wadouri:http://tune01:9000/dicom/7/2_1.dcm',
-        'wadouri:http://tune01:9000/dicom/7/3_2.dcm',
-        'wadouri:http://tune01:9000/dicom/7/4_3.dcm',
-        'wadouri:http://tune01:9000/dicom/7/5_4.dcm',
-        'wadouri:http://tune01:9000/dicom/7/6_5.dcm',
-        'wadouri:http://tune01:9000/dicom/7/7_6.dcm',
-        'wadouri:http://tune01:9000/dicom/7/8_7.dcm',
-        'wadouri:http://tune01:9000/dicom/7/9_8.dcm',
+        'wadouri:http://westChinaBackend:9000/dicom/7/1_0.dcm',
       ],
       //region dicom 各个部分信息
       patient: {
@@ -422,7 +416,7 @@ export default {
     // studyList
 
     // TODO 是否可以在这里将要展示的数据获取，然后，
-    let studyList = that.$store.getters.studySeriesList
+    // let studyList = that.$store.getters.studySeriesList
 
   },
   mounted() {
@@ -443,40 +437,41 @@ export default {
     const canvas = this.$refs.canvas
     //监听滚动事件
     canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
-    new Promise(()=>{
-      //  TODO 渲染列表中的每一项
-      // that.initListCanvas()
-      // const canvasList = new Promise(resolve => {
-      let studyList = that.$store.getters.studySeriesList
-      for (let studyListKey in studyList) {
-        for (let studyListKeyKey in studyList[studyListKey]) {
-          for (let refsKey in that.$refs) {
-            if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-              cornerstone.enable(that.$refs[refsKey][0])
-              let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
-              that.initTools(that.$refs[refsKey][0])
-              cornerstone.loadImage(tempPath)
-                .then(function (image) {
-                  console.log(image)
-                  // that.$refs[refsKey][0].style.width = "19.9vw"
-                  // that.$refs[refsKey][0].style.height = "300px"
-                  // cornerstone.resize(that.$refs[refsKey][0])
-                  let tempCanvas = that.$refs[refsKey][0]
-                  //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
-                  // cornerstone.displayImage(tempCanvas, image)
-                  cornerstone.displayImage(tempCanvas, image)
-                  // studyList[studyListKey][studyListKeyKey].defaultImage = image
-                })
-            }
-          }
-        }
-      }
-    }).then(resolve=>{
-      that.initCanvas()
-    })
+    that.initCanvas()
+    //下面：initListCanvas的初始化必须进行
+    that.initListCanvas()
+    // let studyList = that.$store.getters.studySeriesList
+    // for (let studyListKey in studyList) {
+    //   for (let studyListKeyKey in studyList[studyListKey]) {
+    //     for (let refsKey in that.$refs) {
+    //       if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
+    //         cornerstone.enable(that.$refs[refsKey][0])
+    //         let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
+    //         cornerstone.loadImage(tempPath)
+    //           .then(function (image) {
+    //             console.log(image)
+    //             // that.$refs[refsKey][0].style.width = "19.9vw"
+    //             // that.$refs[refsKey][0].style.height = "300px"
+    //             // cornerstone.resize(that.$refs[refsKey][0])
+    //             let tempCanvas = that.$refs[refsKey][0]
+    //             //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
+    //             // cornerstone.displayImage(tempCanvas, image)
+    //             cornerstone.displayImage(tempCanvas, image)
+    //             // studyList[studyListKey][studyListKeyKey].defaultImage = image
+    //           })
+    //       }
+    //     }
+    //   }
+    // }
 
 
-
+    // new Promise(() => {
+    //   debugger
+    //   //  TODO 渲染列表中的每一项
+    //   that.initListCanvas()
+    // }).then(resolve => {
+    //   that.initCanvas()
+    // })
     // that.updatePatientsStudySeries(studyList)
     //   resolve()
     // })
@@ -499,8 +494,6 @@ export default {
     console.log("upload")
   },
   methods: {
-
-
     showDicom() {
       let that = this
       //初始化工具
@@ -528,6 +521,31 @@ export default {
       cornerstoneTools.addStackStateManager(canvas, ['stack'])
       cornerstoneTools.addToolState(canvas, 'stack', that.canvasStack)
 
+    },
+    initListCanvas() {
+      let studyList = that.$store.getters.studySeriesList
+      for (let studyListKey in studyList) {
+        for (let studyListKeyKey in studyList[studyListKey]) {
+          for (let refsKey in that.$refs) {
+            if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
+              // cornerstone.enable(that.$refs[refsKey][0])
+              let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
+              that.initTools(that.$refs[refsKey][0])
+              cornerstone.loadImage(tempPath).then(function (image) {
+                console.log(image)
+                // that.$refs[refsKey][0].style.width = "19.9vw"
+                // that.$refs[refsKey][0].style.height = "300px"
+                // cornerstone.resize(that.$refs[refsKey][0])
+                let tempCanvas = that.$refs[refsKey][0]
+                //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
+                // cornerstone.displayImage(tempCanvas, image)
+                cornerstone.displayImage(tempCanvas, image)
+                // studyList[studyListKey][studyListKeyKey].defaultImage = image
+              })
+            }
+          }
+        }
+      }
     },
     displayOneCanvasImage1() {
       let that = this
@@ -575,9 +593,7 @@ export default {
           // // viewport.voi.windowCenter=100
           // // viewport.voi.windowWidth=200
           // viewport.pixelReplication=
-
           // console.log("获取图像信息", viewport)
-
           //打印，看数据
           // console.log('----------------image-----------------', image)
           //设置图像视口
@@ -701,7 +717,9 @@ export default {
       })
 
     },
-
+    /*
+    改变视图样式
+     */
     changeWidth() {
       console.log(this.isOpen, this.openStudySeries)
       if (this.isOpen === true && this.openStudySeries === true) {
@@ -719,10 +737,11 @@ export default {
       }
       this.displayOneCanvasImage()
     },
-
+    /*
+    设置默认的ct图像提供操作。
+     */
     initCanvas() {
       const that = this
-      //  TODO 设置默认的ct图像提供操作。
       let studyList = that.$store.getters.studySeriesList
       for (let studyListKey in studyList) {
         let flag = false
@@ -748,6 +767,7 @@ export default {
      * @param row
      */
     changeCurrentImagesIds(row) {
+      console.log(row)
       this.canvasStack.imageIds = row.imageIds
       this.canvasStack.currentImageIdIndex = 0
       this.displayOneCanvasImage()
@@ -923,6 +943,9 @@ export default {
               display: block;
               background-color: #e34f1d !important;
             }
+
+            background-color: #282c34 !important;
+            color: white;
           }
         }
       }

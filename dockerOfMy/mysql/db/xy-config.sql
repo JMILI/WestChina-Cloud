@@ -62,7 +62,7 @@ VALUES (1, 'application-dev.yml', 'DEFAULT_GROUP',
         '', '通用配置', 'null', 'null', 'yaml', 'null');
 INSERT INTO `config_info`
 VALUES (2, 'application-secret-dev.yml', 'DEFAULT_GROUP',
-        'secret:\n  # 演示模式参数信息\n  demo:\n    enabled: false\n\n  #redis参数信息\n  redis:\n    host: tune01\n    port: 6379\n    password:\n  #rabbitmq参数信息\n  rabbitmq:\n    host: tune01\n    port: 5672\n    username: guest\n    password: guest\n  #服务状态监控参数信息\n  security:\n    name: westChina\n    password: westChina123\n    title: 服务状态监控\n  # swagger参数信息\n  swagger:\n    title: 接口文档\n    license: Powered By westChina\n    licenseUrl: https://doc.westChinatt.cn\n  # datasource主库参数信息\n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://tune01:3306/xy-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8\n    username: root\n    password: 123456\n  # druid控制台参数信息\n  druid:\n    stat-view-servlet:\n      enabled: true\n      loginUsername: admin\n      loginPassword: 123456\n  # nacos参数信息\n  nacos:\n    serverAddr: tune01:8848\n',
+        'secret:\n  # 演示模式参数信息\n  demo:\n    enabled: false\n\n  #redis参数信息\n  redis:\n    host: westChinaBackend\n    port: 6379\n    password:\n  #rabbitmq参数信息\n  rabbitmq:\n    host: westChinaBackend\n    port: 5672\n    username: guest\n    password: guest\n  #服务状态监控参数信息\n  security:\n    name: westChina\n    password: westChina123\n    title: 服务状态监控\n  # swagger参数信息\n  swagger:\n    title: 接口文档\n    license: Powered By westChina\n    licenseUrl: https://doc.westChinatt.cn\n  # datasource主库参数信息\n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://westChinaBackend:3306/xy-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8\n    username: root\n    password: 123456\n  # druid控制台参数信息\n  druid:\n    stat-view-servlet:\n      enabled: true\n      loginUsername: admin\n      loginPassword: 123456\n  # nacos参数信息\n  nacos:\n    serverAddr: westChinaBackend:8848\n',
         '343a15e3f0d9390942dd1c65ea21649d', '2022-03-06 13:21:09', '2022-03-06 05:23:43', 'nacos', '192.168.80.1', '',
         '', '通用参数配置', 'null', 'null', 'yaml', 'null');
 INSERT INTO `config_info`
@@ -107,7 +107,7 @@ VALUES (10, 'westChina-job-dev.yml', 'DEFAULT_GROUP',
         '', '定时任务', 'null', 'null', 'yaml', 'null');
 INSERT INTO `config_info`
 VALUES (11, 'westChina-file-dev.yml', 'DEFAULT_GROUP',
-        '# 本地文件上传    \nfile:\n    domain: http://tune01:9300\n    path: D:/westChina/uploadPath\n    prefix: /statics\n\n# FastDFS配置\nfdfs:\n  domain: http://8.129.231.12\n  soTimeout: 3000\n  connectTimeout: 2000\n  trackerList: 8.129.231.12:22122\n\n# Minio配置\nminio:\n  url: http://tune01:9000\n  accessKey: admin\n  secretKey: admin123456\n  bucketName: common',
+        '# 本地文件上传    \nfile:\n    domain: http://westChinaBackend:9300\n    path: D:/westChina/uploadPath\n    prefix: /statics\n\n# FastDFS配置\nfdfs:\n  domain: http://8.129.231.12\n  soTimeout: 3000\n  connectTimeout: 2000\n  trackerList: 8.129.231.12:22122\n\n# Minio配置\nminio:\n  url: http://westChinaBackend:9000\n  accessKey: admin\n  secretKey: admin123456\n  bucketName: common',
         '0f67a238cfc6529eb2ddc5ed6a785d95', '2022-03-06 13:21:09', '2022-03-06 05:26:42', 'nacos', '192.168.80.1', '',
         '', '文件服务', 'null', 'null', 'yaml', 'null');
 INSERT INTO `config_info`
@@ -275,7 +275,7 @@ CREATE TABLE `his_config_info`
 -- ----------------------------
 INSERT INTO `his_config_info`
 VALUES (2, 1, 'application-secret-dev.yml', 'DEFAULT_GROUP', '',
-        'secret:\n  # 演示模式参数信息\n  demo:\n    enabled: false\n\n  #redis参数信息\n  redis:\n    host: tune01\n    port: 6379\n    password:\n  #rabbitmq参数信息\n  rabbitmq:\n    host: tune01\n    port: 5672\n    username: guest\n    password: guest\n  #服务状态监控参数信息\n  security:\n    name: westChina\n    password: westChina123\n    title: 服务状态监控\n  # swagger参数信息\n  swagger:\n    title: 接口文档\n    license: Powered By westChina\n    licenseUrl: https://doc.westChinatt.cn\n  # datasource主库参数信息\n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://tune01:3306/xy-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8\n    username: root\n    password: password\n  # druid控制台参数信息\n  druid:\n    stat-view-servlet:\n      enabled: true\n      loginUsername: admin\n      loginPassword: 123456\n  # nacos参数信息\n  nacos:\n    serverAddr: tune01:8848\n',
+        'secret:\n  # 演示模式参数信息\n  demo:\n    enabled: false\n\n  #redis参数信息\n  redis:\n    host: westChinaBackend\n    port: 6379\n    password:\n  #rabbitmq参数信息\n  rabbitmq:\n    host: westChinaBackend\n    port: 5672\n    username: guest\n    password: guest\n  #服务状态监控参数信息\n  security:\n    name: westChina\n    password: westChina123\n    title: 服务状态监控\n  # swagger参数信息\n  swagger:\n    title: 接口文档\n    license: Powered By westChina\n    licenseUrl: https://doc.westChinatt.cn\n  # datasource主库参数信息\n  datasource:\n    driver-class-name: com.mysql.cj.jdbc.Driver\n    url: jdbc:mysql://westChinaBackend:3306/xy-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8\n    username: root\n    password: password\n  # druid控制台参数信息\n  druid:\n    stat-view-servlet:\n      enabled: true\n      loginUsername: admin\n      loginPassword: 123456\n  # nacos参数信息\n  nacos:\n    serverAddr: westChinaBackend:8848\n',
         '5c29e913666c5a1e4f65f9f2fb24baf3', '2022-03-06 13:23:43', '2022-03-06 05:23:43', 'nacos', '192.168.80.1', 'U',
         '');
 INSERT INTO `his_config_info`
@@ -285,7 +285,7 @@ VALUES (9, 2, 'westChina-gen-dev.yml', 'DEFAULT_GROUP', '',
         '');
 INSERT INTO `his_config_info`
 VALUES (11, 3, 'westChina-file-dev.yml', 'DEFAULT_GROUP', '',
-        '# 本地文件上传    \r\nfile:\r\n    domain: http://tune01:9300\r\n    path: D:/westChina/uploadPath\r\n    prefix: /statics\r\n\r\n# FastDFS配置\r\nfdfs:\r\n  domain: http://8.129.231.12\r\n  soTimeout: 3000\r\n  connectTimeout: 2000\r\n  trackerList: 8.129.231.12:22122\r\n\r\n# Minio配置\r\nminio:\r\n  url: http://8.129.231.12:9000\r\n  accessKey: minioadmin\r\n  secretKey: minioadmin\r\n  bucketName: test',
+        '# 本地文件上传    \r\nfile:\r\n    domain: http://westChinaBackend:9300\r\n    path: D:/westChina/uploadPath\r\n    prefix: /statics\r\n\r\n# FastDFS配置\r\nfdfs:\r\n  domain: http://8.129.231.12\r\n  soTimeout: 3000\r\n  connectTimeout: 2000\r\n  trackerList: 8.129.231.12:22122\r\n\r\n# Minio配置\r\nminio:\r\n  url: http://8.129.231.12:9000\r\n  accessKey: minioadmin\r\n  secretKey: minioadmin\r\n  bucketName: test',
         'dc9739607d5b9593111eb3fbd478a3bc', '2022-03-06 13:26:41', '2022-03-06 05:26:42', 'nacos', '192.168.80.1', 'U',
         '');
 INSERT INTO `his_config_info`

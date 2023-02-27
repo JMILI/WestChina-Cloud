@@ -69,15 +69,15 @@ export default {
   data() {
     return {
       imageIds: [
-        'wadouri:http://tune01:8000/read1',
-        'wadouri:http://tune01:8000/read2',
-        'wadouri:http://tune01:8000/read3',
-        'wadouri:http://tune01:8000/read4',
-        'wadouri:http://tune01:8000/read5',
-        'wadouri:http://tune01:8000/read6',
-        'wadouri:http://tune01:8000/read7',
-        'wadouri:http://tune01:8000/read8',
-        'wadouri:http://tune01:8000/read9'],
+        'wadouri:http://westChinaBackend:8000/read1',
+        'wadouri:http://westChinaBackend:8000/read2',
+        'wadouri:http://westChinaBackend:8000/read3',
+        'wadouri:http://westChinaBackend:8000/read4',
+        'wadouri:http://westChinaBackend:8000/read5',
+        'wadouri:http://westChinaBackend:8000/read6',
+        'wadouri:http://westChinaBackend:8000/read7',
+        'wadouri:http://westChinaBackend:8000/read8',
+        'wadouri:http://westChinaBackend:8000/read9'],
       fileList: [],
 
     }
@@ -427,7 +427,7 @@ export default {
       //选择
 
       const minioClient = new Minio.Client({
-        endPoint: 'tune01', // 地址
+        endPoint: 'westChinaBackend', // 地址
         port: 9000, // 端口号，若地址为类似test.minio.com,就不必写端口号
         useSSL: false, // 是否使用ssl
         accessKey: 'admin', // 登录的accessKey

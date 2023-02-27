@@ -8,11 +8,11 @@ import axios1 from 'axios';
 
 // 第二个代理基础路径配置
 export const instance = axios1.create({
-  baseURL:'http://tune01:8080',
+  baseURL:'http://westChinaBackend:8080',
 });
 instance.defaults.timeout = 50000;
 instance.defaults.headers["Content-Type"] = "application/json;charset=utf-8"
-// instance.defaults.baseURL='http://tune01:8080'
+// instance.defaults.baseURL='http://westChinaBackend:8080'
 instance.interceptors.request.use(function(config){
   //在请求发出之前进行一些操作
   // return config;

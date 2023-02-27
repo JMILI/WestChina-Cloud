@@ -20,13 +20,6 @@ export function getDicom(query) {
   })
 }
 
-export function getDicomListByPatCardId(query) {
-  return request({
-    url: '/ct/dicom/getDicomListByPatCardId',
-    method: 'get',
-    params: query
-  })
-}
 
 // 新增病人dicom存储记录
 export function addDicom(data) {
@@ -47,11 +40,11 @@ export function updateDicom(data) {
 }
 
 // 修改病人dicom存储记录排序
-export function updateDicomSort(data) {
+export function updateDicomSort(query) {
   return request({
     url: '/ct/dicom/sort',
     method: 'put',
-    data: data
+    data: query
   })
 }
 
@@ -64,6 +57,13 @@ export function delDicom(data) {
   })
 }
 
+export function getDicomByPatCardId(data) {
+  return request({
+    url: '/ct/dicom/getDicomByPatCardId',
+    method: 'get',
+    params: data
+  })
+}
 export function getStudyListByPatCardId(query) {
   return request({
     url: '/ct/dicom/getStudyListByPatCardId',
