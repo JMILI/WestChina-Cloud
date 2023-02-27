@@ -38,15 +38,17 @@
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
                          :body-style="{ padding: '0px' }"
+
                 >
                   <div
-                    :ref='studySeriesList[key][childrenKey].dicomId.toString()'
+                    :ref='studySeriesList[key][childrenKey].dicomId'
                     class="ct-image1"
                     @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
                   </div>
                   <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
                   <div style="padding: 14px;" class="left-study-collapse-item"
+                       @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
                     <div>id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
                     <div>研究id：{{ studySeriesList[key][childrenKey].dicomCtStudyUid }}</div>
@@ -403,20 +405,10 @@ export default {
   },
   created() {
     let that = this
-    //region 判断store中有没有阅片病人
-    // let patCardId = this.$store.getters.patCardId
-    // let patCardIdFromRoute = this.$routePatient.patCardId
-    // if (patCardId !== '') {
-    //   that.getPatientData(patCardId)
-    // } else {
-    //   that.$router.push({name: 'patients'})
-    // }
-    //  endregion
-    // that.studySeriesList
-    // studyList
-
-    // TODO 是否可以在这里将要展示的数据获取，然后，
-    // let studyList = that.$store.getters.studySeriesList
+    debugger
+    //这里可以拿到数据
+    let studyList = that.$store.getters.studySeriesList
+    debugger
 
   },
   mounted() {
@@ -439,7 +431,7 @@ export default {
     canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
-    that.initListCanvas()
+
     // let studyList = that.$store.getters.studySeriesList
     // for (let studyListKey in studyList) {
     //   for (let studyListKeyKey in studyList[studyListKey]) {
@@ -463,8 +455,6 @@ export default {
     //     }
     //   }
     // }
-
-
     // new Promise(() => {
     //   debugger
     //   //  TODO 渲染列表中的每一项
@@ -508,6 +498,7 @@ export default {
       //展示
       this.displayOneCanvasImage()
       // this.displayOneCanvasImage1()
+      that.initListCanvas()
     },
     initTools(canvas) {
       //stack滚动工具
@@ -523,29 +514,45 @@ export default {
 
     },
     initListCanvas() {
+      let that = this
+      debugger
       let studyList = that.$store.getters.studySeriesList
+      debugger
+      // setTimeout(()=>{
+      //三层循环可能有问题
       for (let studyListKey in studyList) {
         for (let studyListKeyKey in studyList[studyListKey]) {
           for (let refsKey in that.$refs) {
+            // TODO 这里是否是对的？
             if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
               // cornerstone.enable(that.$refs[refsKey][0])
               let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
-              that.initTools(that.$refs[refsKey][0])
+              debugger
+              // that.initTools(that.$refs[refsKey][0])
+              debugger
+              console.log("mei：",studyList[studyListKey][studyListKeyKey].dicomId)
+              //TODO 下面的代码没有执行,这段代码要移除
               cornerstone.loadImage(tempPath).then(function (image) {
                 console.log(image)
                 // that.$refs[refsKey][0].style.width = "19.9vw"
                 // that.$refs[refsKey][0].style.height = "300px"
                 // cornerstone.resize(that.$refs[refsKey][0])
                 let tempCanvas = that.$refs[refsKey][0]
+                cornerstone.enable(tempCanvas)
                 //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
-                // cornerstone.displayImage(tempCanvas, image)
                 cornerstone.displayImage(tempCanvas, image)
+                // tempCanvas.style.width = "19.9vw"
+                // tempCanvas.style.height = "300px"
+                // debugger
+                // cornerstone.resize(tempCanvas)
                 // studyList[studyListKey][studyListKeyKey].defaultImage = image
               })
             }
           }
         }
       }
+      // },2000)
+
     },
     displayOneCanvasImage1() {
       let that = this
@@ -767,7 +774,7 @@ export default {
      * @param row
      */
     changeCurrentImagesIds(row) {
-      console.log(row)
+      console.log("-------", row)
       this.canvasStack.imageIds = row.imageIds
       this.canvasStack.currentImageIdIndex = 0
       this.displayOneCanvasImage()

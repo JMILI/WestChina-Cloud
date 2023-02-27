@@ -18,7 +18,7 @@ public interface CtDicomMapper {
      * @param dicom 病人dicom存储记录
      * @return 病人dicom存储记录集合
      */
-    @DataScope( eAlias = "e" )
+    @DataScope( eAlias = "e")
     public List<CtDicom> selectDicomList(CtDicom dicom);
 
     /**
@@ -28,7 +28,7 @@ public interface CtDicomMapper {
      * @param dicom 病人dicom存储记录 | dicomId 病人dicom存储记录Id
      * @return 病人dicom存储记录
      */
-    @DataScope( eAlias = "e" )
+    @DataScope( eAlias = "e")
     public CtDicom selectDicomByDicomId(CtDicom dicom);
 
     /**

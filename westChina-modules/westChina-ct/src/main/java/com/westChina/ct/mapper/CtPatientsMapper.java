@@ -19,7 +19,7 @@ public interface CtPatientsMapper {
      * @param patients 病人信息
      * @return 病人信息集合
      */
-    @DataScope( eAlias = "e" )
+    @DataScope( eAlias = "e")
     public List<CtPatients> selectPatientsList(CtPatients patients);
 
     /**
@@ -29,7 +29,7 @@ public interface CtPatientsMapper {
      * @param patients 病人信息 | patId 病人信息Id
      * @return 病人信息
      */
-    @DataScope( eAlias = "e" )
+    @DataScope( eAlias = "e")
     public CtPatients selectPatientsByPatId(CtPatients patients);
 
     /**

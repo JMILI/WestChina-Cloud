@@ -128,11 +128,13 @@
               @click="manage(scope.row)"
             >管理
             </el-button>
+<!--            这里使用v-hasPermi="['ct:patients:edit']" 让只有这个权限的用户可以看到-->
             <el-button
               size="mini"
               type="text"
               icon="el-icon-check"
               @click="route2Patient(scope.row)"
+              v-hasPermi="['ct:patients:edit']"
             >阅片
             </el-button>
             <el-button
@@ -219,6 +221,7 @@
               @file-added="onFileAdded"
               @files-added="onFilesAdded"
               @files-removed="onFilesRemoved"
+              v-hasPermi="['ct:patients:add']"
     >
       <uploader-unsupport></uploader-unsupport>
       <uploader-drop>
