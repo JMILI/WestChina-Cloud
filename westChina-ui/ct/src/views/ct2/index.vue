@@ -31,9 +31,12 @@
 
           <el-collapse-item title="病人study列表" name="2" class="left-study">
 
-            <el-collapse v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse">
+            <el-collapse v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+
+            >
               <!--              study-->
-              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3">
+              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3"
+                                @click="listenerDisplayCanvas()">
                 <!--                series-->
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
@@ -41,10 +44,11 @@
 
                 >
                   <div
-                    :ref='studySeriesList[key][childrenKey].dicomId'
+                    :ref="studySeriesList[key][childrenKey].dicomId"
                     class="ct-image1"
                     @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
+
                   </div>
                   <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
                   <div style="padding: 14px;" class="left-study-collapse-item"
@@ -401,89 +405,39 @@ export default {
       },
       divTempWidth: 'calc(100vw - 200px)',
       divTempWidth2: 'calc(80vw - 200px)',
+      studyCanvasList: {},
+
     }
   },
   created() {
     let that = this
-    debugger
     //这里可以拿到数据
     let studyList = that.$store.getters.studySeriesList
-    debugger
+    for (let studyListKey in studyList) {
+      for (let studyListKeyKey in studyList[studyListKey]) {
+        that.studyCanvasList[studyList[studyListKey][studyListKeyKey].dicomId] = studyList[studyListKey][studyListKeyKey].imageIds[0]
+      }
+    }
 
   },
   mounted() {
 
     const that = this
-    // let getImageIds = new Promise((resolve, reject) => {
-    //   this.getPatientData(this.routePatient.patCardId)
-    //   resolve()
-    // }).then(() => {
-    //   // that.canvasStack.imageIds = that.imageIds
-    // console.log(this.routePatient)
-    // this.emitPatientDate(this.routePatient)
-    // console.log("s------",that.studySeriesList)
-    // console.log(that.studySeriesList)
-    // let json = JSON.(that.studySeriesList)
-    // console.log(json)
-    // })
     const canvas = this.$refs.canvas
     //监听滚动事件
     canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
-
-    // let studyList = that.$store.getters.studySeriesList
-    // for (let studyListKey in studyList) {
-    //   for (let studyListKeyKey in studyList[studyListKey]) {
-    //     for (let refsKey in that.$refs) {
-    //       if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-    //         cornerstone.enable(that.$refs[refsKey][0])
-    //         let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
-    //         cornerstone.loadImage(tempPath)
-    //           .then(function (image) {
-    //             console.log(image)
-    //             // that.$refs[refsKey][0].style.width = "19.9vw"
-    //             // that.$refs[refsKey][0].style.height = "300px"
-    //             // cornerstone.resize(that.$refs[refsKey][0])
-    //             let tempCanvas = that.$refs[refsKey][0]
-    //             //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
-    //             // cornerstone.displayImage(tempCanvas, image)
-    //             cornerstone.displayImage(tempCanvas, image)
-    //             // studyList[studyListKey][studyListKeyKey].defaultImage = image
-    //           })
-    //       }
-    //     }
-    //   }
-    // }
-    // new Promise(() => {
-    //   debugger
-    //   //  TODO 渲染列表中的每一项
-    //   that.initListCanvas()
-    // }).then(resolve => {
-    //   that.initCanvas()
-    // })
-    // that.updatePatientsStudySeries(studyList)
-    //   resolve()
-    // })
-    // canvasList.then(()=>{
-    //   let newList = that.$store.getters.studySeriesList
-    //   console.log(newList)
-    //   for (let studyListKey in studyList) {
-    //     for (let studyListKeyKey in studyList[studyListKey]) {
-    //       for (let refsKey in that.$refs) {
-    //         if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-    //           cornerstone.displayImage(that.$refs[refsKey][0], studyList[studyListKey][studyListKeyKey].defaultImage)
-    //         }
-    //       }
-    //     }
-    //   }
-    // })
+    that.initListCanvas()
   },
   upload() {
-    debugger
-    console.log("upload")
+
   },
   methods: {
+    listenerDisplayCanvas() {
+      console.log("diaji")
+      this.initListCanvas()
+    },
     showDicom() {
       let that = this
       //初始化工具
@@ -491,6 +445,7 @@ export default {
       const canvas = this.$refs.canvas
       //初始化tools,方法包含是否开启触摸监听，鼠标监听，等
       // 在 DOM 中将 canvas 元素注册到 cornerstone
+
       cornerstone.enable(canvas)
       //初始化自己的工具设置
       this.initTools(canvas)
@@ -498,7 +453,7 @@ export default {
       //展示
       this.displayOneCanvasImage()
       // this.displayOneCanvasImage1()
-      that.initListCanvas()
+
     },
     initTools(canvas) {
       //stack滚动工具
@@ -515,44 +470,14 @@ export default {
     },
     initListCanvas() {
       let that = this
-      debugger
-      let studyList = that.$store.getters.studySeriesList
-      debugger
-      // setTimeout(()=>{
-      //三层循环可能有问题
-      for (let studyListKey in studyList) {
-        for (let studyListKeyKey in studyList[studyListKey]) {
-          for (let refsKey in that.$refs) {
-            // TODO 这里是否是对的？
-            if (studyList[studyListKey][studyListKeyKey].dicomId === refsKey) {
-              // cornerstone.enable(that.$refs[refsKey][0])
-              let tempPath = studyList[studyListKey][studyListKeyKey].imageIds[0]
-              debugger
-              // that.initTools(that.$refs[refsKey][0])
-              debugger
-              console.log("mei：",studyList[studyListKey][studyListKeyKey].dicomId)
-              //TODO 下面的代码没有执行,这段代码要移除
-              cornerstone.loadImage(tempPath).then(function (image) {
-                console.log(image)
-                // that.$refs[refsKey][0].style.width = "19.9vw"
-                // that.$refs[refsKey][0].style.height = "300px"
-                // cornerstone.resize(that.$refs[refsKey][0])
-                let tempCanvas = that.$refs[refsKey][0]
-                cornerstone.enable(tempCanvas)
-                //上面的有作用，下面的没有效果，只有在放大或缩小页面窗口时，才有效果
-                cornerstone.displayImage(tempCanvas, image)
-                // tempCanvas.style.width = "19.9vw"
-                // tempCanvas.style.height = "300px"
-                // debugger
-                // cornerstone.resize(tempCanvas)
-                // studyList[studyListKey][studyListKeyKey].defaultImage = image
-              })
-            }
-          }
-        }
+      for (const temp in that.studyCanvasList) {
+        let tempCanvas = that.$refs[temp][0]
+        let address = that.studyCanvasList[temp]
+        cornerstone.enable(tempCanvas)
+        cornerstone.loadAndCacheImage(address).then(function (image) {
+          cornerstone.displayImage(tempCanvas, image)
+        })
       }
-      // },2000)
-
     },
     displayOneCanvasImage1() {
       let that = this
@@ -613,10 +538,10 @@ export default {
           //显示
           // let canvas=this.$refs.canvas
 
-          canvas.style.width = "100%"
-          canvas.style.height = "calc(100vh - 84px)"
+          // canvas.style.width = "100%"
+          // canvas.style.height = "calc(100vh - 84px)"
           cornerstone.displayImage(canvas, image, viewport)
-          cornerstone.resize(canvas)
+          // cornerstone.resize(canvas)
           // 图像信息显示
           that.imageInfos(image)
         })
@@ -749,7 +674,7 @@ export default {
      */
     initCanvas() {
       const that = this
-      let studyList = that.$store.getters.studySeriesList
+      let studyList = this.studySeriesList
       for (let studyListKey in studyList) {
         let flag = false
         for (let studyListKeyKey in studyList[studyListKey]) {
@@ -915,7 +840,7 @@ export default {
       //height: 100%;
       background-color: #282c34 !important;
       border-color: #507cef !important;
-
+      display: block;
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
@@ -939,20 +864,23 @@ export default {
       }
 
       .left-study {
+        display: block;
         .left-study-collapse {
           background-color: #282c34 !important;
           color: white !important;
-
+          display: block;
           .left-study-collapse-item {
+
             .ct-image1 {
               width: 20vw;
               height: 40vh;
-              display: block;
               background-color: #e34f1d !important;
+              display: block;
             }
 
             background-color: #282c34 !important;
             color: white;
+            display: block;
           }
         }
       }

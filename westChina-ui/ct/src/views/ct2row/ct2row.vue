@@ -7,66 +7,59 @@
     <el-scrollbar>
       <div class="left" v-show="openStudySeries">
 
-        <el-collapse v-model="activeName" class="left-collapse">
+        <el-collapse  class="left-collapse">
           <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
           <el-collapse-item title="标记管理" name="1" class="left-label">
             <div class="left-label-item">与现实生活一致：与现实生活的流程、逻辑</div>
             <div class="left-label-item">在界面中一致：所有的元素和结构需保</div>
           </el-collapse-item>
-          <el-collapse-item title="病人study列表" name="2" class="left-study">
-            <el-collapse v-model="activeName" class="left-study-collapse">
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="3" class="left-study-collapse-item">
 
-                <el-card :body-style="{ padding: '0px' }">
+
+          <el-collapse-item title="病人study列表" name="2" class="left-study">
+
+            <el-collapse v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+
+            >
+              <!--              study-->
+              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3">
+                <!--                series-->
+                <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
+                         :childrenIndex="studySeriesList[key][childrenKey].dicomId"
+                         :body-style="{ padding: '0px' }"
+
+                >
                   <div
-                    ref="canvasMini"
+                    :ref="studySeriesList[key][childrenKey].dicomId"
                     class="ct-image1"
+                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
+
                   </div>
-                  <!--                <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
-                  <div style="padding: 14px;">
-                    <span>1.3.12.2.1107.5.1.4.77426.30000021081723585752900164339</span>
+                  <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
+                  <div style="padding: 14px;" class="left-study-collapse-item"
+                       @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
+                  >
+                    <div>id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
+                    <div>研究id：{{ studySeriesList[key][childrenKey].dicomCtStudyUid }}</div>
+                    <div>序列id：{{ studySeriesList[key][childrenKey].dicomCtSeriesUid }}</div>
+                    <div>检查部位：{{ studySeriesList[key][childrenKey].dicomCtBody }}</div>
                     <div class="bottom clearfix">
-                      <time class="time">1.3.12.2.1107.5.1.4.77426.30000021081723585752900164339</time>
-                      <el-button type="text" class="button">操作按钮</el-button>
+                      <span class="time">日期:{{ studySeriesList[key][childrenKey].dicomCtTime }}</span>
+                      <!--                      <el-button type="text" class="button" @click="ownData(studySeriesList[key][childrenKey])">操作按钮-->
+                      <!--                      </el-button>-->
                     </div>
                   </div>
                 </el-card>
               </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="4" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="5" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="6" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="4" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="5" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
-              <el-collapse-item title="1.2.156.14702.6.146.20210819000527" name="6" class="left-color">
-                <div class="left-color">与现实生活一致：与现实生活的流程、逻辑</div>
-                <div class="left-color">在界面中一致：所有的元素和结构需保</div>
-              </el-collapse-item>
+
             </el-collapse>
           </el-collapse-item>
+
 
         </el-collapse>
 
       </div>
     </el-scrollbar>
-    <!--    <div >-->
-    <!--      -->
-    <!--    </div>-->
     <div
       class="ct-father-Open1"
       :style="{
@@ -77,10 +70,10 @@
     >
       <div id="dicomImage1"
            data-id="1"
-           ref="canvas"
+           ref="canvas1"
            class="ct-image"
            @mouseover="hoverOver(1)"
-           @click="select(1,'dicomImage1')"
+           @contextmenu="select(1,'dicomImage1')"
       >
       </div>
     </div>
@@ -98,7 +91,7 @@
         ref="canvas2"
         class="ct-image"
         @mouseover="hoverOver(2)"
-        @click="select(2,'dicomImage2')"
+        @contextmenu ="select(2,'dicomImage2')"
       >
       </div>
     </div>
@@ -162,30 +155,8 @@ export default {
   name: 'ct2row',
   data() {
     return {
-      element1: this.$refs.canvas,
+      element1: this.$refs.canvas1,
       element2: this.$refs.canvas2,
-      imageIds1: [
-        'wadouri:http://westChinaBackend:9000/dicom/7/1_0.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/2_1.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/3_2.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/4_3.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/5_4.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/6_5.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/7_6.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/8_7.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/9_8.dcm',
-      ],
-      imageIds2: [
-        'wadouri:http://westChinaBackend:9000/dicom/7/1_0.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/2_1.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/3_2.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/4_3.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/5_4.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/6_5.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/7_6.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/8_7.dcm',
-        'wadouri:http://westChinaBackend:9000/dicom/7/9_8.dcm',
-      ],
       fileList: [],
       //region dicom 各个部分信息
       patient: {
@@ -277,15 +248,103 @@ export default {
       divTempWidth: 'calc(100vw - 200px)',
       divTempWidth1: 'calc(40vw - 100px)',
       divTempWidth2: 'calc(40vw - 100px)',
+      studyCanvasList: {},
     }
   },
-  methods: {
 
+  created() {
+    let that = this
+    //这里可以拿到数据
+    let studyList = that.$store.getters.studySeriesList
+    for (let studyListKey in studyList) {
+      for (let studyListKeyKey in studyList[studyListKey]) {
+        that.studyCanvasList[studyList[studyListKey][studyListKeyKey].dicomId] = studyList[studyListKey][studyListKeyKey].imageIds[0]
+      }
+    }
+  },
+  mounted() {
+    const that = this
+    //
+    let element1 = this.$refs.canvas1
+    let element2 = this.$refs.canvas2
+    this.currentRoutePath = this.$route.path
+    //加载初始化
+    //监听滚动事件:mounted是vue已经渲染好了最终模板，
+    // 也就是可以拿到页面的元素了，或者监听页面2021年12月28日22:23:52
+    element1.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
+    element2.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
+    that.initListCanvas()
+    that.initTwoCanvas()
+    // let marking = cornerstoneTools.getToolState(element1, 'FreehandRoi')
+    // let temp = cornerstone.getElementToolStateManager()
+    //region 备用
+    // window.addEventListener('resize', this.listenForWindowResize);
+    // 像素反转，水平反转，垂直反转，使用cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED方法来监听
+    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_ADDED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("ADDED", eventData)
+    // });
+    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_ADDED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("ADDED", eventData)
+    // });
+    // // 用户用操作用具标注图像完成之后，触发这个监听事件MEASUREMENT_COMPLETED。用来保存图像png/jpeg
+    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("COMPLETED", eventData)
+    // });
+    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("COMPLETED", eventData)
+    // });
+    // // 使用橡皮擦修改图像后，重新保存图像
+    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("REMOVED", eventData)
+    // });
+    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
+    //   const eventData = params.detail;
+    //   console.log("REMOVED", eventData)
+    // });
+    // Dicom 加载 进度
+//     cornerstone.events.addEventListener(
+//       "cornerstoneimageloadprogress",
+//       function(event) {
+//         const eventData = event.detail;
+//         const loadProgress = document.getElementById("loadProgress");
+//         loadProgress.textContent = `Dicom加载: ${eventData.percentComplete}%`;
+//       }
+//     );
+
+    //endregion
+  },
+  methods: {
+    initListCanvas() {
+      let that = this
+      for (const temp in that.studyCanvasList) {
+        let tempCanvas = that.$refs[temp][0]
+        let address = that.studyCanvasList[temp]
+        cornerstone.enable(tempCanvas)
+        cornerstone.loadAndCacheImage(address).then(function (image) {
+          cornerstone.displayImage(tempCanvas, image)
+        })
+      }
+    },
+    changeCurrentImagesIds(row) {
+      if (this.currentCanvas == 1) {
+        this.canvasStack1.imageIds=row.imageIds
+        this.canvasStack1.currentImageIdIndex=0
+      } else if (this.currentCanvas == 2) {
+        this.canvasStack2.imageIds=row.imageIds
+        this.canvasStack2.currentImageIdIndex=0
+      }
+      this.displayCanvas()
+    },
     saveImages() {
       let that = this
       let tempSize = that.canvasStack1.imageIds.length
-      const canvas = document.getElementById('dicomImage1')
-      const viewport = cornerstone.getViewport(canvas)
+      const canvas1 = document.getElementById('dicomImage1')
+      const viewport = cornerstone.getViewport(canvas1)
       debugger
       for (let i = 0; i < 1; i++) {
         cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[i]).then(function (image) {
@@ -352,7 +411,7 @@ export default {
       return newCanvas
     },
     //  region
-    upload() {
+    upload()  {
       console.log('wenjian:', this.fileList[0])
       var reader = new FileReader()
 
@@ -536,36 +595,25 @@ export default {
     //  endregion
 
 
-    showDicom() {
+    initTwoCanvas() {
       let that = this
-      console.log('showDicom')
-      //获取div区域
       //初始化工具
       cornerstoneTools.init()
-      const canvas = this.$refs.canvas
+      const canvas1 = this.$refs.canvas1
       const canvas2 = this.$refs.canvas2
       //初始化tools,方法包含是否开启触摸监听，鼠标监听，等
       // 在 DOM 中将 canvas 元素注册到 cornerstone
-      cornerstone.enable(canvas)
+      cornerstone.enable(canvas1)
       cornerstone.enable(canvas2)
-      //region 测试
-
-      //endregion
-
-
       //初始化自己的工具设置
       this.initTools()
-      //展示
-      this.displayCanvas2()
-      this.displayCanvas1()
-
     },
     initTools() {
       //stack滚动工具
       let that = this
-      const canvas = this.$refs.canvas
+      const canvas1 = this.$refs.canvas1
       const canvas2 = this.$refs.canvas2
-      console.log("设置默认工具")
+      // console.log("设置默认工具")
       const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
       cornerstoneTools.addTool(StackScrollMouseWheelTool)
       cornerstoneTools.setToolActive('StackScrollMouseWheel', {})
@@ -576,9 +624,8 @@ export default {
      * 1.加载图像，2.处理图像信息，3，显示图像，4.保存图像
      */
     displayCanvas1() {
-      console.log('disp1')
       let that = this
-      const canvas1 = this.$refs.canvas
+      const canvas1 = this.$refs.canvas1
       let tempIndex = that.canvasStack1.currentImageIdIndex
       //TODO file
       cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[tempIndex])
@@ -593,19 +640,18 @@ export default {
           canvas1.style.width = "100%"
           canvas1.style.height = "100%"
           cornerstone.resize(canvas1, true)
-          // canvas1.style.height = "calc(100vh - 84px)"
-          cornerstone.displayImage(canvas1, image, viewport)
-
-          cornerstoneTools.addStackStateManager(canvas1, ['stack'])
-          cornerstoneTools.addToolState(canvas1, 'stack', that.canvasStack1)
+          cornerstone.displayImage(canvas1, image,viewport)
+          //TODO 展示信息有问题
+          that.imageInfos(image)
         })
+      cornerstoneTools.addStackStateManager(canvas1, ['stack'])
+      cornerstoneTools.addToolState(canvas1, 'stack', that.canvasStack1)
 
     },
     /**
      * 1.加载图像，2.处理图像信息，3，显示图像，4.保存图像
      */
     displayCanvas2() {
-      console.log('disp2')
       let that = this
       const canvas2 = this.$refs.canvas2
       let tempIndex = that.canvasStack2.currentImageIdIndex
@@ -618,13 +664,14 @@ export default {
           viewport.invert = that.getInvert
           viewport.hflip = that.getHflip
           viewport.vflip = that.getVflip
-          // viewport.pixelReplication = !that.getPixelReplication
+          viewport.pixelReplication = !that.getPixelReplication
           //显示
           canvas2.style.width = "100%"
           canvas2.style.height = "100%"
-          // canvas2.style.height = "calc(100vh - 84px)"
           cornerstone.resize(canvas2, true)
           cornerstone.displayImage(canvas2, image, viewport)
+          //TODO 展示信息有问题
+          that.imageInfos(image)
         })
       cornerstoneTools.addStackStateManager(canvas2, ['stack'])
       cornerstoneTools.addToolState(canvas2, 'stack', that.canvasStack2)
@@ -646,7 +693,7 @@ export default {
       that.patient.patientSex = dataSet.string('x00100040')
       that.patient.patientAge = dataSet.string('x00101010')
       that.patient.sopInstanceUid = dataSet.string('x00080018')
-      console.log(that.patient.sopInstanceUid)
+      // console.log(that.patient.sopInstanceUid)
       that.studyInfo.studyDescription = dataSet.string('x00081030')
       that.studyInfo.protocolName = dataSet.string('x00181030')
       that.studyInfo.accession = dataSet.string('x00080050')
@@ -704,7 +751,6 @@ export default {
      * @param e
      */
     hoverOver(e) {
-      console.log('hoverOver', e)
       this.currentWheelCanvas = e
     },
     /**
@@ -713,9 +759,13 @@ export default {
      * @param classId
      */
     select(id, classId) {
-      console.log('select', id)
+      console.log('select', classId)
       this.currentCanvas = id
       // 处理css样式，有待完成
+      let box = document.getElementById(classId)
+      console.log(box)
+      box.style.borderColor="#ffeded"
+      box.style.border="20px"
     },
     /**
      * 滚动处理
@@ -800,67 +850,7 @@ export default {
       this.displayCanvas2()
     },
   },
-  mounted() {
-    const that = this
-    this.canvasStack1.imageIds = this.imageIds1
-    this.canvasStack2.imageIds = this.imageIds2
-    //
-    let element1 = this.$refs.canvas
-    let element2 = this.$refs.canvas2
-    this.currentRoutePath = this.$route.path
-    //加载初始化
-    that.showDicom()
-    //监听滚动事件:mounted是vue已经渲染好了最终模板，
-    // 也就是可以拿到页面的元素了，或者监听页面2021年12月28日22:23:52
-    element1.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
-    element2.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
-    // let marking = cornerstoneTools.getToolState(element1, 'FreehandRoi')
-    // let temp = cornerstone.getElementToolStateManager()
-    console.log("sd")
-    //region 备用
-    // window.addEventListener('resize', this.listenForWindowResize);
-    // 像素反转，水平反转，垂直反转，使用cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED方法来监听
-    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_ADDED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("ADDED", eventData)
-    // });
-    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_ADDED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("ADDED", eventData)
-    // });
-    // // 用户用操作用具标注图像完成之后，触发这个监听事件MEASUREMENT_COMPLETED。用来保存图像png/jpeg
-    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("COMPLETED", eventData)
-    // });
-    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("COMPLETED", eventData)
-    // });
-    // // 使用橡皮擦修改图像后，重新保存图像
-    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("REMOVED", eventData)
-    // });
-    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("REMOVED", eventData)
-    // });
-    // Dicom 加载 进度
-//     cornerstone.events.addEventListener(
-//       "cornerstoneimageloadprogress",
-//       function(event) {
-//         const eventData = event.detail;
-//         const loadProgress = document.getElementById("loadProgress");
-//         loadProgress.textContent = `Dicom加载: ${eventData.percentComplete}%`;
-//       }
-//     );
 
-    //endregion
-  },
-  created() {
-
-  },
   beforeUpdate() {
     //对需要修改的数据进行处理，此时数据还没有在页面更新，就是在页面更新之前的操作
   },
@@ -917,6 +907,9 @@ export default {
       return this.$store.getters.sidebar.opened
     },
     //  endregion
+    studySeriesList() {
+      return this.$store.getters.studySeriesList
+    }
   },
   watch: {
     //region viewpost 监视设置 逻辑操作
@@ -987,7 +980,7 @@ export default {
       //height: 100%;
       background-color: #282c34 !important;
       border-color: #507cef !important;
-
+      display: block;
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
@@ -1011,17 +1004,23 @@ export default {
       }
 
       .left-study {
+        display: block;
         .left-study-collapse {
           background-color: #282c34 !important;
           color: white !important;
-
+          display: block;
           .left-study-collapse-item {
+
             .ct-image1 {
-              width: 100%;
-              height: 280px;
+              width: 20vw;
+              height: 35vh;
+              background-color: #e34f1d !important;
               display: block;
-              background-color: #282c34 !important;
             }
+
+            background-color: #282c34 !important;
+            color: white;
+            display: block;
           }
         }
       }

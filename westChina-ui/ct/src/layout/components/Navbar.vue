@@ -32,10 +32,11 @@
             布局<i class="el-icon-arrow-down el-icon--right"></i>
           </span>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item>
-              <router-link :to="{path:'ct2row'}"> 双列布局</router-link>
-            </el-dropdown-item>
-            <!--            <el-dropdown-item divided>三列布局</el-dropdown-item>-->
+<!--            <el-dropdown-item>-->
+<!--              <router-link :to="{path:'ct2row'}"> 双列布局</router-link>-->
+<!--            </el-dropdown-item>-->
+             <el-dropdown-item @click.native="routerToCt2row">双列布局</el-dropdown-item>
+<!--            &lt;!&ndash;            <el-dropdown-item divided>三列布局</el-dropdown-item>&ndash;&gt;-->
           </el-dropdown-menu>
         </el-dropdown>
         <!--      changeShowInfos方法传入需要调用的函数名  -->
@@ -136,6 +137,11 @@ export default {
   },
   methods: {
     //jm start 顶部菜单
+    routerToCt2row(){
+      //TODO 路由之前确认是否选择了两个序列
+      this.$router.push({path: 'ct2row'})
+    },
+
     handleSelect(key, keyPath) {
       console.log(key, keyPath);
     },
