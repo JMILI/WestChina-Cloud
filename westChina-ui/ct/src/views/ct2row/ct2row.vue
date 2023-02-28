@@ -7,7 +7,7 @@
     <el-scrollbar>
       <div class="left" v-show="openStudySeries">
 
-        <el-collapse  class="left-collapse">
+        <el-collapse class="left-collapse">
           <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
           <el-collapse-item title="标记管理" name="1" class="left-label">
             <div class="left-label-item">与现实生活一致：与现实生活的流程、逻辑</div>
@@ -76,7 +76,216 @@
            @contextmenu="select(1,'dicomImage1')"
       >
       </div>
+      <!--      region as-->
+      <!--      病人信息-->
+      <!--  病人信息    左上角-->
+      <div id="topleft" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px;font-size:15px">
+        sop Instance Uid: {{ patient1.sopInstanceUid }}
+        <br>
+        是否反转：{{ getInvert }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px">
+        patient ID: {{ patient1.patientId }},
+        <br>
+        patient Name: {{ patient1.patientName }}
+        <br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        Patient sex: {{ patient1.patientSex }}
+        <br>
+        Patient age: {{ patient1.patientAge }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        Patient birth date: {{ patient1.patientBirthDate }}
+        <br>
+      </div>
+      <!--study信息-->
+      <!--study:isShowStudyInfo-->
+      <div id="topleft" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        study Description: {{ studyInfo1.studyDescription }}
+        <br>
+        protocol Name:{{ studyInfo1.protocolName }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        accession: {{ studyInfo1.accession }},
+        <br>
+        studyId: {{ studyInfo1.studyId }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        study Date: {{ studyInfo1.studyDate }}
+        <br>
+        study Time: {{ studyInfo1.studyTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+      <!--       序列信息-->
+      <!-- study:isShowSeriesInfo -->
+      <div id="topleft" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        series Description: {{ seriesInfo1.seriesDescription }}
+        <br>
+        series:{{ seriesInfo1.series }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        modality: {{ seriesInfo1.modality }},
+        <br>
+        bodyPart: {{ seriesInfo1.bodyPart }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        series Date: {{ seriesInfo1.seriesDate }}
+        <br>
+        series Time: {{ seriesInfo1.seriesTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+      <!--      instances 信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        instance: {{ instanceInfo1.instance }}
+        <br>
+        acquisition:{{ instanceInfo1.acquisition }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        acquisition Date: {{ instanceInfo1.acquisitionDate }},
+        <br>
+        acquisition Time: {{ instanceInfo1.acquisitionTime }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        content Date: {{ instanceInfo1.contentDate }}
+        <br>
+        content Time: {{ instanceInfo1.contentTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+
+      <!--       image 信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        rows: {{ imageInfo1.rows }}<br>
+        columns:{{ imageInfo1.columns }}<br>
+        photometric Interpretation:{{ imageInfo1.photometricInter }}<br>
+        image Type:{{ imageInfo1.imageType }}<br>
+        bits Allocated:{{ imageInfo1.bitsAllocated }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        bits Stored:{{ imageInfo1.bitsStored }}<br>
+        pixel Representation:{{ imageInfo1.pixelRepre }}<br>
+        high Bit:{{ imageInfo1.highBit }}<br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        rescale Slope:{{ imageInfo1.rescaleSlope }}<br>
+        rescale Intercept:{{ imageInfo1.rescaleIntercept }}<br>
+        image Position Patient:{{ imageInfo1.imagePositionPatient }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        image Orientation Patient:{{ imageInfo1.imageOrientationPatient }}<br>
+        pixel Spacing:{{ imageInfo1.pixelSpacing }}<br>
+        samples Per Pixel:{{ imageInfo1.samplesPerPixel }}<br>
+      </div>
+
+      <!--     equipmentInfo   设备信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        manufacturer:{{ equipmentInfo1.manufacturer }}<br>
+        model:{{ equipmentInfo1.model }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        station Name:{{ equipmentInfo1.stationName }}<br>
+        AE Title:{{ equipmentInfo1.AETitle }}<br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        institution Name:{{ equipmentInfo1.institutionName }}<br>
+        software Version:{{ equipmentInfo1.softwareVersion }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        implementation Version Name:{{ equipmentInfo1.implementationVersionName }}<br>
+      </div>
+      <!--     UIDS   uid信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        study UID:{{ UIDS1.studyUID }}<br>
+        series UID:{{ UIDS1.seriesUID }}<br>
+        instance UID:{{ UIDS1.instanceUID }}<br>
+        SOP Class UID:{{ UIDS1.SOPClassUID }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        transfer Syntax UID:{{ UIDS1.transferSyntaxUID }}<br>
+        frame Of Reference UID:{{ UIDS1.frameOfReferenceUID }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+      <!--endregion-->
     </div>
+
+
+
+
 
     <div
       class="ct-father-Open2"
@@ -91,10 +300,216 @@
         ref="canvas2"
         class="ct-image"
         @mouseover="hoverOver(2)"
-        @contextmenu ="select(2,'dicomImage2')"
+        @contextmenu="select(2,'dicomImage2')"
       >
       </div>
+      <!--      region as-->
+      <!--      病人信息-->
+      <!--  病人信息    左上角-->
+      <div id="topleft" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px;font-size:15px">
+        sop Instance Uid: {{ patient2.sopInstanceUid }}
+        <br>
+        是否反转：{{ getInvert }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px">
+        patient ID: {{ patient2.patientId }},
+        <br>
+        patient Name: {{ patient2.patientName }}
+        <br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        Patient sex: {{ patient2.patientSex }}
+        <br>
+        Patient age: {{ patient2.patientAge }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowPatientInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        Patient birth date: {{ patient2.patientBirthDate }}
+        <br>
+      </div>
+      <!--study信息-->
+      <!--study:isShowStudyInfo-->
+      <div id="topleft" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        study Description: {{ studyInfo2.studyDescription }}
+        <br>
+        protocol Name:{{ studyInfo2.protocolName }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        accession: {{ studyInfo2.accession }},
+        <br>
+        studyId: {{ studyInfo2.studyId }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        study Date: {{ studyInfo2.studyDate }}
+        <br>
+        study Time: {{ studyInfo2.studyTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowStudyInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+      <!--       序列信息-->
+      <!-- study:isShowSeriesInfo -->
+      <div id="topleft" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        series Description: {{ seriesInfo2.seriesDescription }}
+        <br>
+        series:{{ seriesInfo2.series }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        modality: {{ seriesInfo2.modality }},
+        <br>
+        bodyPart: {{ seriesInfo2.bodyPart }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        series Date: {{ seriesInfo2.seriesDate }}
+        <br>
+        series Time: {{ seriesInfo2.seriesTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+      <!--      instances 信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        instance: {{ instanceInfo2.instance }}
+        <br>
+        acquisition:{{ instanceInfo2.acquisition }}
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        acquisition Date: {{ instanceInfo2.acquisitionDate }},
+        <br>
+        acquisition Time: {{ instanceInfo2.acquisitionTime }}
+        <br>
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        content Date: {{ instanceInfo2.contentDate }}
+        <br>
+        content Time: {{ instanceInfo2.contentTime }}
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+
+
+      <!--       image 信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        rows: {{ imageInfo2.rows }}<br>
+        columns:{{ imageInfo2.columns }}<br>
+        photometric Interpretation:{{ imageInfo2.photometricInter }}<br>
+        image Type:{{ imageInfo2.imageType }}<br>
+        bits Allocated:{{ imageInfo2.bitsAllocated }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        bits Stored:{{ imageInfo2.bitsStored }}<br>
+        pixel Representation:{{ imageInfo2.pixelRepre }}<br>
+        high Bit:{{ imageInfo2.highBit }}<br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        rescale Slope:{{ imageInfo2.rescaleSlope }}<br>
+        rescale Intercept:{{ imageInfo2.rescaleIntercept }}<br>
+        image Position Patient:{{ imageInfo2.imagePositionPatient }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowImageInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        image Orientation Patient:{{ imageInfo2.imageOrientationPatient }}<br>
+        pixel Spacing:{{ imageInfo2.pixelSpacing }}<br>
+        samples Per Pixel:{{ imageInfo2.samplesPerPixel }}<br>
+      </div>
+
+      <!--     equipmentInfo   设备信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        manufacturer:{{ equipmentInfo2.manufacturer }}<br>
+        model:{{ equipmentInfo2.model }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+        station Name:{{ equipmentInfo2.stationName }}<br>
+        AE Title:{{ equipmentInfo2.AETitle }}<br>
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        institution Name:{{ equipmentInfo2.institutionName }}<br>
+        software Version:{{ equipmentInfo2.softwareVersion }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+        implementation Version Name:{{ equipmentInfo2.implementationVersionName }}<br>
+      </div>
+      <!--     UIDS   uid信息-->
+      <!--      -->
+      <div id="topleft" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;top:10px;left:10px; font-size:15px">
+        study UID:{{ UIDS2.studyUID }}<br>
+        series UID:{{ UIDS2.seriesUID }}<br>
+        instance UID:{{ UIDS2.instanceUID }}<br>
+        SOP Class UID:{{ UIDS2.SOPClassUID }}<br>
+      </div>
+      <!--      右上角-->
+      <div id="topright" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;top:10px;right:10px;font-size:15px"
+      >
+
+      </div>
+      <!--      左下角-->
+      <div id="bottomleft" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+        transfer Syntax UID:{{ UIDS2.transferSyntaxUID }}<br>
+        frame Of Reference UID:{{ UIDS2.frameOfReferenceUID }}<br>
+      </div>
+      <!--      右下角-->
+      <div id="bottomright" v-show="isShowUIDS" class="overlay"
+           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      </div>
+      <!--endregion-->
     </div>
+
     <!--    <el-button @click="saveImages()">-->
     <!--      保存-->
     <!--    </el-button>-->
@@ -158,8 +573,8 @@ export default {
       element1: this.$refs.canvas1,
       element2: this.$refs.canvas2,
       fileList: [],
-      //region dicom 各个部分信息
-      patient: {
+      //region 展示图像的第一列：id="dicomImage1"  各个部分信息
+      patient1: {
         patientId: '',
         patientName: '',
         patientBirthDate: '',
@@ -167,7 +582,7 @@ export default {
         patientAge: '',
         sopInstanceUid: ''
       },
-      studyInfo: {
+      studyInfo1: {
         studyDescription: '',
         protocolName: '',
         accession: '',
@@ -175,7 +590,7 @@ export default {
         studyDate: '',
         studyTime: ''
       },
-      seriesInfo: {
+      seriesInfo1: {
         seriesDescription: '',
         series: '',
         modality: '',
@@ -183,7 +598,7 @@ export default {
         seriesDate: '',
         seriesTime: ''
       },
-      instanceInfo: {
+      instanceInfo1: {
         instance: '',
         acquisition: '',
         acquisitionDate: '',
@@ -191,7 +606,7 @@ export default {
         contentDate: '',
         contentTime: ''
       },
-      imageInfo: {
+      imageInfo1: {
         rows: '',
         columns: '',
         photometricInter: '',
@@ -207,7 +622,7 @@ export default {
         pixelSpacing: '',
         samplesPerPixel: ''
       },
-      equipmentInfo: {
+      equipmentInfo1: {
         manufacturer: '',
         model: '',
         stationName: '',
@@ -216,7 +631,7 @@ export default {
         softwareVersion: '',
         implementationVersionName: ''
       },
-      UIDS: {
+      UIDS1: {
         studyUID: '',
         seriesUID: '',
         instanceUID: '',
@@ -225,7 +640,73 @@ export default {
         frameOfReferenceUID: ''
       },
       //endregion
-
+      //region 展示图像的第二列：id="dicomImage1"  各个部分信息
+      patient2: {
+        patientId: '',
+        patientName: '',
+        patientBirthDate: '',
+        patientSex: '',
+        patientAge: '',
+        sopInstanceUid: ''
+      },
+      studyInfo2: {
+        studyDescription: '',
+        protocolName: '',
+        accession: '',
+        studyId: '',
+        studyDate: '',
+        studyTime: ''
+      },
+      seriesInfo2: {
+        seriesDescription: '',
+        series: '',
+        modality: '',
+        bodyPart: '',
+        seriesDate: '',
+        seriesTime: ''
+      },
+      instanceInfo2: {
+        instance: '',
+        acquisition: '',
+        acquisitionDate: '',
+        acquisitionTime: '',
+        contentDate: '',
+        contentTime: ''
+      },
+      imageInfo2: {
+        rows: '',
+        columns: '',
+        photometricInter: '',
+        imageType: '',
+        bitsAllocated: '',
+        bitsStored: '',
+        pixelRepre: '',
+        highBit: '',
+        rescaleSlope: '',
+        rescaleIntercept: '',
+        imagePositionPatient: '',
+        imageOrientationPatient: '',
+        pixelSpacing: '',
+        samplesPerPixel: ''
+      },
+      equipmentInfo2: {
+        manufacturer: '',
+        model: '',
+        stationName: '',
+        AETitle: '',
+        institutionName: '',
+        softwareVersion: '',
+        implementationVersionName: ''
+      },
+      UIDS2: {
+        studyUID: '',
+        seriesUID: '',
+        instanceUID: '',
+        SOPClassUID: '',
+        transferSyntaxUID: '',
+        frameOfReferenceUID: ''
+      },
+      //endregion
       //region 图像展示cavas信息
       canvasStack1: {
         currentImageIdIndex: 0,
@@ -319,27 +800,7 @@ export default {
     //endregion
   },
   methods: {
-    initListCanvas() {
-      let that = this
-      for (const temp in that.studyCanvasList) {
-        let tempCanvas = that.$refs[temp][0]
-        let address = that.studyCanvasList[temp]
-        cornerstone.enable(tempCanvas)
-        cornerstone.loadAndCacheImage(address).then(function (image) {
-          cornerstone.displayImage(tempCanvas, image)
-        })
-      }
-    },
-    changeCurrentImagesIds(row) {
-      if (this.currentCanvas == 1) {
-        this.canvasStack1.imageIds=row.imageIds
-        this.canvasStack1.currentImageIdIndex=0
-      } else if (this.currentCanvas == 2) {
-        this.canvasStack2.imageIds=row.imageIds
-        this.canvasStack2.currentImageIdIndex=0
-      }
-      this.displayCanvas()
-    },
+
     saveImages() {
       let that = this
       let tempSize = that.canvasStack1.imageIds.length
@@ -411,7 +872,7 @@ export default {
       return newCanvas
     },
     //  region
-    upload()  {
+    upload() {
       console.log('wenjian:', this.fileList[0])
       var reader = new FileReader()
 
@@ -594,7 +1055,27 @@ export default {
     },
     //  endregion
 
-
+    initListCanvas() {
+      let that = this
+      for (const temp in that.studyCanvasList) {
+        let tempCanvas = that.$refs[temp][0]
+        let address = that.studyCanvasList[temp]
+        cornerstone.enable(tempCanvas)
+        cornerstone.loadAndCacheImage(address).then(function (image) {
+          cornerstone.displayImage(tempCanvas, image)
+        })
+      }
+    },
+    changeCurrentImagesIds(row) {
+      if (this.currentCanvas == 1) {
+        this.canvasStack1.imageIds = row.imageIds
+        this.canvasStack1.currentImageIdIndex = 0
+      } else if (this.currentCanvas == 2) {
+        this.canvasStack2.imageIds = row.imageIds
+        this.canvasStack2.currentImageIdIndex = 0
+      }
+      this.displayCanvas()
+    },
     initTwoCanvas() {
       let that = this
       //初始化工具
@@ -617,6 +1098,19 @@ export default {
       const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
       cornerstoneTools.addTool(StackScrollMouseWheelTool)
       cornerstoneTools.setToolActive('StackScrollMouseWheel', {})
+      that.styleOfCanvas()
+    },
+    styleOfCanvas(){
+      //可以设置激活工具的颜色，也就是鼠标覆盖在上面的颜色
+      cornerstoneTools.toolColors.setActiveColor('rgb(255, 255, 0)');
+      //Set color for inactive tools
+      cornerstoneTools.toolColors.setToolColor('rgb(0, 255, 0)');
+      // Set the tool width
+      cornerstoneTools.toolStyle.setToolWidth(2);
+      // Set the tool font and font size
+      const fontFamily =
+        'Work Sans, Roboto, OpenSans, HelveticaNeue-Light, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif';
+      cornerstoneTools.textStyle.setFont(`16px ${fontFamily}`);
     },
 
 
@@ -627,7 +1121,6 @@ export default {
       let that = this
       const canvas1 = this.$refs.canvas1
       let tempIndex = that.canvasStack1.currentImageIdIndex
-      //TODO file
       cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[tempIndex])
         .then(function (image) {
           //设置视口
@@ -640,9 +1133,9 @@ export default {
           canvas1.style.width = "100%"
           canvas1.style.height = "100%"
           cornerstone.resize(canvas1, true)
-          cornerstone.displayImage(canvas1, image,viewport)
+          cornerstone.displayImage(canvas1, image, viewport)
           //TODO 展示信息有问题
-          that.imageInfos(image)
+          that.imageInfos1(image)
         })
       cornerstoneTools.addStackStateManager(canvas1, ['stack'])
       cornerstoneTools.addToolState(canvas1, 'stack', that.canvasStack1)
@@ -655,8 +1148,6 @@ export default {
       let that = this
       const canvas2 = this.$refs.canvas2
       let tempIndex = that.canvasStack2.currentImageIdIndex
-
-
       cornerstone.loadAndCacheImage(that.canvasStack2.imageIds[tempIndex])
         .then(function (image) {
           //设置视口
@@ -671,7 +1162,7 @@ export default {
           cornerstone.resize(canvas2, true)
           cornerstone.displayImage(canvas2, image, viewport)
           //TODO 展示信息有问题
-          that.imageInfos(image)
+          that.imageInfos2(image)
         })
       cornerstoneTools.addStackStateManager(canvas2, ['stack'])
       cornerstoneTools.addToolState(canvas2, 'stack', that.canvasStack2)
@@ -680,70 +1171,140 @@ export default {
      * 图像信息处理
      * @param image
      */
-    imageInfos(image) {
+    imageInfos1(image) {
       let that = this
       //region dicom 信息解析映射
       // console.log('image.data.byteArray', image.data.byteArray)
       const byteArray = image.data.byteArray
       const dataSet = dicomParser.parseDicom(byteArray)
 
-      that.patient.patientId = dataSet.string('x00100020')
-      that.patient.patientName = dataSet.string("x00100010")
-      that.patient.patientBirthDate = dataSet.string('x00100030')
-      that.patient.patientSex = dataSet.string('x00100040')
-      that.patient.patientAge = dataSet.string('x00101010')
-      that.patient.sopInstanceUid = dataSet.string('x00080018')
+      that.patient1.patientId = dataSet.string('x00100020')
+      that.patient1.patientName = dataSet.string("x00100010")
+      that.patient1.patientBirthDate = dataSet.string('x00100030')
+      that.patient1.patientSex = dataSet.string('x00100040')
+      that.patient1.patientAge = dataSet.string('x00101010')
+      that.patient1.sopInstanceUid = dataSet.string('x00080018')
       // console.log(that.patient.sopInstanceUid)
-      that.studyInfo.studyDescription = dataSet.string('x00081030')
-      that.studyInfo.protocolName = dataSet.string('x00181030')
-      that.studyInfo.accession = dataSet.string('x00080050')
-      that.studyInfo.studyId = dataSet.string('x00200010')
-      that.studyInfo.studyDate = dataSet.string('x00080020')
-      that.studyInfo.studyTime = dataSet.string('x00080030')
+      that.studyInfo1.studyDescription = dataSet.string('x00081030')
+      that.studyInfo1.protocolName = dataSet.string('x00181030')
+      that.studyInfo1.accession = dataSet.string('x00080050')
+      that.studyInfo1.studyId = dataSet.string('x00200010')
+      that.studyInfo1.studyDate = dataSet.string('x00080020')
+      that.studyInfo1.studyTime = dataSet.string('x00080030')
 
-      that.seriesInfo.seriesDescription = dataSet.string('x0008103e')
-      that.seriesInfo.series = dataSet.string('x00200011')
-      that.seriesInfo.modality = dataSet.string('x00080060')
-      that.seriesInfo.bodyPart = dataSet.string('x00180015')
-      that.seriesInfo.seriesDate = dataSet.string('x00080021')
-      that.seriesInfo.seriesTime = dataSet.string('x00080031')
+      that.seriesInfo1.seriesDescription = dataSet.string('x0008103e')
+      that.seriesInfo1.series = dataSet.string('x00200011')
+      that.seriesInfo1.modality = dataSet.string('x00080060')
+      that.seriesInfo1.bodyPart = dataSet.string('x00180015')
+      that.seriesInfo1.seriesDate = dataSet.string('x00080021')
+      that.seriesInfo1.seriesTime = dataSet.string('x00080031')
 
-      that.instanceInfo.instance = dataSet.string('x00200013')
-      that.instanceInfo.acquisition = dataSet.string('x00200012')
-      that.instanceInfo.acquisitionDate = dataSet.string('x00080022')
-      that.instanceInfo.acquisitionTime = dataSet.string('x00080032')
-      that.instanceInfo.contentDate = dataSet.string('x00080023')
-      that.instanceInfo.contentTime = dataSet.string('x00080033')
+      that.instanceInfo1.instance = dataSet.string('x00200013')
+      that.instanceInfo1.acquisition = dataSet.string('x00200012')
+      that.instanceInfo1.acquisitionDate = dataSet.string('x00080022')
+      that.instanceInfo1.acquisitionTime = dataSet.string('x00080032')
+      that.instanceInfo1.contentDate = dataSet.string('x00080023')
+      that.instanceInfo1.contentTime = dataSet.string('x00080033')
 
-      that.imageInfo.rows = dataSet.string('x00280010')
-      that.imageInfo.columns = dataSet.string('x00280011')
-      that.imageInfo.photometricInter = dataSet.string('x00280004')
-      that.imageInfo.imageType = dataSet.string('x00080008')
-      that.imageInfo.bitsAllocated = dataSet.string('x00280100')
-      that.imageInfo.bitsStored = dataSet.string('x00280101')
-      that.imageInfo.highBit = dataSet.string('x00280102')
-      that.imageInfo.pixelRepre = dataSet.string('x00280103')
-      that.imageInfo.rescaleSlope = dataSet.string('x00281053')
-      that.imageInfo.rescaleIntercept = dataSet.string('x00281052')
-      that.imageInfo.imagePositionPatient = dataSet.string('x00200032')
-      that.imageInfo.imageOrientationPatient = dataSet.string('x00200037')
-      that.imageInfo.pixelSpacing = dataSet.string('x00280030')
-      that.imageInfo.samplesPerPixel = dataSet.string('x00280002')
+      that.imageInfo1.rows = dataSet.string('x00280010')
+      that.imageInfo1.columns = dataSet.string('x00280011')
+      that.imageInfo1.photometricInter = dataSet.string('x00280004')
+      that.imageInfo1.imageType = dataSet.string('x00080008')
+      that.imageInfo1.bitsAllocated = dataSet.string('x00280100')
+      that.imageInfo1.bitsStored = dataSet.string('x00280101')
+      that.imageInfo1.highBit = dataSet.string('x00280102')
+      that.imageInfo1.pixelRepre = dataSet.string('x00280103')
+      that.imageInfo1.rescaleSlope = dataSet.string('x00281053')
+      that.imageInfo1.rescaleIntercept = dataSet.string('x00281052')
+      that.imageInfo1.imagePositionPatient = dataSet.string('x00200032')
+      that.imageInfo1.imageOrientationPatient = dataSet.string('x00200037')
+      that.imageInfo1.pixelSpacing = dataSet.string('x00280030')
+      that.imageInfo1.samplesPerPixel = dataSet.string('x00280002')
 
-      that.equipmentInfo.manufacturer = dataSet.string('x00080070')
-      that.equipmentInfo.model = dataSet.string('x00081090')
-      that.equipmentInfo.stationName = dataSet.string('x00081010')
-      that.equipmentInfo.AETitle = dataSet.string('x00020016')
-      that.equipmentInfo.institutionName = dataSet.string('x00080080')
-      that.equipmentInfo.softwareVersion = dataSet.string('x00181020')
-      that.equipmentInfo.implementationVersionName = dataSet.string('x00020013')
+      that.equipmentInfo1.manufacturer = dataSet.string('x00080070')
+      that.equipmentInfo1.model = dataSet.string('x00081090')
+      that.equipmentInfo1.stationName = dataSet.string('x00081010')
+      that.equipmentInfo1.AETitle = dataSet.string('x00020016')
+      that.equipmentInfo1.institutionName = dataSet.string('x00080080')
+      that.equipmentInfo1.softwareVersion = dataSet.string('x00181020')
+      that.equipmentInfo1.implementationVersionName = dataSet.string('x00020013')
 
-      that.UIDS.studyUID = dataSet.string('x0020000d')
-      that.UIDS.seriesUID = dataSet.string('x0020000e')
-      that.UIDS.instanceUID = dataSet.string('x00080018')
-      that.UIDS.SOPClassUID = dataSet.string('x00080016')
-      that.UIDS.transferSyntaxUID = dataSet.string('x00020010')
-      that.UIDS.frameOfReferenceUID = dataSet.string('x00200052')
+      that.UIDS1.studyUID = dataSet.string('x0020000d')
+      that.UIDS1.seriesUID = dataSet.string('x0020000e')
+      that.UIDS1.instanceUID = dataSet.string('x00080018')
+      that.UIDS1.SOPClassUID = dataSet.string('x00080016')
+      that.UIDS1.transferSyntaxUID = dataSet.string('x00020010')
+      that.UIDS1.frameOfReferenceUID = dataSet.string('x00200052')
+      //endregion
+    },
+    /**
+     * 图像信息处理
+     * @param image
+     */
+    imageInfos2(image) {
+      let that = this
+      //region dicom 信息解析映射
+      // console.log('image.data.byteArray', image.data.byteArray)
+      const byteArray = image.data.byteArray
+      const dataSet = dicomParser.parseDicom(byteArray)
+
+      that.patient2.patientId = dataSet.string('x00100020')
+      that.patient2.patientName = dataSet.string("x00100010")
+      that.patient2.patientBirthDate = dataSet.string('x00100030')
+      that.patient2.patientSex = dataSet.string('x00100040')
+      that.patient2.patientAge = dataSet.string('x00101010')
+      that.patient2.sopInstanceUid = dataSet.string('x00080018')
+      // console.log(that.patient.sopInstanceUid)
+      that.studyInfo2.studyDescription = dataSet.string('x00081030')
+      that.studyInfo2.protocolName = dataSet.string('x00181030')
+      that.studyInfo2.accession = dataSet.string('x00080050')
+      that.studyInfo2.studyId = dataSet.string('x00200010')
+      that.studyInfo2.studyDate = dataSet.string('x00080020')
+      that.studyInfo2.studyTime = dataSet.string('x00080030')
+
+      that.seriesInfo2.seriesDescription = dataSet.string('x0008103e')
+      that.seriesInfo2.series = dataSet.string('x00200011')
+      that.seriesInfo2.modality = dataSet.string('x00080060')
+      that.seriesInfo2.bodyPart = dataSet.string('x00180015')
+      that.seriesInfo2.seriesDate = dataSet.string('x00080021')
+      that.seriesInfo2.seriesTime = dataSet.string('x00080031')
+
+      that.instanceInfo2.instance = dataSet.string('x00200013')
+      that.instanceInfo2.acquisition = dataSet.string('x00200012')
+      that.instanceInfo2.acquisitionDate = dataSet.string('x00080022')
+      that.instanceInfo2.acquisitionTime = dataSet.string('x00080032')
+      that.instanceInfo2.contentDate = dataSet.string('x00080023')
+      that.instanceInfo2.contentTime = dataSet.string('x00080033')
+
+      that.imageInfo2.rows = dataSet.string('x00280010')
+      that.imageInfo2.columns = dataSet.string('x00280011')
+      that.imageInfo2.photometricInter = dataSet.string('x00280004')
+      that.imageInfo2.imageType = dataSet.string('x00080008')
+      that.imageInfo2.bitsAllocated = dataSet.string('x00280100')
+      that.imageInfo2.bitsStored = dataSet.string('x00280101')
+      that.imageInfo2.highBit = dataSet.string('x00280102')
+      that.imageInfo2.pixelRepre = dataSet.string('x00280103')
+      that.imageInfo2.rescaleSlope = dataSet.string('x00281053')
+      that.imageInfo2.rescaleIntercept = dataSet.string('x00281052')
+      that.imageInfo2.imagePositionPatient = dataSet.string('x00200032')
+      that.imageInfo2.imageOrientationPatient = dataSet.string('x00200037')
+      that.imageInfo2.pixelSpacing = dataSet.string('x00280030')
+      that.imageInfo2.samplesPerPixel = dataSet.string('x00280002')
+
+      that.equipmentInfo2.manufacturer = dataSet.string('x00080070')
+      that.equipmentInfo2.model = dataSet.string('x00081090')
+      that.equipmentInfo2.stationName = dataSet.string('x00081010')
+      that.equipmentInfo2.AETitle = dataSet.string('x00020016')
+      that.equipmentInfo2.institutionName = dataSet.string('x00080080')
+      that.equipmentInfo2.softwareVersion = dataSet.string('x00181020')
+      that.equipmentInfo2.implementationVersionName = dataSet.string('x00020013')
+
+      that.UIDS2.studyUID = dataSet.string('x0020000d')
+      that.UIDS2.seriesUID = dataSet.string('x0020000e')
+      that.UIDS2.instanceUID = dataSet.string('x00080018')
+      that.UIDS2.SOPClassUID = dataSet.string('x00080016')
+      that.UIDS2.transferSyntaxUID = dataSet.string('x00020010')
+      that.UIDS2.frameOfReferenceUID = dataSet.string('x00200052')
       //endregion
     },
     /**
@@ -764,8 +1325,8 @@ export default {
       // 处理css样式，有待完成
       let box = document.getElementById(classId)
       console.log(box)
-      box.style.borderColor="#ffeded"
-      box.style.border="20px"
+      box.style.borderColor = "#ffeded"
+      box.style.border = "20px"
     },
     /**
      * 滚动处理
@@ -981,6 +1542,7 @@ export default {
       background-color: #282c34 !important;
       border-color: #507cef !important;
       display: block;
+
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
@@ -1005,10 +1567,12 @@ export default {
 
       .left-study {
         display: block;
+
         .left-study-collapse {
           background-color: #282c34 !important;
           color: white !important;
           display: block;
+
           .left-study-collapse-item {
 
             .ct-image1 {
@@ -1034,15 +1598,11 @@ export default {
     height: 100%;
     position: relative;
     color: white;
-    border-color: red;
-    border-width: 5px;
-
+    font-size: 1px;
     .ct-image {
       width: 100%;
       height: 100%;
       background-color: #000000;
-      border-color: red;
-      border-width: 5px;
     }
   }
 
@@ -1050,15 +1610,11 @@ export default {
     height: 100%;
     position: relative;
     color: white;
-    border-color: red;
-    border-width: 5px;
-
+    font-size: 1px;
     .ct-image {
       width: 100%;
       height: 100%;
       background-color: #000000;
-      border-color: red;
-      border-width: 5px;
     }
   }
 

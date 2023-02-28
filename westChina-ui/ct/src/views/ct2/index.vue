@@ -466,7 +466,19 @@ export default {
       //增加堆栈管理工具
       cornerstoneTools.addStackStateManager(canvas, ['stack'])
       cornerstoneTools.addToolState(canvas, 'stack', that.canvasStack)
-
+      that.styleOfCanvas()
+    },
+    styleOfCanvas() {
+      //可以设置激活工具的颜色，也就是鼠标覆盖在上面的颜色
+      cornerstoneTools.toolColors.setActiveColor('rgb(255, 255, 0)');
+      //Set color for inactive tools
+      cornerstoneTools.toolColors.setToolColor('rgb(0, 255, 0)');
+      // Set the tool width
+      cornerstoneTools.toolStyle.setToolWidth(2);
+      // Set the tool font and font size
+      const fontFamily =
+        'Work Sans, Roboto, OpenSans, HelveticaNeue-Light, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif';
+      cornerstoneTools.textStyle.setFont(`16px ${fontFamily}`);
     },
     initListCanvas() {
       let that = this
@@ -841,6 +853,7 @@ export default {
       background-color: #282c34 !important;
       border-color: #507cef !important;
       display: block;
+
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
@@ -865,10 +878,12 @@ export default {
 
       .left-study {
         display: block;
+
         .left-study-collapse {
           background-color: #282c34 !important;
           color: white !important;
           display: block;
+
           .left-study-collapse-item {
 
             .ct-image1 {
