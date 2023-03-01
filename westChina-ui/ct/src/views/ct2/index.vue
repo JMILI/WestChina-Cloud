@@ -12,12 +12,10 @@
 
         <el-collapse v-model="activeNames" class="left-collapse">
           <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
-          <el-collapse-item title="标记管理" name="1" class="left-label" >
-            <el-card v-for="item in makerInfoList" :key="index"
-                     :body-style="{ padding: '0px' }"
-            >
-              <div style="padding: 14px;" class="left-label-item"
-              >
+          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label" >
+            <el-card v-for="item in makerInfoList"
+                     :body-style="{ padding: '0px' }">
+              <div style="padding: 14px;" class="left-label-item" @click="viewImage(item)">
                 <div>图像id：{{ item.instanceUID }}</div>
                 <div>拍摄CT时间：{{ item.studyDate }}</div>
                 <div class="bottom clearfix">
@@ -40,7 +38,7 @@
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
                          :body-style="{ padding: '0px' }"
-                         @click.prevent="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
+                         @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                 >
                   <div
                     :ref="studySeriesList[key][childrenKey].dicomId"
@@ -407,6 +405,7 @@ export default {
       studyCanvasList: {},
 
       makerInfoList: {},
+      makerFlag:true,
     }
   },
   created() {
@@ -439,7 +438,10 @@ export default {
 
   },
   methods: {
-
+    viewImage(row){
+      let canvas = this.$refs.canvas
+        cornerstone.displayImage(canvas, row.makerImage)
+    },
     makerImageDeal(imageSave, canvas) {
       let that = this
       //解析图像信息
@@ -465,28 +467,32 @@ export default {
       //canvas类型图像信息，方便后面上传，数据库表中没有该字段
       makerInfo.makerImage = imageSave
       //将此次标记图像和信息存储到页面中
-      that.makerInfoList[instanceUID] = makerInfo
       console.log(that.makerInfoList)
-      const viewport = cornerstone.getViewport(canvas)
-      const zoom = viewport.scale.toFixed(2)
-      const cols = imageSave.columns * zoom
-      const rows = imageSave.rows * zoom
-      let myCanvas = document.createElement('canvas')
-      let canvasTemp = canvas.firstElementChild
-      console.log("打印",canvasTemp)
-      myCanvas = that.cropCanvas(
-        canvasTemp,
-        Math.round(canvasTemp.width / 2 - cols / 2),
-        Math.round(canvasTemp.height / 2 - rows / 2),
-        cols, rows)
-      // 创建一个a标签
-      let a = document.createElement("a")
-      // let imagemy = myCanvas.toDataURL(`image/jpeg`)
-      a.href = myCanvas.toDataURL(`image/png`)
-      // a.href = myCanvas.toDataURL(`image/${type}`)
-      a.download = `test.png`
-      document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
-      a.click()
+      that.makerInfoList[instanceUID] = makerInfo
+      that.makerFlag=false
+      that.$nextTick(() => {
+        that.makerFlag=true
+      });
+      // const viewport = cornerstone.getViewport(canvas)
+      // const zoom = viewport.scale.toFixed(2)
+      // const cols = imageSave.columns * zoom
+      // const rows = imageSave.rows * zoom
+      // let myCanvas = document.createElement('canvas')
+      // let canvasTemp = canvas.firstElementChild
+      // console.log("打印",canvasTemp)
+      // myCanvas = that.cropCanvas(
+      //   canvasTemp,
+      //   Math.round(canvasTemp.width / 2 - cols / 2),
+      //   Math.round(canvasTemp.height / 2 - rows / 2),
+      //   cols, rows)
+      // // 创建一个a标签
+      // let a = document.createElement("a")
+      // // let imagemy = myCanvas.toDataURL(`image/jpeg`)
+      // a.href = myCanvas.toDataURL(`image/png`)
+      // // a.href = myCanvas.toDataURL(`image/${type}`)
+      // a.download = `test.png`
+      // document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
+      // a.click()
     },
     /**
      * 重新绘制图像并返回
