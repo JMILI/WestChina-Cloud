@@ -68,7 +68,7 @@ export const constantRoutes = [
   {
     path: '/Layout',
     component: Layout,
-    redirect: 'ct2',
+    redirect: 'ct3row',
     name: 'Layout',
     children: [
       {
@@ -81,6 +81,12 @@ export const constantRoutes = [
         path: 'ct2row',
         component: (resolve) => require(['@/views/ct2row/ct2row'], resolve),
         name: 'ct2row',
+        meta: {keepAlive: true}
+      },
+      {
+        path: 'ct3row',
+        component: (resolve) => require(['@/views/ct3row/ct3row'], resolve),
+        name: 'ct3row',
         meta: {keepAlive: true}
       },
       {

@@ -10,45 +10,42 @@
     <el-scrollbar style="height:100%">
       <div class="left" v-show="openStudySeries">
 
-        <el-collapse class="left-collapse">
+        <el-collapse v-model="activeNames" class="left-collapse">
           <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
-          <el-collapse-item title="标记管理" name="1" class="left-label">
-            <!--            <div v-for="(key,items) in studySeriesList" :key="items" class="left-label-item" >-->
-            <!--              {{items}}-->
-            <!--              <div v-for="(keys,value) in studySeriesList[items]">-->
-            <!--                {{value}}-->
-            <!--&lt;!&ndash;                <div v-for="(index,temp) in studySeriesList[items][value]">&ndash;&gt;-->
-            <!--                  {{studySeriesList[items][value].dicomId}}-->
-            <!--                  <div style="background-color:blue;height: 5px;"></div>-->
-            <!--&lt;!&ndash;                </div>&ndash;&gt;-->
-            <!--              </div>-->
-            <!--              <div style="background-color:red;height: 5px;"></div>-->
-            <!--            </div>-->
-
-            <!--            <div class="left-label-item">在界面中一致：所有的元素和结构需保</div>-->
-
+          <el-collapse-item title="标记管理" name="1" class="left-label" >
+            <el-card v-for="item in makerInfoList" :key="index"
+                     :body-style="{ padding: '0px' }"
+            >
+              <div style="padding: 14px;" class="left-label-item"
+              >
+                <div>图像id：{{ item.instanceUID }}</div>
+                <div>拍摄CT时间：{{ item.studyDate }}</div>
+                <div class="bottom clearfix">
+                  <span class="time">标记日期:{{ item.makerTime }}</span>
+                </div>
+              </div>
+            </el-card>
           </el-collapse-item>
 
           <el-collapse-item title="病人study列表" name="2" class="left-study">
 
-            <el-collapse v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
 
             >
               <!--              study-->
-              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3"
-                                @click="listenerDisplayCanvas()">
+              <el-collapse-item  :title="'studyID:'+key"  class="left-study-collapse left-study-collapse-item" name="3"
+                                >
+<!--                @click="listenerDisplayCanvas()"-->
                 <!--                series-->
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
                          :body-style="{ padding: '0px' }"
-
+                         @click.prevent="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                 >
                   <div
                     :ref="studySeriesList[key][childrenKey].dicomId"
                     class="ct-image1"
-                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
-
                   </div>
                   <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
                   <div style="padding: 14px;" class="left-study-collapse-item"
@@ -327,6 +324,8 @@ export default {
   name: 'ct2',
   data() {
     return {
+
+      activeNames:['1','2','3'],
       routePatient: this.$route.params.patient,
       imageIds: [
         'wadouri:http://westChinaBackend:9000/dicom/7/1_0.dcm',
@@ -407,6 +406,7 @@ export default {
       divTempWidth2: 'calc(80vw - 200px)',
       studyCanvasList: {},
 
+      makerInfoList: {},
     }
   },
   created() {
@@ -426,6 +426,11 @@ export default {
     const canvas = this.$refs.canvas
     //监听滚动事件
     canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
+    canvas.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+      //得到image
+      let imageSave = cornerstone.getImage(canvas)
+      that.makerImageDeal(imageSave, canvas)
+    });
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
     that.initListCanvas()
@@ -434,8 +439,76 @@ export default {
 
   },
   methods: {
+
+    makerImageDeal(imageSave, canvas) {
+      let that = this
+      //解析图像信息
+      const byteArray = imageSave.data.byteArray
+      const dataSet = dicomParser.parseDicom(byteArray)
+      let makerInfo = {}
+      let instanceUID = dataSet.string('x00080018')
+      makerInfo.instanceUID = dataSet.string('x00080018')
+      makerInfo.studyUID = dataSet.string('x0020000d')
+      makerInfo.seriesUID = dataSet.string('x0020000e')
+      makerInfo.studyDate = dataSet.string('x00080020')
+      //获取病人信息
+      makerInfo.patCardId = that.$store.getters.patCardId
+      makerInfo.patientName = that.$store.getters.patName
+      //获取医生信息和企业信息
+      makerInfo.makerDoctor = that.$store.getters.name
+      makerInfo.makerEnterpriseName = that.$store.getters.enterpriseName
+      //设置标记图像时间
+      makerInfo.makerTime = new Date().toLocaleString()
+      //存储图像在服务器上的地址
+      makerInfo.markerImageAddress = ""
+      makerInfo.makerDescription = ''
+      //canvas类型图像信息，方便后面上传，数据库表中没有该字段
+      makerInfo.makerImage = imageSave
+      //将此次标记图像和信息存储到页面中
+      that.makerInfoList[instanceUID] = makerInfo
+      console.log(that.makerInfoList)
+      const viewport = cornerstone.getViewport(canvas)
+      const zoom = viewport.scale.toFixed(2)
+      const cols = imageSave.columns * zoom
+      const rows = imageSave.rows * zoom
+      let myCanvas = document.createElement('canvas')
+      let canvasTemp = canvas.firstElementChild
+      console.log("打印",canvasTemp)
+      myCanvas = that.cropCanvas(
+        canvasTemp,
+        Math.round(canvasTemp.width / 2 - cols / 2),
+        Math.round(canvasTemp.height / 2 - rows / 2),
+        cols, rows)
+      // 创建一个a标签
+      let a = document.createElement("a")
+      // let imagemy = myCanvas.toDataURL(`image/jpeg`)
+      a.href = myCanvas.toDataURL(`image/png`)
+      // a.href = myCanvas.toDataURL(`image/${type}`)
+      a.download = `test.png`
+      document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
+      a.click()
+    },
+    /**
+     * 重新绘制图像并返回
+     * @param canvas 原来canvas图像
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     * @returns {HTMLCanvasElement}
+     */
+    cropCanvas(canvas, x, y, width, height) {
+      // create a temp canvas创建一个临时的画布
+      const newCanvas = document.createElement('canvas')
+      // set its dimensions
+      newCanvas.width = width
+      newCanvas.height = height
+      // draw the canvas in the new resized temp canvas
+      newCanvas.getContext('2d').drawImage(canvas, x, y, width, height, 0, 0, width, height)
+      debugger
+      return newCanvas
+    },
     listenerDisplayCanvas() {
-      console.log("diaji")
       this.initListCanvas()
     },
     showDicom() {
@@ -490,6 +563,14 @@ export default {
           cornerstone.displayImage(tempCanvas, image)
         })
       }
+    },
+    convertCanvasToImage(canvas) {
+      //新Image对象，可以理解为DOM
+      var image = new Image();
+      // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
+      // 指定格式 PNG
+      image.src = canvas.toDataURL("image/png");
+      return image;
     },
     displayOneCanvasImage1() {
       let that = this
@@ -623,6 +704,11 @@ export default {
       that.UIDS.SOPClassUID = dataSet.string('x00080016')
       that.UIDS.transferSyntaxUID = dataSet.string('x00020010')
       that.UIDS.frameOfReferenceUID = dataSet.string('x00200052')
+      //endregion
+
+      //region 存储标记图像的信息
+      // let tempMakerImage={}
+
       //endregion
     },
 
@@ -797,8 +883,6 @@ export default {
       this.changeWidth()
     },
     //  监视并修改样式宽度
-
-
   },
   components: {}
 }
@@ -851,28 +935,29 @@ export default {
       //width: 100%;
       //height: 100%;
       background-color: #282c34 !important;
-      border-color: #507cef !important;
       display: block;
 
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
-        border-bottom-color: #ea768b;
+        //border-bottom-color: #ea768b;
       }
 
       ::v-deep .el-collapse-item__wrap {
         background-color: #17191c !important;
         color: white !important;
+      }
 
-        //border-color: white !important;
-        border-bottom-color: #eada76 !important;
-
+      ::v-deep .el-collapse-item__content {
+        padding-bottom: 0px;
       }
 
       .left-label {
         .left-label-item {
-          background-color: #17191c !important;
+          background-color: #282c34 !important;
           color: white !important;
+          font-size: 1px;
+          width: 20vw;
         }
       }
 
@@ -888,12 +973,15 @@ export default {
 
             .ct-image1 {
               width: 20vw;
-              height: 40vh;
-              background-color: #e34f1d !important;
+              height: 35vh;
               display: block;
+              //阻止所有鼠标事件
+              pointer-events: none;
+              background-color: #000 !important;
             }
 
             background-color: #282c34 !important;
+            font-size: 1px;
             color: white;
             display: block;
           }

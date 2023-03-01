@@ -7,17 +7,15 @@
     <el-scrollbar>
       <div class="left" v-show="openStudySeries">
 
-        <el-collapse class="left-collapse">
+        <el-collapse v-model="activeNames" class="left-collapse">
           <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
           <el-collapse-item title="标记管理" name="1" class="left-label">
-            <div class="left-label-item">与现实生活一致：与现实生活的流程、逻辑</div>
-            <div class="left-label-item">在界面中一致：所有的元素和结构需保</div>
           </el-collapse-item>
 
 
-          <el-collapse-item title="病人study列表" name="2" class="left-study">
+          <el-collapse-item  title="病人study列表" name="2" class="left-study">
 
-            <el-collapse v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
 
             >
               <!--              study-->
@@ -31,7 +29,6 @@
                   <div
                     :ref="studySeriesList[key][childrenKey].dicomId"
                     class="ct-image1"
-                    @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
                   >
 
                   </div>
@@ -53,6 +50,7 @@
               </el-collapse-item>
 
             </el-collapse>
+
           </el-collapse-item>
 
 
@@ -79,44 +77,44 @@
       <!--      region as-->
       <!--      病人信息-->
       <!--  病人信息    左上角-->
-      <div id="topleft" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px;font-size:15px">
+      <div id="topleft" v-show="isShowPatientInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px;">
         sop Instance Uid: {{ patient1.sopInstanceUid }}
         <br>
         是否反转：{{ getInvert }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px">
+      <div id="topright" v-show="isShowPatientInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;">
         patient ID: {{ patient1.patientId }},
         <br>
         patient Name: {{ patient1.patientName }}
         <br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         Patient sex: {{ patient1.patientSex }}
         <br>
         Patient age: {{ patient1.patientAge }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowPatientInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
         Patient birth date: {{ patient1.patientBirthDate }}
         <br>
       </div>
       <!--study信息-->
       <!--study:isShowStudyInfo-->
-      <div id="topleft" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowStudyInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         study Description: {{ studyInfo1.studyDescription }}
         <br>
         protocol Name:{{ studyInfo1.protocolName }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowStudyInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
         accession: {{ studyInfo1.accession }},
         <br>
@@ -125,28 +123,28 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         study Date: {{ studyInfo1.studyDate }}
         <br>
         study Time: {{ studyInfo1.studyTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowStudyInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
       <!--       序列信息-->
       <!-- study:isShowSeriesInfo -->
-      <div id="topleft" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowSeriesInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         series Description: {{ seriesInfo1.seriesDescription }}
         <br>
         series:{{ seriesInfo1.series }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowSeriesInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
         modality: {{ seriesInfo1.modality }},
         <br>
@@ -155,28 +153,28 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         series Date: {{ seriesInfo1.seriesDate }}
         <br>
         series Time: {{ seriesInfo1.seriesTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
       <!--      instances 信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowInstancesInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         instance: {{ instanceInfo1.instance }}
         <br>
         acquisition:{{ instanceInfo1.acquisition }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowInstancesInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
         acquisition Date: {{ instanceInfo1.acquisitionDate }},
         <br>
@@ -185,22 +183,22 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         content Date: {{ instanceInfo1.contentDate }}
         <br>
         content Time: {{ instanceInfo1.contentTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
 
       <!--       image 信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowImageInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         rows: {{ imageInfo1.rows }}<br>
         columns:{{ imageInfo1.columns }}<br>
         photometric Interpretation:{{ imageInfo1.photometricInter }}<br>
@@ -208,23 +206,23 @@
         bits Allocated:{{ imageInfo1.bitsAllocated }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowImageInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
         bits Stored:{{ imageInfo1.bitsStored }}<br>
         pixel Representation:{{ imageInfo1.pixelRepre }}<br>
         high Bit:{{ imageInfo1.highBit }}<br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowImageInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         rescale Slope:{{ imageInfo1.rescaleSlope }}<br>
         rescale Intercept:{{ imageInfo1.rescaleIntercept }}<br>
         image Position Patient:{{ imageInfo1.imagePositionPatient }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowImageInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
         image Orientation Patient:{{ imageInfo1.imageOrientationPatient }}<br>
         pixel Spacing:{{ imageInfo1.pixelSpacing }}<br>
         samples Per Pixel:{{ imageInfo1.samplesPerPixel }}<br>
@@ -232,53 +230,53 @@
 
       <!--     equipmentInfo   设备信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         manufacturer:{{ equipmentInfo1.manufacturer }}<br>
         model:{{ equipmentInfo1.model }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowEquipmentInfo" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
         station Name:{{ equipmentInfo1.stationName }}<br>
         AE Title:{{ equipmentInfo1.AETitle }}<br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         institution Name:{{ equipmentInfo1.institutionName }}<br>
         software Version:{{ equipmentInfo1.softwareVersion }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
         implementation Version Name:{{ equipmentInfo1.implementationVersionName }}<br>
       </div>
       <!--     UIDS   uid信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowUIDS" class="overlay1"
+           style="position:absolute;top:10px;left:10px; ">
         study UID:{{ UIDS1.studyUID }}<br>
         series UID:{{ UIDS1.seriesUID }}<br>
         instance UID:{{ UIDS1.instanceUID }}<br>
         SOP Class UID:{{ UIDS1.SOPClassUID }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowUIDS" class="overlay1"
+           style="position:absolute;top:10px;right:10px;"
       >
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowUIDS" class="overlay1"
+           style="position:absolute;bottom:10px;left:10px;">
         transfer Syntax UID:{{ UIDS1.transferSyntaxUID }}<br>
         frame Of Reference UID:{{ UIDS1.frameOfReferenceUID }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowUIDS" class="overlay1"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
       <!--endregion-->
     </div>
@@ -306,44 +304,44 @@
       <!--      region as-->
       <!--      病人信息-->
       <!--  病人信息    左上角-->
-      <div id="topleft" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px;font-size:15px">
+      <div id="topleft" v-show="isShowPatientInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px;">
         sop Instance Uid: {{ patient2.sopInstanceUid }}
         <br>
         是否反转：{{ getInvert }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px">
+      <div id="topright" v-show="isShowPatientInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;">
         patient ID: {{ patient2.patientId }},
         <br>
         patient Name: {{ patient2.patientName }}
         <br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowPatientInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         Patient sex: {{ patient2.patientSex }}
         <br>
         Patient age: {{ patient2.patientAge }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowPatientInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowPatientInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
         Patient birth date: {{ patient2.patientBirthDate }}
         <br>
       </div>
       <!--study信息-->
       <!--study:isShowStudyInfo-->
-      <div id="topleft" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowStudyInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         study Description: {{ studyInfo2.studyDescription }}
         <br>
         protocol Name:{{ studyInfo2.protocolName }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowStudyInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
         accession: {{ studyInfo2.accession }},
         <br>
@@ -352,28 +350,28 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowStudyInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         study Date: {{ studyInfo2.studyDate }}
         <br>
         study Time: {{ studyInfo2.studyTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowStudyInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowStudyInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
       <!--       序列信息-->
       <!-- study:isShowSeriesInfo -->
-      <div id="topleft" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowSeriesInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         series Description: {{ seriesInfo2.seriesDescription }}
         <br>
         series:{{ seriesInfo2.series }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowSeriesInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
         modality: {{ seriesInfo2.modality }},
         <br>
@@ -382,28 +380,28 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowSeriesInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         series Date: {{ seriesInfo2.seriesDate }}
         <br>
         series Time: {{ seriesInfo2.seriesTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowSeriesInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
       <!--      instances 信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowInstancesInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         instance: {{ instanceInfo2.instance }}
         <br>
         acquisition:{{ instanceInfo2.acquisition }}
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowInstancesInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
         acquisition Date: {{ instanceInfo2.acquisitionDate }},
         <br>
@@ -412,22 +410,22 @@
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowInstancesInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         content Date: {{ instanceInfo2.contentDate }}
         <br>
         content Time: {{ instanceInfo2.contentTime }}
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowInstancesInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
 
 
       <!--       image 信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowImageInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         rows: {{ imageInfo2.rows }}<br>
         columns:{{ imageInfo2.columns }}<br>
         photometric Interpretation:{{ imageInfo2.photometricInter }}<br>
@@ -435,23 +433,23 @@
         bits Allocated:{{ imageInfo2.bitsAllocated }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowImageInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
         bits Stored:{{ imageInfo2.bitsStored }}<br>
         pixel Representation:{{ imageInfo2.pixelRepre }}<br>
         high Bit:{{ imageInfo2.highBit }}<br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowImageInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         rescale Slope:{{ imageInfo2.rescaleSlope }}<br>
         rescale Intercept:{{ imageInfo2.rescaleIntercept }}<br>
         image Position Patient:{{ imageInfo2.imagePositionPatient }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowImageInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowImageInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
         image Orientation Patient:{{ imageInfo2.imageOrientationPatient }}<br>
         pixel Spacing:{{ imageInfo2.pixelSpacing }}<br>
         samples Per Pixel:{{ imageInfo2.samplesPerPixel }}<br>
@@ -459,53 +457,53 @@
 
       <!--     equipmentInfo   设备信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowEquipmentInfo" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         manufacturer:{{ equipmentInfo2.manufacturer }}<br>
         model:{{ equipmentInfo2.model }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowEquipmentInfo" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
         station Name:{{ equipmentInfo2.stationName }}<br>
         AE Title:{{ equipmentInfo2.AETitle }}<br>
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowEquipmentInfo" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         institution Name:{{ equipmentInfo2.institutionName }}<br>
         software Version:{{ equipmentInfo2.softwareVersion }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowEquipmentInfo" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
         implementation Version Name:{{ equipmentInfo2.implementationVersionName }}<br>
       </div>
       <!--     UIDS   uid信息-->
       <!--      -->
-      <div id="topleft" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;top:10px;left:10px; font-size:15px">
+      <div id="topleft" v-show="isShowUIDS" class="overlay2"
+           style="position:absolute;top:10px;left:10px; ">
         study UID:{{ UIDS2.studyUID }}<br>
         series UID:{{ UIDS2.seriesUID }}<br>
         instance UID:{{ UIDS2.instanceUID }}<br>
         SOP Class UID:{{ UIDS2.SOPClassUID }}<br>
       </div>
       <!--      右上角-->
-      <div id="topright" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;top:10px;right:10px;font-size:15px"
+      <div id="topright" v-show="isShowUIDS" class="overlay2"
+           style="position:absolute;top:10px;right:10px;"
       >
 
       </div>
       <!--      左下角-->
-      <div id="bottomleft" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;bottom:10px;left:10px;font-size:15px">
+      <div id="bottomleft" v-show="isShowUIDS" class="overlay2"
+           style="position:absolute;bottom:10px;left:10px;">
         transfer Syntax UID:{{ UIDS2.transferSyntaxUID }}<br>
         frame Of Reference UID:{{ UIDS2.frameOfReferenceUID }}<br>
       </div>
       <!--      右下角-->
-      <div id="bottomright" v-show="isShowUIDS" class="overlay"
-           style="position:absolute;bottom:10px;right:10px;font-size:15px">
+      <div id="bottomright" v-show="isShowUIDS" class="overlay2"
+           style="position:absolute;bottom:10px;right:10px;">
       </div>
       <!--endregion-->
     </div>
@@ -570,6 +568,7 @@ export default {
   name: 'ct2row',
   data() {
     return {
+      activeNames:['1','2','3'],
       element1: this.$refs.canvas1,
       element2: this.$refs.canvas2,
       fileList: [],
@@ -769,15 +768,15 @@ export default {
     //   const eventData = params.detail;
     //   console.log("ADDED", eventData)
     // });
-    // // 用户用操作用具标注图像完成之后，触发这个监听事件MEASUREMENT_COMPLETED。用来保存图像png/jpeg
-    // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("COMPLETED", eventData)
-    // });
-    // this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-    //   const eventData = params.detail;
-    //   console.log("COMPLETED", eventData)
-    // });
+    // 用户用操作用具标注图像完成之后，触发这个监听事件MEASUREMENT_COMPLETED。用来保存图像png/jpeg
+    this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+      const eventData = params.detail;
+      console.log("COMPLETED", eventData)
+    });
+    this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+      const eventData = params.detail;
+      console.log("COMPLETED", eventData)
+    });
     // // 使用橡皮擦修改图像后，重新保存图像
     // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
     //   const eventData = params.detail;
@@ -1322,12 +1321,28 @@ export default {
     select(id, classId) {
       console.log('select', classId)
       this.currentCanvas = id
+      let boxs1 = document.getElementsByClassName("overlay1");
+      let boxs2 = document.getElementsByClassName("overlay2")
+      if (id == 1) {
+
+        for (let i = 0; i < boxs1.length; i++) {
+          boxs1[i].style.color="#eeff11"
+          boxs2[i].style.color="#fff"
+        }
+      } else if (id == 2) {
+
+        for (let i = 0; i < boxs2.length; i++) {
+          boxs1[i].style.color="#fff"
+          boxs2[i].style.color="#eeff11"
+        }
+      }
       // 处理css样式，有待完成
-      let box = document.getElementById(classId)
-      console.log(box)
-      box.style.borderColor = "#ffeded"
-      box.style.border = "20px"
+      // let box = document.getElementsByClassName(classId)
+      // console.log(box)
+      // box.style.borderColor = "#ffeded"
+      // box.style.border = "20px"
     },
+
     /**
      * 滚动处理
      * @param e
@@ -1505,7 +1520,7 @@ export default {
 @import "~@assets/styles/mixin.scss";
 @import "~@assets/styles/variables.scss";
 
-.overlay {
+.overlay1 {
   /* prevent text selection on overlay */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -1515,6 +1530,20 @@ export default {
   user-select: none;
   /* ignore pointer event on overlay */
   pointer-events: none;
+  color: #f1fa8c;
+  font-size: 1px;
+}
+.overlay2 {
+  /* prevent text selection on overlay */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* ignore pointer event on overlay */
+  pointer-events: none;
+  font-size: 1px;
 }
 
 .ct-container {
@@ -1528,6 +1557,7 @@ export default {
     overflow-x: hidden;
   }
 
+
   .left {
     padding-left: 5px;
     width: 20vw;
@@ -1540,28 +1570,28 @@ export default {
       //width: 100%;
       //height: 100%;
       background-color: #282c34 !important;
-      border-color: #507cef !important;
       display: block;
 
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
         color: white !important;
-        border-bottom-color: #ea768b;
       }
 
       ::v-deep .el-collapse-item__wrap {
         background-color: #17191c !important;
         color: white !important;
-
         //border-color: white !important;
-        border-bottom-color: #eada76 !important;
-
       }
 
+      ::v-deep .el-collapse-item__content {
+        padding-bottom: 0px;
+      }
       .left-label {
         .left-label-item {
           background-color: #17191c !important;
           color: white !important;
+          font-size: 1px;
+          width: 20vw;
         }
       }
 
@@ -1578,11 +1608,13 @@ export default {
             .ct-image1 {
               width: 20vw;
               height: 35vh;
-              background-color: #e34f1d !important;
               display: block;
+              pointer-events: none;
+              background-color: #000 !important;
             }
 
             background-color: #282c34 !important;
+            font-size: 1px;
             color: white;
             display: block;
           }
@@ -1596,9 +1628,9 @@ export default {
   .ct-father-Open1 {
 
     height: 100%;
+    width: 100%;
     position: relative;
     color: white;
-    font-size: 1px;
     .ct-image {
       width: 100%;
       height: 100%;
@@ -1608,9 +1640,9 @@ export default {
 
   .ct-father-Open2 {
     height: 100%;
+    width: 100%;
     position: relative;
     color: white;
-    font-size: 1px;
     .ct-image {
       width: 100%;
       height: 100%;
