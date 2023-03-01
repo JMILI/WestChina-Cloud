@@ -435,6 +435,7 @@ export default {
 
   },
   methods: {
+    //点击
     viewImage(row){
       let canvas = this.$refs.canvas
         cornerstone.displayImage(canvas, row.makerImage)
