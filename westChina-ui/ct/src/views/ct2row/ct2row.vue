@@ -6,16 +6,25 @@
   >
     <el-scrollbar>
       <div class="left" v-show="openStudySeries">
-
         <el-collapse v-model="activeNames" class="left-collapse">
-          <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
-          <el-collapse-item title="标记管理" name="1" class="left-label">
+          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
+            <el-card v-for="item in makerInfoList"
+                     :body-style="{ padding: '0px' }">
+              <div style="padding: 14px;" class="left-label-item" @click="viewImage(item)">
+                <div>图像id：{{ item.instanceUID }}</div>
+                <div>拍摄CT时间：{{ item.studyDate }}</div>
+                <div class="bottom clearfix">
+                  <span class="time">标记日期:{{ item.makerTime }}</span>
+                </div>
+              </div>
+            </el-card>
           </el-collapse-item>
 
 
-          <el-collapse-item  title="病人study列表" name="2" class="left-study">
+          <el-collapse-item title="病人study列表" name="2" class="left-study">
 
-            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key"
+                         class="left-study-collapse"
 
             >
               <!--              study-->
@@ -280,9 +289,6 @@
       </div>
       <!--endregion-->
     </div>
-
-
-
 
 
     <div
@@ -568,7 +574,7 @@ export default {
   name: 'ct2row',
   data() {
     return {
-      activeNames:['1','2','3'],
+      activeNames: ['1', '2', '3'],
       element1: this.$refs.canvas1,
       element2: this.$refs.canvas2,
       fileList: [],
@@ -729,6 +735,9 @@ export default {
       divTempWidth1: 'calc(40vw - 100px)',
       divTempWidth2: 'calc(40vw - 100px)',
       studyCanvasList: {},
+
+      makerInfoList: {},
+      makerFlag: true,
     }
   },
 
@@ -769,13 +778,15 @@ export default {
     //   console.log("ADDED", eventData)
     // });
     // 用户用操作用具标注图像完成之后，触发这个监听事件MEASUREMENT_COMPLETED。用来保存图像png/jpeg
-    this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-      const eventData = params.detail;
-      console.log("COMPLETED", eventData)
+    element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+      //得到image
+      let imageSave = cornerstone.getImage(element1)
+      that.makerImageDeal(imageSave, element1)
     });
-    this.element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-      const eventData = params.detail;
-      console.log("COMPLETED", eventData)
+    element2.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
+      //得到image
+      let imageSave = cornerstone.getImage(element2)
+      that.makerImageDeal(imageSave, element2)
     });
     // // 使用橡皮擦修改图像后，重新保存图像
     // this.element1.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_REMOVED, function (params) {
@@ -799,7 +810,68 @@ export default {
     //endregion
   },
   methods: {
+    viewImage(row) {
+      if (this.currentCanvas == 1) {
+        let element1 = this.$refs.canvas1
+        cornerstone.displayImage(element1, row.makerImage)
+      } else if (this.currentCanvas == 2) {
+        let element2 = this.$refs.canvas2
+        cornerstone.displayImage(element2, row.makerImage)
+      }
 
+    },
+    makerImageDeal(imageSave, canvas) {
+      let that = this
+      //解析图像信息
+      const byteArray = imageSave.data.byteArray
+      const dataSet = dicomParser.parseDicom(byteArray)
+      let makerInfo = {}
+      let instanceUID = dataSet.string('x00080018')
+      makerInfo.instanceUID = dataSet.string('x00080018')
+      makerInfo.studyUID = dataSet.string('x0020000d')
+      makerInfo.seriesUID = dataSet.string('x0020000e')
+      makerInfo.studyDate = dataSet.string('x00080020')
+      //获取病人信息
+      makerInfo.patCardId = that.$store.getters.patCardId
+      makerInfo.patientName = that.$store.getters.patName
+      //获取医生信息和企业信息
+      makerInfo.makerDoctor = that.$store.getters.name
+      makerInfo.makerEnterpriseName = that.$store.getters.enterpriseName
+      //设置标记图像时间
+      makerInfo.makerTime = new Date().toLocaleString()
+      //存储图像在服务器上的地址
+      makerInfo.markerImageAddress = ""
+      makerInfo.makerDescription = ''
+      //canvas类型图像信息，方便后面上传，数据库表中没有该字段
+      makerInfo.makerImage = imageSave
+      //将此次标记图像和信息存储到页面中
+      console.log(that.makerInfoList)
+      that.makerInfoList[instanceUID] = makerInfo
+      that.makerFlag = false
+      that.$nextTick(() => {
+        that.makerFlag = true
+      });
+      // const viewport = cornerstone.getViewport(canvas)
+      // const zoom = viewport.scale.toFixed(2)
+      // const cols = imageSave.columns * zoom
+      // const rows = imageSave.rows * zoom
+      // let myCanvas = document.createElement('canvas')
+      // let canvasTemp = canvas.firstElementChild
+      // console.log("打印",canvasTemp)
+      // myCanvas = that.cropCanvas(
+      //   canvasTemp,
+      //   Math.round(canvasTemp.width / 2 - cols / 2),
+      //   Math.round(canvasTemp.height / 2 - rows / 2),
+      //   cols, rows)
+      // // 创建一个a标签
+      // let a = document.createElement("a")
+      // // let imagemy = myCanvas.toDataURL(`image/jpeg`)
+      // a.href = myCanvas.toDataURL(`image/png`)
+      // // a.href = myCanvas.toDataURL(`image/${type}`)
+      // a.download = `test.png`
+      // document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
+      // a.click()
+    },
     saveImages() {
       let that = this
       let tempSize = that.canvasStack1.imageIds.length
@@ -1099,7 +1171,7 @@ export default {
       cornerstoneTools.setToolActive('StackScrollMouseWheel', {})
       that.styleOfCanvas()
     },
-    styleOfCanvas(){
+    styleOfCanvas() {
       //可以设置激活工具的颜色，也就是鼠标覆盖在上面的颜色
       cornerstoneTools.toolColors.setActiveColor('rgb(255, 255, 0)');
       //Set color for inactive tools
@@ -1326,14 +1398,14 @@ export default {
       if (id == 1) {
 
         for (let i = 0; i < boxs1.length; i++) {
-          boxs1[i].style.color="#eeff11"
-          boxs2[i].style.color="#fff"
+          boxs1[i].style.color = "#eeff11"
+          boxs2[i].style.color = "#fff"
         }
       } else if (id == 2) {
 
         for (let i = 0; i < boxs2.length; i++) {
-          boxs1[i].style.color="#fff"
-          boxs2[i].style.color="#eeff11"
+          boxs1[i].style.color = "#fff"
+          boxs2[i].style.color = "#eeff11"
         }
       }
       // 处理css样式，有待完成
@@ -1533,6 +1605,7 @@ export default {
   color: #f1fa8c;
   font-size: 1px;
 }
+
 .overlay2 {
   /* prevent text selection on overlay */
   -webkit-touch-callout: none;
@@ -1586,6 +1659,7 @@ export default {
       ::v-deep .el-collapse-item__content {
         padding-bottom: 0px;
       }
+
       .left-label {
         .left-label-item {
           background-color: #17191c !important;
@@ -1631,6 +1705,7 @@ export default {
     width: 100%;
     position: relative;
     color: white;
+
     .ct-image {
       width: 100%;
       height: 100%;
@@ -1643,6 +1718,7 @@ export default {
     width: 100%;
     position: relative;
     color: white;
+
     .ct-image {
       width: 100%;
       height: 100%;

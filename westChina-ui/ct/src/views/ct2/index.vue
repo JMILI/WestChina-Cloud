@@ -5,13 +5,10 @@
        }
 ">
     <!--div 方病人CT序列列 表-->
-    <!--    <div class="left-right">-->
-    <!--    <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
     <el-scrollbar style="height:100%">
       <div class="left" v-show="openStudySeries">
 
         <el-collapse v-model="activeNames" class="left-collapse">
-          <!--          <ul class="infinite-list" v-infinite-scroll="load" style="overflow:auto">-->
           <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label" >
             <el-card v-for="item in makerInfoList"
                      :body-style="{ padding: '0px' }">
