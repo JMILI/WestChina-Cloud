@@ -57,11 +57,11 @@ export function delDicom(data) {
   })
 }
 
-export function getDicomByPatCardId(data) {
+export function getDicomByPatCardId(query) {
   return request({
     url: '/ct/dicom/getDicomByPatCardId',
     method: 'get',
-    params: data
+    params: query
   })
 }
 export function getStudyListByPatCardId(query) {

@@ -8,7 +8,9 @@ import com.westChina.common.core.web.domain.AjaxResult;
 import com.westChina.common.log.annotation.Log;
 import com.westChina.common.log.enums.BusinessType;
 import com.westChina.common.redis.service.RedisService;
+import com.westChina.common.security.annotation.RequiresPermissions;
 import com.westChina.common.security.service.TokenService;
+import com.westChina.ct.domain.DicomMaker;
 import com.westChina.system.api.domain.material.SysFile;
 import com.westChina.system.api.feign.RemoteFileService;
 import com.westChina.system.api.model.LoginUser;
@@ -62,8 +64,34 @@ public class ctUploadController extends BaseController {
         ajax.put("url", url);
         return ajax;
     }
-
-
+    /**
+     * 上传病人ct图像,
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    @Log(title = "上传病人ct图像", businessType = BusinessType.UPDATE)
+    @PostMapping("/ctImage")
+    public AjaxResult ctImage(MultipartFile file) throws IOException {
+        System.out.println("------------");
+//        readDicomInfo(file);
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+        String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
+        System.out.printf("bucketName ",bucketName);
+        R<SysFile> fileResult = remoteFileService.directUpload(file, bucketName);
+        if (StringUtils.isNull(fileResult) || StringUtils.isNull(fileResult.getData())) {
+            return AjaxResult.error("文件服务异常，请稍后再试");
+        }
+        String url = fileResult.getData().getUrl();
+        log.info("url" + url);
+        AjaxResult ajax = AjaxResult.success("成功");
+        ajax.put("url", url);
+        return ajax;
+    }
+    @GetMapping(value = "/test")
+    public void test(String dicomMaker) {
+        System.out.println(dicomMaker);
+    }
     public void readDicomInfo(MultipartFile file) throws IOException {
 
 //        DicomInputStream dis = new DicomInputStream(transferToFile(file));
@@ -89,16 +117,5 @@ public class ctUploadController extends BaseController {
     public String tranByte2String(byte[] b){
         return new String(b);
     }
-//    /**
-//     * 删除
-//     *
-//     * @param files
-//     */
-//    private void deleteFile(File... files) {
-//        for (File file : files) {
-//            if (file.exists()) {
-//                file.delete();
-//            }
-//        }
-//    }
+
 }

@@ -26,7 +26,36 @@ SET
 
 USE
     `xy-cloud1`;
+DROP TABLE IF EXISTS `dicom_maker`;
+CREATE TABLE `dicom_maker`
+(
+    `dicom_maker_id`        bigint                                                         NOT NULL COMMENT 'id',
+    `instance_uid`          varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NOT NULL COMMENT '单张图像instanceID',
+    `study_uid`             varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '研究id',
+    `series_uid`            varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '序列UId',
+    `study_date`            varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT 'ct拍摄时间',
+    `pat_card_id`           varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '身份证号',
+    `patient_name`          varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '病人姓名',
+    `maker_doctor`          varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NOT NULL COMMENT '标记医生',
+    `maker_enterprise_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NOT NULL COMMENT '医院名',
+    `maker_time`            varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '标记时间',
+    `marker_image_address`  varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '标记图像地址',
+    `maker_description`     varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `maker_image`           varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '用来存储图像元数据，临时用',
 
+    `sort`                  int UNSIGNED                                                   NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `create_by`             bigint                                                         NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`           datetime                                                       NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`             bigint                                                         NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`           datetime                                                       NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark`                varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `del_flag`              tinyint                                                        NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    `tenant_id`             bigint                                                         NOT NULL COMMENT '租户Id',
+    PRIMARY KEY (`dicom_maker_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = '病人标记过的dicom图像表'
+  ROW_FORMAT = DYNAMIC;
 DROP TABLE IF EXISTS `ct_dicom`;
 CREATE TABLE `ct_dicom`
 (

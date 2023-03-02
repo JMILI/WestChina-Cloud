@@ -57,10 +57,10 @@ export function ctFile(data) {
   })
 }
 
-// export function ctFile(data) {
-//   return request({
-//     url: '/ct/upload/ctFile',
-//     method: 'post',
-//     data: data
-//   })
-// }
+export function makerFile(data) {
+  return request({
+    url: '/ct/upload/ctImage',
+    method: 'post',
+    data: data,
+  })
+}

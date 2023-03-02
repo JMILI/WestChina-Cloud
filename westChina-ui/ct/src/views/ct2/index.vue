@@ -9,28 +9,37 @@
       <div class="left" v-show="openStudySeries">
 
         <el-collapse v-model="activeNames" class="left-collapse">
-          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label" >
+          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
             <el-card v-for="item in makerInfoList"
                      :body-style="{ padding: '0px' }">
-              <div style="padding: 14px;" class="left-label-item" @click="viewImage(item)">
-                <div>图像id：{{ item.instanceUID }}</div>
+              <div class="left-label-item" @click="viewImage(item)">
+                <div>图像id：{{ item.instanceUid }}</div>
                 <div>拍摄CT时间：{{ item.studyDate }}</div>
                 <div class="bottom clearfix">
                   <span class="time">标记日期:{{ item.makerTime }}</span>
                 </div>
               </div>
             </el-card>
+            <div v-if="isDisplaySave" class="left-label-item-save">
+
+              <el-button class="uploader-btn" @click="submitUpload">保存</el-button>
+              <br>
+              <span class="noteOfMe"> 解释：点击保存按钮，系统将上传标记的图像!!!</span>
+
+            </div>
           </el-collapse-item>
+
 
           <el-collapse-item title="病人study列表" name="2" class="left-study">
 
-            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key" class="left-study-collapse"
+            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key"
+                         class="left-study-collapse"
 
             >
               <!--              study-->
-              <el-collapse-item  :title="'studyID:'+key"  class="left-study-collapse left-study-collapse-item" name="3"
-                                >
-<!--                @click="listenerDisplayCanvas()"-->
+              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3"
+              >
+                <!--                @click="listenerDisplayCanvas()"-->
                 <!--                series-->
                 <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
                          :childrenIndex="studySeriesList[key][childrenKey].dicomId"
@@ -305,6 +314,11 @@ import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from 'cornerstone-tools'
 import upload from "element-ui/packages/upload/src/ajax";
 import eventBus from "@/eventBus";
+import stream from "stream";
+import {makerFile} from "../../api/ct/ctFileUpload";
+import axios from "axios";
+import {getToken} from "common/src/utils/auth";
+import {addMaker} from "../../api/ct/maker";
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -319,8 +333,7 @@ export default {
   name: 'ct2',
   data() {
     return {
-
-      activeNames:['1','2','3'],
+      activeNames: ['1', '2', '3'],
       routePatient: this.$route.params.patient,
       imageIds: [
         'wadouri:http://westChinaBackend:9000/dicom/7/1_0.dcm',
@@ -402,7 +415,8 @@ export default {
       studyCanvasList: {},
 
       makerInfoList: {},
-      makerFlag:true,
+      makerFlag: true,
+      isDisplaySave:false,
     }
   },
   created() {
@@ -426,6 +440,7 @@ export default {
       //得到image
       let imageSave = cornerstone.getImage(canvas)
       that.makerImageDeal(imageSave, canvas)
+
     });
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
@@ -435,10 +450,186 @@ export default {
 
   },
   methods: {
+    submitUpload() {
+      let that = this
+      that.$modal.loading("正在上传数据中");
+      const upload = new Promise((resolve,reject) => {
+        for (let makerInfoListKey in that.makerInfoList) {
+          //上传前处理
+          let tempDicomMaker = that.makerInfoList[makerInfoListKey]
+          const uploadImage = new Promise((resolve, reject) => {
+            let imageSave = tempDicomMaker.makerImage
+            let canvas = that.$refs.canvas
+            const viewport = cornerstone.getViewport(canvas)
+            const zoom = viewport.scale.toFixed(2)
+            const cols = imageSave.columns * zoom
+            const rows = imageSave.rows * zoom
+            let myCanvas = document.createElement('canvas')
+            let canvasTemp = canvas.firstElementChild
+            // console.log("打印",canvasTemp)
+            myCanvas = that.cropCanvas(
+              canvasTemp,
+              Math.round(canvasTemp.width / 2 - cols / 2),
+              Math.round(canvasTemp.height / 2 - rows / 2),
+              cols, rows)
+            //canvas转base64
+            // let image = new Image();
+            // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
+            // 指定格式 PNG
+            let base64Image = myCanvas.toDataURL("image/png");
+            console.log(base64Image)
+            // image.src = myCanvas.toDataURL("image/png")
+            let datetime = new Date().getTime()
+            let fileName = tempDicomMaker.instanceUid + "_" + datetime + ".png"
+            let fileOfImage = that.dataURLtoFile(base64Image, fileName)
+            //  创建FormDate对象
+            let formDateOfMakerImage = new FormData(); //创建form对象
+            formDateOfMakerImage.append('file', fileOfImage, fileOfImage.name);//通过append向form对象添加数据
+            console.log(fileOfImage)
+            resolve(formDateOfMakerImage,)
+          })
+          //  上传
+          uploadImage.then(formDateOfMakerImage => {
+            return new Promise((resolve, reject) => {
+              makerFile(formDateOfMakerImage).then(res => {
+                if (res.url !== '') {
+                  //  封装对象
+                  let dicomMaker = {}
+                  dicomMaker = tempDicomMaker
+                  dicomMaker.makerImage = ""
+                  dicomMaker.markerImageAddress = res.url
+                  resolve(dicomMaker)
+                } else {
+                  reject("上传失败，请检查网络")
+                }
+              })
+            })
+          }).then((dicomMaker) => {
+            addMaker(dicomMaker).then(res => {
+              console.log(res)
+            })
+            resolve()
+          })
+        }
+      })
+
+      //上传完之后，清空列表
+      upload.then((resolve,reject) => {
+        that.$nextTick(() => {
+          that.makerInfoList = {}
+          that.makerFlag = true
+          that.isDisplaySave=false
+          setTimeout(()=>{
+          that.$modal.closeLoading();
+          },500)
+        });
+      })
+    },
+    convertCanvasToImage(canvas) {
+      //参考 https://blog.csdn.net/yongjian_123/article/details/106857298
+      //新Image对象，可以理解为DOM
+      let image = new Image();
+      // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
+      // 指定格式 PNG
+      let base64Image = canvas.toDataURL("image/png");
+      // image.src = canvas.toDataURL("image/png")
+      this.dataURLtoFile(base64Image, "myfile.png")
+      return image;
+    },
+    dataURLtoFile(base64Image, fileName) {//将base64转换为文件，dataurl为base64字符串，filename为文件名（必须带后缀名，如.jpg,.png）
+      const dataArr = base64Image.split(",");
+      let opType = base64Image.split(";base64")[0].slice(5);
+
+      const byteString = atob(dataArr[1]);
+      const options = {
+        type: opType,
+        endings: "native"
+      }
+      const u8Arr = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i++) {
+        u8Arr[i] = byteString.charCodeAt(i);
+      }
+      console.log(u8Arr)
+      return new File([u8Arr], fileName, options);
+    },
+    isCanvas(i) {
+      return i instanceof HTMLCanvasElement;
+    },
+    isImage(i) {
+      return i instanceof HTMLImageElement;
+    },
+    //上传文件到minio
+    uploadMinIo(fileObj, index) {
+      let vm = this
+      // const files = fileObj;
+      if (fileObj) {
+        let file = fileObj
+        //判断是否选择了文件
+        if (file == undefined) {
+          //未选择
+          console.log('请上传文件')
+        } else {
+          //选择
+          //获取文件类型及大小
+          const fileName = file.name
+          const mineType = file.type
+          const fileSize = file.size
+
+          //参数
+          let metadata = {
+            'content-type': mineType,
+            'content-length': fileSize
+          }
+          //判断储存桶是否存在
+          minioClient.bucketExists('testfile', function (err) {
+            if (err) {
+              if (err.code == 'NoSuchBucket') return console.log('bucket does not exist.')
+              return console.log(err)
+            }
+            //存在
+            console.log('Bucket exists.')
+            //准备上传
+            let reader = new FileReader()
+            reader.readAsDataURL(file)
+            reader.onloadend = function (e) {
+              const dataurl = e.target.result
+              //base64转blob
+              const blob = vm.toBlob(dataurl)
+              //blob转arrayBuffer
+              let reader2 = new FileReader()
+              reader2.readAsArrayBuffer(blob)
+
+              reader2.onload = function (ex) {
+                //定义流
+                let bufferStream = new stream.PassThrough()
+                //将buffer写入
+                bufferStream.end(new Buffer(ex.target.result))
+                //上传
+                minioClient.putObject('testfile', fileName, bufferStream, fileSize, metadata, function (err, etag) {
+                  if (err == null) {
+                    minioClient.presignedGetObject('testfile', fileName, 24 * 60 * 60, function (err, presignedUrl) {
+                      if (err) return console.log(err)
+                      //输出url
+                      console.log(presignedUrl)
+                      // this.$notify({
+                      //   title: '标题名称',
+                      //   message: h('i', { style: 'color: teal'}, '这是提示文案这是提示文案这是提示文案这是提示文案这是提示文案这是提示文案这是提示文案这是提示文案')
+                      // });
+                    })
+                  }
+                  //return console.log(err, etag)
+                })
+              }
+            }
+          })
+        }
+
+      }
+    },
     //点击
-    viewImage(row){
+    viewImage(row) {
       let canvas = this.$refs.canvas
-        cornerstone.displayImage(canvas, row.makerImage)
+      cornerstone.displayImage(canvas, row.makerImage)
     },
     makerImageDeal(imageSave, canvas) {
       let that = this
@@ -446,10 +637,10 @@ export default {
       const byteArray = imageSave.data.byteArray
       const dataSet = dicomParser.parseDicom(byteArray)
       let makerInfo = {}
-      let instanceUID = dataSet.string('x00080018')
-      makerInfo.instanceUID = dataSet.string('x00080018')
-      makerInfo.studyUID = dataSet.string('x0020000d')
-      makerInfo.seriesUID = dataSet.string('x0020000e')
+      let instanceUid = dataSet.string('x00080018')
+      makerInfo.instanceUid = dataSet.string('x00080018')
+      makerInfo.studyUid = dataSet.string('x0020000d')
+      makerInfo.seriesUid = dataSet.string('x0020000e')
       makerInfo.studyDate = dataSet.string('x00080020')
       //获取病人信息
       makerInfo.patCardId = that.$store.getters.patCardId
@@ -466,10 +657,11 @@ export default {
       makerInfo.makerImage = imageSave
       //将此次标记图像和信息存储到页面中
       console.log(that.makerInfoList)
-      that.makerInfoList[instanceUID] = makerInfo
-      that.makerFlag=false
+      that.makerInfoList[instanceUid] = makerInfo
+      that.makerFlag = false
       that.$nextTick(() => {
-        that.makerFlag=true
+        that.makerFlag = true
+        that.isDisplaySave=true
       });
       // const viewport = cornerstone.getViewport(canvas)
       // const zoom = viewport.scale.toFixed(2)
@@ -492,6 +684,7 @@ export default {
       // document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
       // a.click()
     },
+
     /**
      * 重新绘制图像并返回
      * @param canvas 原来canvas图像
@@ -509,7 +702,6 @@ export default {
       newCanvas.height = height
       // draw the canvas in the new resized temp canvas
       newCanvas.getContext('2d').drawImage(canvas, x, y, width, height, 0, 0, width, height)
-      debugger
       return newCanvas
     },
     listenerDisplayCanvas() {
@@ -568,14 +760,7 @@ export default {
         })
       }
     },
-    convertCanvasToImage(canvas) {
-      //新Image对象，可以理解为DOM
-      var image = new Image();
-      // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
-      // 指定格式 PNG
-      image.src = canvas.toDataURL("image/png");
-      return image;
-    },
+
     displayOneCanvasImage1() {
       let that = this
       const canvasMini = this.$refs.canvasMini
@@ -943,8 +1128,9 @@ export default {
 
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
-        color: white !important;
-        //border-bottom-color: #ea768b;
+        color: #e3a5a5 !important;
+        border-bottom-color: #f8f6f6;
+        font-size: 1px;
       }
 
       ::v-deep .el-collapse-item__wrap {
@@ -956,12 +1142,52 @@ export default {
         padding-bottom: 0px;
       }
 
+      ::v-deep .el-card {
+        border-radius: 28px;
+        border: 3px solid #e6ebf5;
+        background-color: #FFFFFF;
+        overflow: hidden;
+        color: #303133;
+        -webkit-transition: 0.3s;
+        transition: 0.3s;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        margin-right: 5px;
+      }
+
       .left-label {
         .left-label-item {
           background-color: #282c34 !important;
           color: white !important;
           font-size: 1px;
           width: 20vw;
+          padding: 14px;
+        }
+
+        .left-label-item-save {
+          background-color: #282c34 !important;
+          color: #e3a5a5 !important;
+          font-size: 1px;
+          width: 20vw;
+          height: auto;
+
+          ::v-deep.uploader-btn {
+            margin: 3% 23.6%;
+          }
+
+          ::v-deep .el-button--medium {
+            width: 50%;
+            font-size: 14px;
+            border-radius: 22px;
+            background-color: #343536;
+            border: none;
+            color: white;
+          }
+
+          .noteOfMe {
+            margin-bottom: 1%;
+          }
+
         }
       }
 

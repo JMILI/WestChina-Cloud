@@ -107,28 +107,20 @@
       <el-table v-loading="loading" :data="patientsList" @selection-change="handleSelectionChange" ref="dataTable"
                 row-key="patId">
         <el-table-column type="selection" width="55" align="center" class-name="allowDrag"/>
-        <el-table-column label="序号" align="center" min-width="70" class-name="allowDrag" v-if="columns[0].visible">
+        <el-table-column label="序号" align="center" min-width="50" class-name="allowDrag" v-if="columns[0].visible">
           <template slot-scope="scope">
             <span>{{ queryParams.pageSize * (queryParams.pageNum - 1) + scope.$index + 1 }}</span>
           </template>
         </el-table-column>
         <el-table-column label="身份证号" align="center" key="patCardId" prop="patCardId" min-width="120"
                          class-name="allowDrag" v-if="columns[1].visible"/>
-        <el-table-column label="病人姓名" align="center" key="patName" prop="patName" min-width="120"
+        <el-table-column label="病人姓名" align="center" key="patName" prop="patName" min-width="50"
                          class-name="allowDrag"
                          v-if="columns[2].visible"/>
-        <el-table-column label="病人手机号码" align="center" key="patPhone" prop="patPhone" min-width="120"
+        <el-table-column label="病人手机号码" align="center" key="patPhone" prop="patPhone" min-width="50"
                          class-name="allowDrag" v-if="columns[3].visible"/>
-        <el-table-column label="操作" align="center" min-width="120" class-name="small-padding fixed-width allowDrag">
+        <el-table-column label="操作" align="right" min-width="150" class-name="small-padding fixed-width allowDrag">
           <template slot-scope="scope">
-            <el-button
-              size="mini"
-              type="text"
-              icon="el-icon-check"
-              @click="manage(scope.row)"
-            >管理
-            </el-button>
-<!--            这里使用v-hasPermi="['ct:patients:edit']" 让只有这个权限的用户可以看到-->
             <el-button
               size="mini"
               type="text"
@@ -137,6 +129,21 @@
               v-hasPermi="['ct:patients:edit']"
             >阅片
             </el-button>
+            <el-button
+              size="mini"
+              type="text"
+              icon="el-icon-check"
+              @click="manageMaker(scope.row)"
+            >标记图像管理
+            </el-button>
+            <el-button
+              size="mini"
+              type="text"
+              icon="el-icon-check"
+              @click="manage(scope.row)"
+            >CT图像管理
+            </el-button>
+<!--            这里使用v-hasPermi="['ct:patients:edit']" 让只有这个权限的用户可以看到-->
             <el-button
               size="mini"
               type="text"
@@ -893,6 +900,17 @@ export default {
     //  endregion
     //region 跳转到阅片界面
     ...mapActions(['changePatientInfo', 'updatePatientsStudySeries','dicomOfPatCardId']),
+    manageMaker(row) {
+      //将需要查看的病人patCardId，存储起来
+      new Promise(resolve => {
+        this.dicomOfPatCardId(row.patCardId)
+        resolve()
+      }).then(resolve=>{
+        this.$router.push({name: 'maker'})
+      }).catch(reject=>{
+        console.log("出现错误")
+      })
+    },
     manage(row) {
       //将需要查看的病人patCardId，存储起来
       new Promise(resolve => {

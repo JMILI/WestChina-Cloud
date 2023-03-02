@@ -144,7 +144,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 
 <!--自己写的-->
-        <select id="getDicomListByPatCardId" parameterType="String" resultMap="ctDicomResult">
+        <select id="getDicomListByPatCardId" parameterType="CtDicom" resultMap="ctDicomResult">
             <include refid="selectVo"/>
             where 1 = 1
             <if test="patCardId != null  and patCardId != ''">                    and e.pat_card_id = #{patCardId}                       </if>

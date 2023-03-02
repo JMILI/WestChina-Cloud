@@ -63,8 +63,15 @@ export const constantRoutes = [
     path: 'dicom',
     name: 'dicom',
     component: (resolve) => require(['@/views/dicom/index'], resolve),
-    meta: {title: homePageName, icon: homePageIcon, affix: true}
+    meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
   },
+  {
+    path: 'maker',
+    name: 'maker',
+    component: (resolve) => require(['@/views/maker/index'], resolve),
+    meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
+  },
+
   {
     path: '/Layout',
     component: Layout,
@@ -88,6 +95,12 @@ export const constantRoutes = [
         component: (resolve) => require(['@/views/ct3row/ct3row'], resolve),
         name: 'ct3row',
         meta: {keepAlive: true}
+      },
+      {
+        path: 'makerImage',
+        name: 'makerImage',
+        component: (resolve) => require(['@/views/makerImage/index'], resolve),
+        meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
       },
       {
         path: '/swiftUpload',
