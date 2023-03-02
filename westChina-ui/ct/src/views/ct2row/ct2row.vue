@@ -10,14 +10,21 @@
           <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
             <el-card v-for="item in makerInfoList"
                      :body-style="{ padding: '0px' }">
-              <div style="padding: 14px;" class="left-label-item" @click="viewImage(item)">
-                <div>图像id：{{ item.instanceUID }}</div>
+              <div class="left-label-item" @click="viewImage(item)">
+                <div>图像id：{{ item.instanceUid }}</div>
                 <div>拍摄CT时间：{{ item.studyDate }}</div>
                 <div class="bottom clearfix">
                   <span class="time">标记日期:{{ item.makerTime }}</span>
                 </div>
               </div>
             </el-card>
+            <div v-if="isDisplaySave" class="left-label-item-save">
+
+              <el-button class="uploader-btn" @click="submitUpload">保存</el-button>
+              <br>
+              <span class="noteOfMe"> 解释：点击保存按钮，系统将上传标记的图像!!!</span>
+
+            </div>
           </el-collapse-item>
 
 
@@ -554,9 +561,10 @@ import * as cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 import Hammer from 'hammerjs'
 import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from 'cornerstone-tools'
-import {ctFile} from "../../api/ct/ctFileUpload";
+import {ctFile, makerFile} from "../../api/ct/ctFileUpload";
 import stream from "stream";
 import cornerstoneFileImageLoader from "cornerstone-file-image-loader/src";
+import {addMaker} from "../../api/ct/maker";
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -738,6 +746,7 @@ export default {
 
       makerInfoList: {},
       makerFlag: true,
+      isDisplaySave:false,
     }
   },
 
@@ -826,10 +835,10 @@ export default {
       const byteArray = imageSave.data.byteArray
       const dataSet = dicomParser.parseDicom(byteArray)
       let makerInfo = {}
-      let instanceUID = dataSet.string('x00080018')
-      makerInfo.instanceUID = dataSet.string('x00080018')
-      makerInfo.studyUID = dataSet.string('x0020000d')
-      makerInfo.seriesUID = dataSet.string('x0020000e')
+      let instanceUid = dataSet.string('x00080018')
+      makerInfo.instanceUid = dataSet.string('x00080018')
+      makerInfo.studyUid = dataSet.string('x0020000d')
+      makerInfo.seriesUid = dataSet.string('x0020000e')
       makerInfo.studyDate = dataSet.string('x00080020')
       //获取病人信息
       makerInfo.patCardId = that.$store.getters.patCardId
@@ -843,13 +852,17 @@ export default {
       makerInfo.markerImageAddress = ""
       makerInfo.makerDescription = ''
       //canvas类型图像信息，方便后面上传，数据库表中没有该字段
-      makerInfo.makerImage = imageSave
+
+      makerInfo.makerImage = {}
+      makerInfo.makerImage.canvas=canvas
+      makerInfo.makerImage.imageSave=imageSave
       //将此次标记图像和信息存储到页面中
       console.log(that.makerInfoList)
-      that.makerInfoList[instanceUID] = makerInfo
+      that.makerInfoList[instanceUid] = makerInfo
       that.makerFlag = false
       that.$nextTick(() => {
         that.makerFlag = true
+        that.isDisplaySave=true
       });
       // const viewport = cornerstone.getViewport(canvas)
       // const zoom = viewport.scale.toFixed(2)
@@ -871,6 +884,97 @@ export default {
       // a.download = `test.png`
       // document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
       // a.click()
+    },
+    submitUpload() {
+      let that = this
+      that.$modal.loading("正在上传数据中");
+      const upload = new Promise((resolve,reject) => {
+        for (let makerInfoListKey in that.makerInfoList) {
+          //上传前处理
+          let tempDicomMaker = that.makerInfoList[makerInfoListKey]
+          const uploadImage = new Promise((resolve, reject) => {
+            let imageSave = tempDicomMaker.makerImage.imageSave
+            let canvas = tempDicomMaker.makerImage.canvas
+            const viewport = cornerstone.getViewport(canvas)
+            const zoom = viewport.scale.toFixed(2)
+            const cols = imageSave.columns * zoom
+            const rows = imageSave.rows * zoom
+            let myCanvas = document.createElement('canvas')
+            let canvasTemp = canvas.firstElementChild
+            // console.log("打印",canvasTemp)
+            myCanvas = that.cropCanvas(
+              canvasTemp,
+              Math.round(canvasTemp.width / 2 - cols / 2),
+              Math.round(canvasTemp.height / 2 - rows / 2),
+              cols, rows)
+            //canvas转base64
+            // let image = new Image();
+            // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
+            // 指定格式 PNG
+            let base64Image = myCanvas.toDataURL("image/png");
+            console.log(base64Image)
+            // image.src = myCanvas.toDataURL("image/png")
+            let datetime = new Date().getTime()
+            let fileName = tempDicomMaker.instanceUid + "_" + datetime + ".png"
+            let fileOfImage = that.dataURLtoFile(base64Image, fileName)
+            //  创建FormDate对象
+            let formDateOfMakerImage = new FormData(); //创建form对象
+            formDateOfMakerImage.append('file', fileOfImage, fileOfImage.name);//通过append向form对象添加数据
+            console.log(fileOfImage)
+            resolve(formDateOfMakerImage,)
+          })
+          //  上传
+          uploadImage.then(formDateOfMakerImage => {
+            return new Promise((resolve, reject) => {
+              makerFile(formDateOfMakerImage).then(res => {
+                if (res.url !== '') {
+                  //  封装对象
+                  let dicomMaker = {}
+                  dicomMaker = tempDicomMaker
+                  dicomMaker.makerImage = ""
+                  dicomMaker.markerImageAddress = res.url
+                  resolve(dicomMaker)
+                } else {
+                  reject("上传失败，请检查网络")
+                }
+              })
+            })
+          }).then((dicomMaker) => {
+            addMaker(dicomMaker).then(res => {
+              console.log(res)
+            })
+            resolve()
+          })
+        }
+      })
+
+      //上传完之后，清空列表
+      upload.then((resolve,reject) => {
+        that.$nextTick(() => {
+          that.makerInfoList = {}
+          that.makerFlag = true
+          that.isDisplaySave=false
+          setTimeout(()=>{
+            that.$modal.closeLoading();
+          },500)
+        });
+      })
+    },
+    dataURLtoFile(base64Image, fileName) {//将base64转换为文件，dataurl为base64字符串，filename为文件名（必须带后缀名，如.jpg,.png）
+      const dataArr = base64Image.split(",");
+      let opType = base64Image.split(";base64")[0].slice(5);
+
+      const byteString = atob(dataArr[1]);
+      const options = {
+        type: opType,
+        endings: "native"
+      }
+      const u8Arr = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i++) {
+        u8Arr[i] = byteString.charCodeAt(i);
+      }
+      console.log(u8Arr)
+      return new File([u8Arr], fileName, options);
     },
     saveImages() {
       let that = this
@@ -1647,7 +1751,9 @@ export default {
 
       ::v-deep .el-collapse-item__header {
         background-color: #282c34 !important;
-        color: white !important;
+        color: #e3a5a5 !important;
+        border-bottom-color: #f8f6f6;
+        font-size: 1px;
       }
 
       ::v-deep .el-collapse-item__wrap {
@@ -1659,13 +1765,50 @@ export default {
       ::v-deep .el-collapse-item__content {
         padding-bottom: 0px;
       }
-
+      ::v-deep .el-card {
+        border-radius: 28px;
+        border: 3px solid #e6ebf5;
+        background-color: #FFFFFF;
+        overflow: hidden;
+        color: #303133;
+        -webkit-transition: 0.3s;
+        transition: 0.3s;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        margin-right: 5px;
+      }
       .left-label {
         .left-label-item {
-          background-color: #17191c !important;
+          background-color: #282c34 !important;
           color: white !important;
           font-size: 1px;
           width: 20vw;
+          padding: 14px;
+        }
+        .left-label-item-save {
+          background-color: #282c34 !important;
+          color: #e3a5a5 !important;
+          font-size: 1px;
+          width: 20vw;
+          height: auto;
+
+          ::v-deep.uploader-btn {
+            margin: 3% 23.6%;
+          }
+
+          ::v-deep .el-button--medium {
+            width: 50%;
+            font-size: 14px;
+            border-radius: 22px;
+            background-color: #343536;
+            border: none;
+            color: white;
+          }
+
+          .noteOfMe {
+            margin-bottom: 1%;
+          }
+
         }
       }
 
