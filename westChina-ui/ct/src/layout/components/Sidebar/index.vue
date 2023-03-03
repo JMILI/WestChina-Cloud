@@ -91,7 +91,7 @@ export default {
         },
         {
           toolName: 'Bidirectional',
-          name: '位置注释',
+          name: '十字测量',
         },
         {
           toolName: 'CircleRoi',

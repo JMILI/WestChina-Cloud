@@ -138,7 +138,6 @@ export default {
   methods: {
     //jm start 顶部菜单
     routerToCt2row(){
-      //TODO 路由之前确认是否选择了两个序列
       this.$router.push({path: 'ct2row'})
     },
 
@@ -177,7 +176,7 @@ export default {
       this.openStudy()
     },
     routeReturn(){
-      this.$router.back()
+        this.$router.push({name: 'patients'})
     }
   }
 }

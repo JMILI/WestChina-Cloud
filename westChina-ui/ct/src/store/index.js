@@ -9,6 +9,8 @@ import getters from './getters'
 import ctTools from "./modules/ctTools";
 import ctPatientInfo from "./modules/ctPatientInfo"
 import dicom from "./modules/dicom";
+import makerImage from "./modules/makerImage";
+
 
 import persistedState from 'vuex-persistedstate'
 
@@ -24,6 +26,7 @@ const store = new Vuex.Store({
     ctTools,
     ctPatientInfo,
     dicom,
+    makerImage,
   },
   getters,
   plugins: [persistedState(

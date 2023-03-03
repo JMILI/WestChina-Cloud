@@ -70,11 +70,9 @@ public class ctUploadController extends BaseController {
      * @return
      * @throws IOException
      */
-    @Log(title = "上传病人ct图像", businessType = BusinessType.UPDATE)
+    @Log(title = "上传病人标记图像", businessType = BusinessType.UPDATE)
     @PostMapping("/ctImage")
     public AjaxResult ctImage(MultipartFile file) throws IOException {
-        System.out.println("------------");
-//        readDicomInfo(file);
         LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
         System.out.printf("bucketName ",bucketName);

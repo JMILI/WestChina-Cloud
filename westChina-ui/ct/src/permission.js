@@ -43,13 +43,8 @@ router.beforeEach((to, from, next) => {
           })
         })
       } else {
-        // console.log("有userinfo")
-        // if (to.path === '/layout2'){
-        //   next({ path: '/layout2' })
-        // }else{
+        // console.log("before",window.location)
         next()
-        // }
-
       }
     }
   } else {
@@ -69,5 +64,6 @@ router.beforeEach((to, from, next) => {
 })
 // 你也可以注册全局后置钩子，然而和守卫不同的是，这些钩子不会接受 next 函数也不会改变导航本身：
 router.afterEach(() => {
+  // console.log("after",window.location)
   NProgress.done()
 })

@@ -30,9 +30,6 @@
           <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         </el-form-item>
-        <!--        <el-form-item>-->
-        <!--        <el-button icon="el-icon-refresh" size="mini" @click="routeToLayout2">文件管理</el-button>-->
-        <!--        </el-form-item>-->
       </el-form>
     </div>
 
@@ -899,11 +896,19 @@ export default {
     },
     //  endregion
     //region 跳转到阅片界面
-    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries','dicomOfPatCardId']),
+    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries','dicomOfPatCardId','makerOfPatCardId']),
     manageMaker(row) {
       //将需要查看的病人patCardId，存储起来
       new Promise(resolve => {
+        console.log("标记：",row)
+        let patient = {
+          patCardId: row.patCardId,
+          patName: row.patName,
+          patPhone: row.patPhone,
+        }
+        this.changePatientInfo(patient)
         this.dicomOfPatCardId(row.patCardId)
+        this.makerOfPatCardId(row.patCardId)
         resolve()
       }).then(resolve=>{
         this.$router.push({name: 'maker'})
@@ -914,7 +919,15 @@ export default {
     manage(row) {
       //将需要查看的病人patCardId，存储起来
       new Promise(resolve => {
+        console.log("dicom：",row)
+        let patient = {
+          patCardId: row.patCardId,
+          patName: row.patName,
+          patPhone: row.patPhone,
+        }
+        this.changePatientInfo(patient)
         this.dicomOfPatCardId(row.patCardId)
+        this.makerOfPatCardId(row.patCardId)
         resolve()
       }).then(resolve=>{
         this.$router.push({name: 'dicom'})
@@ -928,20 +941,20 @@ export default {
      */
     route2Patient(row) {
       let that = this
-
       const temp1 = new Promise(resolve => {
+
         let patient = {
           patCardId: row.patCardId,
           patName: row.patName,
           patPhone: row.patPhone,
         }
         that.changePatientInfo(patient)
-        console.log("1")
+        this.dicomOfPatCardId(row.patCardId)
+        this.makerOfPatCardId(row.patCardId)
         resolve()
       })
 
       const temp12 = new Promise((resolve, reject) => {
-        console.log("2")
         getStudyListByPatCardId({patCardId: row.patCardId}).then(result => {
           let studySeriesList = {}
           if (result.data.length > 0) {
@@ -965,6 +978,7 @@ export default {
                 item.imageIds.push(newPath)
               }
             })
+
             that.updatePatientsStudySeries(studySeriesList)
             resolve()
           } else {
@@ -976,18 +990,9 @@ export default {
       Promise
         .all([temp1, temp12])
         .then(() => {
-          console.log("all")
           that.$router.push({name: 'ct2'})
         })
     },
-
-    routeToLayout2() {
-      setTimeout("alert('对不起, 要你久候')", 5000)
-      console.log("21")
-      // const patId = row.patId || this.ids[0]
-      // this.$router.push('/Layout')
-    }
-    ,
     //endregion
     //region 获取该账号所对应的bucketNameOfMe
     getBucketName() {

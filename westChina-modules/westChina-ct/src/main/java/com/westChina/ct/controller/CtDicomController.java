@@ -120,43 +120,7 @@ public class CtDicomController extends BaseController {
     @GetMapping(value = "/getStudyListByPatCardId")
     public AjaxResult getStudyListByPatCardId(String patCardId) {
         List<CtDicom> list = dicomService.getStudyListByPatCardId(patCardId);
-        // if (StringUtils.isEmpty(list)) {
-        //     return AjaxResult.error("尚未成功查询到病人study列表");
-        // } else {
-        //     JSONObject jsonFather = new JSONObject();
-        //     for (int i = 0; i < list.size(); i++) {
-        //         System.out.printf(list.get(i).getDicomCtStudyUid());
-        //         String studyUid = list.get(i).getDicomCtStudyUid();
-        //         String seriesUid = list.get(i).getDicomCtSeriesUid();
-        //         //包含studyUid
-        //         if (jsonFather.containsKey(studyUid)) {
-        //
-        //             // if (jsonFather.get(studyUid)){
-        //             //
-        //             // }
-        //             if (jsonFather.get()){
-        //
-        //             }
-        //         } else {
-        //             //既没有study也没有series
-        //             JSONObject jsonStudy = new JSONObject();
-        //             JSONObject jsonSeries = new JSONObject();
-        //             // jsonSeries.append(list.get(i).getDicomId().toString(),list.get(i).getDicomId());
-        //             // jsonSeries.append(list.get(i).getPatCardId(),list.get(i).getPatCardId());
-        //             // jsonSeries.append(list.get(i).getDicomCtStudyUid(),list.get(i).getDicomCtStudyUid());
-        //             // jsonSeries.append(list.get(i).getDicomCtSeriesUid(),list.get(i).getDicomCtSeriesUid());
-        //             // jsonSeries.append(list.get(i).getDicomCtBody(),list.get(i).getDicomCtBody());
-        //             // jsonSeries.append(list.get(i).getDicomCtPath(),list.get(i).getDicomCtPath());
-        //             //CtSeriesUid:CtDicom(对象）
-        //             // jsonSeries.append(list.get(i).getDicomCtSeriesUid(),list.get(i));
-        //             //CtSeriesUid:CtDicom(对象）
-        //             jsonStudy.append(list.get(i).getDicomCtSeriesUid(), list.get(i));
-        //             //
-        //             jsonFather.append(list.get(i).getDicomCtStudyUid(), jsonStudy);
-        //         }
-        //     }
-        //     return AjaxResult.success("", jsonFather);
-        // }
+
         return AjaxResult.success(list);
     }
 }

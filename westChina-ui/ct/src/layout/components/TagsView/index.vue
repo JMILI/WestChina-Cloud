@@ -34,11 +34,6 @@ export default {
   },
   watch: {},
   mounted() {
-    // eventBus.$on('patient', (patient) => {
-    //   //一些操作，message就是从top组件传过来的值
-    //   this.patient = patient
-    //   console.log(patient)
-    // })
   },
   methods: {}
 }

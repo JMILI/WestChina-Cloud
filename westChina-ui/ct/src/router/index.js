@@ -56,71 +56,48 @@ export const constantRoutes = [
   {
     path: '/',
     name: 'patients',
-    meta:{keepAlive: true},
+    meta: {keepAlive: true},
     component: (resolve) => require(['@/views/patients/index'], resolve),
   },
   {
     path: 'dicom',
     name: 'dicom',
     component: (resolve) => require(['@/views/dicom/index'], resolve),
-    meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
   },
   {
     path: 'maker',
     name: 'maker',
     component: (resolve) => require(['@/views/maker/index'], resolve),
-    meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
+    meta: {
+      keepAlive: true,
+    }
   },
 
   {
     path: '/Layout',
     component: Layout,
-    redirect: 'ct3row',
+    redirect: 'ct2',
     name: 'Layout',
     children: [
       {
         path: 'ct2',
         component: (resolve) => require(['@/views/ct2/index'], resolve),
         name: 'ct2',
-        meta: {keepAlive: true}
       },
       {
         path: 'ct2row',
         component: (resolve) => require(['@/views/ct2row/ct2row'], resolve),
         name: 'ct2row',
-        meta: {keepAlive: true}
       },
       {
         path: 'ct3row',
         component: (resolve) => require(['@/views/ct3row/ct3row'], resolve),
         name: 'ct3row',
-        meta: {keepAlive: true}
       },
       {
         path: 'makerImage',
         name: 'makerImage',
         component: (resolve) => require(['@/views/makerImage/index'], resolve),
-        meta: {title: homePageName, icon: homePageIcon, affix: true,keepAlive: true}
-      },
-      {
-        path: '/swiftUpload',
-        component: (resolve) => require(['@/views/swiftUpload/swiftUpload'], resolve),
-      },
-    ]
-  },
-
-
-  {
-    path: '/layout2',
-    component: layout2,
-    redirect: 'dicom',
-    name: 'layout2',
-    children: [
-      {
-        path: 'dicom',
-        component: (resolve) => require(['@/views/dicom/index'], resolve),
-        name: 'dicom',
-        meta: {title: homePageName, icon: homePageIcon, affix: true}
       },
     ]
   },

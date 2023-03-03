@@ -1,4 +1,4 @@
-import ctTools from "./modules/ctTools";
+
 
 const getters = {
   sidebar: state => state.app.sidebar,
@@ -45,8 +45,11 @@ const getters = {
   patName:state=>state.ctPatientInfo.patName,
   patPhone:state=>state.ctPatientInfo.patPhone,
   studySeriesList:state=>state.ctPatientInfo.studySeriesList,
-  // patientInfo:state=> state.ctPatientInfo.patient
 
   dicomOfPatCardId:state=>state.dicom.dicomOfPatCardId,
+
+  makerOfPatCardId:state=>state.makerImage.makerOfPatCardId,
+  makerImageList:state=>state.makerImage.makerImageList,
+  makerImageInitInfo:state=>state.makerImage.makerImageInitInfo,
 }
 export default getters

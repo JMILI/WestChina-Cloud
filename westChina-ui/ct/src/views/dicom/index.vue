@@ -251,7 +251,9 @@ export default {
     getList() {
       this.loading = true;
       let patCardId = this.$store.getters.dicomOfPatCardId
+
       console.log("-------------------------------", patCardId)
+
       getDicomByPatCardId({patCardId:patCardId}).then(response => {
         this.dicomList = response.data.items;
         this.total = response.data.total;

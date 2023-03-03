@@ -24,7 +24,6 @@ module.exports = {
   systemId: '1',
 
   /** 初始页名称|图标 */
-  //TODO 病人列表
   homePageName: '病人列表',
   homePageIcon: 'xy_productCenter',
 

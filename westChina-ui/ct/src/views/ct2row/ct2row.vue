@@ -5,6 +5,7 @@
        }"
   >
     <el-scrollbar>
+<!--      <el-button @click="zou()">走</el-button>-->
       <div class="left" v-show="openStudySeries">
         <el-collapse v-model="activeNames" class="left-collapse">
           <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
@@ -71,6 +72,7 @@
 
 
         </el-collapse>
+
 
       </div>
     </el-scrollbar>
@@ -296,8 +298,6 @@
       </div>
       <!--endregion-->
     </div>
-
-
     <div
       class="ct-father-Open2"
       :style="{
@@ -520,28 +520,6 @@
       </div>
       <!--endregion-->
     </div>
-
-    <!--    <el-button @click="saveImages()">-->
-    <!--      保存-->
-    <!--    </el-button>-->
-    <!--    <div class="minioBox">-->
-    <!--      <el-button style="marginRight:10px;" @click="getFileName" size="mini" type="success">选择文件</el-button>-->
-    <!--      -->
-    <!--      <input accept="*/*" type="file" multiple="multiple" id="minIoFile" ref="minIoFile" v-show="false"-->
-    <!--             @change="getFile"-->
-    <!--      >-->
-    <!--      <el-button v-if="fileList.length>0" style="marginRight:10px;" @click="upload" size="mini" type="success">上传-->
-    <!--      </el-button>-->
-    <!--    </div>-->
-    <!--    <ul class="uploadFileList">-->
-    <!--      <li v-for="item of fileList" :key="item.index">-->
-    <!--        <span class="subString">{{ item.name }}</span>&nbsp;-->
-    <!--        <span>({{ (item.size / 1024 / 1024).toFixed(2) }}M)</span>-->
-    <!--        <div class="floatRight" style="float: right;">-->
-    <!--          <i class="el-icon-close" style="cursor: pointer;" @click="deleteMinioFile(index)"></i>-->
-    <!--        </div>-->
-    <!--      </li>-->
-    <!--    </ul>-->
   </div>
 
 
@@ -819,13 +797,22 @@ export default {
     //endregion
   },
   methods: {
+    zou(){
+      // while(true){
+      //   setTimeout(()=>{
+          this.displayCanvas1()
+          this.displayCanvas2()
+        // },100)
+      // }
+    },
+
     viewImage(row) {
       if (this.currentCanvas == 1) {
         let element1 = this.$refs.canvas1
-        cornerstone.displayImage(element1, row.makerImage)
+        cornerstone.displayImage(element1, row.makerImage.imageSave)
       } else if (this.currentCanvas == 2) {
         let element2 = this.$refs.canvas2
-        cornerstone.displayImage(element2, row.makerImage)
+        cornerstone.displayImage(element2, row.makerImage.imageSave)
       }
 
     },
@@ -852,38 +839,43 @@ export default {
       makerInfo.markerImageAddress = ""
       makerInfo.makerDescription = ''
       //canvas类型图像信息，方便后面上传，数据库表中没有该字段
-
-      makerInfo.makerImage = {}
-      makerInfo.makerImage.canvas=canvas
-      makerInfo.makerImage.imageSave=imageSave
-      //将此次标记图像和信息存储到页面中
-      console.log(that.makerInfoList)
+      //生成png照片
+      const viewport = cornerstone.getViewport(canvas)
+      const zoom = viewport.scale.toFixed(2)
+      const cols = imageSave.columns * zoom
+      const rows = imageSave.rows * zoom
+      let myCanvas = document.createElement('canvas')
+      let canvasTemp = canvas.firstElementChild
+      // console.log("打印",canvasTemp)
+      myCanvas = that.cropCanvas(
+        canvasTemp,
+        Math.round(canvasTemp.width / 2 - cols / 2),
+        Math.round(canvasTemp.height / 2 - rows / 2),
+        cols, rows)
+      //canvas转base64
+      // let image = new Image();
+      // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
+      // 指定格式 PNG
+      let base64Image = myCanvas.toDataURL("image/png");
+      console.log(base64Image)
+      let datetime = new Date().getTime()
+      let fileName = "/"+makerInfo.instanceUid + "_" + datetime + ".png"
+      let fileOfImage = that.dataURLtoFile(base64Image, fileName)
+      //记录信息
+      //canvas类型图像信息，方便后面上传，数据库表中没有该字段，临时存储起来,
+      // fileOfImage:需要保存的图像，png类型文件
+      //imageSave：存放可以直接通过：displayImage(imageSave)展示该图像
+      let makerImage = {}
+      makerImage.fileOfImage = fileOfImage
+      makerImage.imageSave = imageSave
+      makerInfo.makerImage = makerImage
+      // //将此次标记图像和信息存储到页面中
       that.makerInfoList[instanceUid] = makerInfo
       that.makerFlag = false
       that.$nextTick(() => {
         that.makerFlag = true
         that.isDisplaySave=true
       });
-      // const viewport = cornerstone.getViewport(canvas)
-      // const zoom = viewport.scale.toFixed(2)
-      // const cols = imageSave.columns * zoom
-      // const rows = imageSave.rows * zoom
-      // let myCanvas = document.createElement('canvas')
-      // let canvasTemp = canvas.firstElementChild
-      // console.log("打印",canvasTemp)
-      // myCanvas = that.cropCanvas(
-      //   canvasTemp,
-      //   Math.round(canvasTemp.width / 2 - cols / 2),
-      //   Math.round(canvasTemp.height / 2 - rows / 2),
-      //   cols, rows)
-      // // 创建一个a标签
-      // let a = document.createElement("a")
-      // // let imagemy = myCanvas.toDataURL(`image/jpeg`)
-      // a.href = myCanvas.toDataURL(`image/png`)
-      // // a.href = myCanvas.toDataURL(`image/${type}`)
-      // a.download = `test.png`
-      // document.body.appendChild(a) // Required for this to work in FireFox为使其在FireFox中工作，这是必要的
-      // a.click()
     },
     submitUpload() {
       let that = this
@@ -893,35 +885,9 @@ export default {
           //上传前处理
           let tempDicomMaker = that.makerInfoList[makerInfoListKey]
           const uploadImage = new Promise((resolve, reject) => {
-            let imageSave = tempDicomMaker.makerImage.imageSave
-            let canvas = tempDicomMaker.makerImage.canvas
-            const viewport = cornerstone.getViewport(canvas)
-            const zoom = viewport.scale.toFixed(2)
-            const cols = imageSave.columns * zoom
-            const rows = imageSave.rows * zoom
-            let myCanvas = document.createElement('canvas')
-            let canvasTemp = canvas.firstElementChild
-            // console.log("打印",canvasTemp)
-            myCanvas = that.cropCanvas(
-              canvasTemp,
-              Math.round(canvasTemp.width / 2 - cols / 2),
-              Math.round(canvasTemp.height / 2 - rows / 2),
-              cols, rows)
-            //canvas转base64
-            // let image = new Image();
-            // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
-            // 指定格式 PNG
-            let base64Image = myCanvas.toDataURL("image/png");
-            console.log(base64Image)
-            // image.src = myCanvas.toDataURL("image/png")
-            let datetime = new Date().getTime()
-            let fileName = tempDicomMaker.instanceUid + "_" + datetime + ".png"
-            let fileOfImage = that.dataURLtoFile(base64Image, fileName)
-            //  创建FormDate对象
             let formDateOfMakerImage = new FormData(); //创建form对象
-            formDateOfMakerImage.append('file', fileOfImage, fileOfImage.name);//通过append向form对象添加数据
-            console.log(fileOfImage)
-            resolve(formDateOfMakerImage,)
+            formDateOfMakerImage.append('file', tempDicomMaker.makerImage.fileOfImage, tempDicomMaker.makerImage.fileOfImage.name);//通过append向form对象添加数据
+            resolve(formDateOfMakerImage)
           })
           //  上传
           uploadImage.then(formDateOfMakerImage => {
@@ -983,7 +949,7 @@ export default {
       const viewport = cornerstone.getViewport(canvas1)
       debugger
       for (let i = 0; i < 1; i++) {
-        cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[i]).then(function (image) {
+        cornerstone.loadImage(that.canvasStack1.imageIds[i]).then(function (image) {
           debugger
           //toFixed,小数点后几位进位，例如123.7654 toFixed(3)是123.765
           const zoom = viewport.scale.toFixed(2)
@@ -1055,7 +1021,7 @@ export default {
       //将上传的文件给cornerstoneWADOImageLoader
       const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
       const canvas2 = this.$refs.canvas
-      cornerstone.loadAndCacheImage(imageId).then(function (image) {
+      cornerstone.loadImage(imageId).then(function (image) {
         var viewport = cornerstone.getDefaultViewportForImage(
           canvas2,
           image
@@ -1087,12 +1053,6 @@ export default {
         console.log('Patient Gender        = ' + patientSex)
         console.log('Scan optionss         = ' + scanOpt)
         console.log('Encoding type         = ' + encodingOpt)
-        //上传之前将信息存到数据库
-        //联通OSS对象存储
-        // this.fileList.map((item,index) => {
-        //   // this.uploadMinIo(item,index);
-        // })
-        //  上传之后清空文件列表
       }
       //
 
@@ -1236,7 +1196,7 @@ export default {
         let tempCanvas = that.$refs[temp][0]
         let address = that.studyCanvasList[temp]
         cornerstone.enable(tempCanvas)
-        cornerstone.loadAndCacheImage(address).then(function (image) {
+        cornerstone.loadImage(address).then(function (image) {
           cornerstone.displayImage(tempCanvas, image)
         })
       }
@@ -1296,7 +1256,7 @@ export default {
       let that = this
       const canvas1 = this.$refs.canvas1
       let tempIndex = that.canvasStack1.currentImageIdIndex
-      cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[tempIndex])
+      cornerstone.loadImage(that.canvasStack1.imageIds[tempIndex])
         .then(function (image) {
           //设置视口
           let viewport = {}
@@ -1323,7 +1283,7 @@ export default {
       let that = this
       const canvas2 = this.$refs.canvas2
       let tempIndex = that.canvasStack2.currentImageIdIndex
-      cornerstone.loadAndCacheImage(that.canvasStack2.imageIds[tempIndex])
+      cornerstone.loadImage(that.canvasStack2.imageIds[tempIndex])
         .then(function (image) {
           //设置视口
           let viewport = {}
@@ -1546,6 +1506,7 @@ export default {
      * 鼠标点击时，
      */
     displayCanvas() {
+
       if (this.currentCanvas == 1) {
         this.displayCanvas1()
       } else if (this.currentCanvas == 2) {

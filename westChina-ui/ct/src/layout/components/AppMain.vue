@@ -3,7 +3,9 @@
     <transition name="fade-transform" mode="out-in">
       <keep-alive >
         <router-view :key="key" v-if="$route.meta.keepAlive"/>
+        <router-view :key="key" v-if="!$route.meta.keepAlive"/>
       </keep-alive>
+
     </transition>
   </section>
 </template>

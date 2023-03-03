@@ -1,245 +1,268 @@
 <template>
   <div class="app-container">
     <div class="wrapper-container" v-show="showSearch">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="80px">
-<!--      <el-form-item label="单张图像instanceID" prop="instanceUid">-->
-<!--        <el-input-->
-<!--          v-model="queryParams.instanceUid"-->
-<!--          placeholder="请输入单张图像instanceID"-->
-<!--          clearable-->
-<!--          size="small"-->
-<!--          @keyup.enter.native="handleQuery"/>-->
-<!--      </el-form-item>-->
-<!--      <el-form-item label="研究id" prop="studyUid">-->
-<!--        <el-input-->
-<!--          v-model="queryParams.studyUid"-->
-<!--          placeholder="请输入研究id"-->
-<!--          clearable-->
-<!--          size="small"-->
-<!--          @keyup.enter.native="handleQuery"/>-->
-<!--      </el-form-item>-->
-<!--      <el-form-item label="序列UId" prop="seriesUid">-->
-<!--        <el-input-->
-<!--          v-model="queryParams.seriesUid"-->
-<!--          placeholder="请输入序列UId"-->
-<!--          clearable-->
-<!--          size="small"-->
-<!--          @keyup.enter.native="handleQuery"/>-->
-<!--      </el-form-item>-->
-      <el-form-item label="拍摄时间" prop="studyDate">
-        <el-input
-          v-model="queryParams.studyDate"
-          placeholder="请输入ct拍摄时间"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-<!--      <el-form-item label="身份证号" prop="patCardId">-->
-<!--        <el-input-->
-<!--          v-model="queryParams.patCardId"-->
-<!--          placeholder="请输入身份证号"-->
-<!--          clearable-->
-<!--          size="small"-->
-<!--          @keyup.enter.native="handleQuery"/>-->
-<!--      </el-form-item>-->
-<!--      <el-form-item label="病人姓名" prop="patientName">-->
-<!--        <el-input-->
-<!--          v-model="queryParams.patientName"-->
-<!--          placeholder="请输入病人姓名"-->
-<!--          clearable-->
-<!--          size="small"-->
-<!--          @keyup.enter.native="handleQuery"/>-->
-<!--      </el-form-item>-->
-      <el-form-item label="标记医生" prop="makerDoctor">
-        <el-input
-          v-model="queryParams.makerDoctor"
-          placeholder="请输入标记医生"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="医院名" prop="makerEnterpriseName">
-        <el-input
-          v-model="queryParams.makerEnterpriseName"
-          placeholder="请输入医院名"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item label="标记时间" prop="makerTime">
-        <el-input
-          v-model="queryParams.makerTime"
-          placeholder="请输入标记时间"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"/>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+      <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="80px">
+        <!--      <el-form-item label="单张图像instanceID" prop="instanceUid">-->
+        <!--        <el-input-->
+        <!--          v-model="queryParams.instanceUid"-->
+        <!--          placeholder="请输入单张图像instanceID"-->
+        <!--          clearable-->
+        <!--          size="small"-->
+        <!--          @keyup.enter.native="handleQuery"/>-->
+        <!--      </el-form-item>-->
+        <!--      <el-form-item label="研究id" prop="studyUid">-->
+        <!--        <el-input-->
+        <!--          v-model="queryParams.studyUid"-->
+        <!--          placeholder="请输入研究id"-->
+        <!--          clearable-->
+        <!--          size="small"-->
+        <!--          @keyup.enter.native="handleQuery"/>-->
+        <!--      </el-form-item>-->
+        <!--      <el-form-item label="序列UId" prop="seriesUid">-->
+        <!--        <el-input-->
+        <!--          v-model="queryParams.seriesUid"-->
+        <!--          placeholder="请输入序列UId"-->
+        <!--          clearable-->
+        <!--          size="small"-->
+        <!--          @keyup.enter.native="handleQuery"/>-->
+        <!--      </el-form-item>-->
+        <el-form-item label="拍摄时间" prop="studyDate">
+          <el-input
+            v-model="queryParams.studyDate"
+            placeholder="请输入ct拍摄时间"
+            clearable
+            size="small"
+            @keyup.enter.native="handleQuery"/>
+        </el-form-item>
+        <!--      <el-form-item label="身份证号" prop="patCardId">-->
+        <!--        <el-input-->
+        <!--          v-model="queryParams.patCardId"-->
+        <!--          placeholder="请输入身份证号"-->
+        <!--          clearable-->
+        <!--          size="small"-->
+        <!--          @keyup.enter.native="handleQuery"/>-->
+        <!--      </el-form-item>-->
+        <!--      <el-form-item label="病人姓名" prop="patientName">-->
+        <!--        <el-input-->
+        <!--          v-model="queryParams.patientName"-->
+        <!--          placeholder="请输入病人姓名"-->
+        <!--          clearable-->
+        <!--          size="small"-->
+        <!--          @keyup.enter.native="handleQuery"/>-->
+        <!--      </el-form-item>-->
+        <el-form-item label="标记医生" prop="makerDoctor">
+          <el-input
+            v-model="queryParams.makerDoctor"
+            placeholder="请输入标记医生"
+            clearable
+            size="small"
+            @keyup.enter.native="handleQuery"/>
+        </el-form-item>
+        <el-form-item label="医院名" prop="makerEnterpriseName">
+          <el-input
+            v-model="queryParams.makerEnterpriseName"
+            placeholder="请输入医院名"
+            clearable
+            size="small"
+            @keyup.enter.native="handleQuery"/>
+        </el-form-item>
+        <el-form-item label="标记时间" prop="makerTime">
+          <el-input
+            v-model="queryParams.makerTime"
+            placeholder="请输入标记时间"
+            clearable
+            size="small"
+            @keyup.enter.native="handleQuery"/>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
     </div>
 
     <div class="wrapper-container">
-    <el-row :gutter="10" class="mb8">
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="primary"-->
-<!--          plain-->
-<!--          icon="el-icon-plus"-->
-<!--          size="mini"-->
-<!--          @click="handleAdd"-->
-<!--          v-hasPermi="['ct:maker:add']"-->
-<!--        >新增</el-button>-->
-<!--      </el-col>-->
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['ct:maker:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['ct:maker:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['ct:maker:export']"
-        >导出</el-button>
-      </el-col>
-
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-sort"
-          size="mini"
-          @click="handleSort"
-          v-show="sortVisible"
-          v-hasPermi="['ct:maker:edit']"
-        >保存排序</el-button>
-      </el-col>
-
-
-
-
-
-
-
-
-      <right-toolbar :showSearch.sync="showSearch" @controlSortable="handleSortable" @queryTable="getList" :columns="columns"/>
-    </el-row>
-
-    <el-table v-loading="loading" :data="makerList" @selection-change="handleSelectionChange" ref="dataTable" row-key="dicomMakerId">
-      <el-table-column type="selection" width="55" align="center" class-name="allowDrag"/>
-      <el-table-column label="序号" align="center" min-width="70" class-name="allowDrag" v-if="columns[0].visible">
-        <template slot-scope="scope">
-          <span>{{ queryParams.pageSize * (queryParams.pageNum - 1) + scope.$index + 1 }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="instanceID" align="center" key="instanceUid" prop="instanceUid" min-width="120" class-name="allowDrag" v-if="columns[1].visible"/>
-      <el-table-column label="研究id" align="center" key="studyUid" prop="studyUid" min-width="120" class-name="allowDrag" v-if="columns[2].visible"/>
-      <el-table-column label="序列UId" align="center" key="seriesUid" prop="seriesUid" min-width="120" class-name="allowDrag" v-if="columns[3].visible"/>
-      <el-table-column label="ct拍摄时间" align="center" key="studyDate" prop="studyDate" min-width="120" class-name="allowDrag" v-if="columns[4].visible"/>
-      <el-table-column label="身份证号" align="center" key="patCardId" prop="patCardId" min-width="120" class-name="allowDrag" v-if="columns[5].visible"/>
-      <el-table-column label="病人姓名" align="center" key="patientName" prop="patientName" min-width="120" class-name="allowDrag" v-if="columns[6].visible"/>
-      <el-table-column label="标记医生" align="center" key="makerDoctor" prop="makerDoctor" min-width="120" class-name="allowDrag" v-if="columns[7].visible"/>
-      <el-table-column label="医院名" align="center" key="makerEnterpriseName" prop="makerEnterpriseName" min-width="120" class-name="allowDrag" v-if="columns[8].visible"/>
-      <el-table-column label="标记时间" align="center" key="makerTime" prop="makerTime" min-width="120" class-name="allowDrag" v-if="columns[9].visible"/>
-      <el-table-column label="标记图像地址" align="center" key="markerImageAddress" prop="markerImageAddress" min-width="120" class-name="allowDrag" v-if="columns[10].visible"/>
-      <el-table-column label="备注" align="center" key="makerDescription" prop="makerDescription" min-width="120" class-name="allowDrag" v-if="columns[11].visible"/>
-      <el-table-column label="操作" align="center" min-width="160" class-name="small-padding fixed-width allowDrag">
-        <template slot-scope="scope">
+      <el-row :gutter="10" class="mb8">
+        <!--      <el-col :span="1.5">-->
+        <!--        <el-button-->
+        <!--          type="primary"-->
+        <!--          plain-->
+        <!--          icon="el-icon-plus"-->
+        <!--          size="mini"-->
+        <!--          @click="handleAdd"-->
+        <!--          v-hasPermi="['ct:maker:add']"-->
+        <!--        >新增</el-button>-->
+        <!--      </el-col>-->
+        <el-col :span="1.5">
           <el-button
+            type="primary"
+            plain
             size="mini"
-            type="text"
+            @click="returnRoute"
+          >返回
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="success"
+            plain
             icon="el-icon-edit"
-            @click="viewMakerImage(scope.row)"
-            v-hasPermi="['ct:maker:edit']"
-          >阅片</el-button>
-          <el-button
             size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            :disabled="single"
+            @click="handleUpdate"
             v-hasPermi="['ct:maker:edit']"
-          >修改</el-button>
+          >修改
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
           <el-button
-            size="mini"
-            type="text"
+            type="danger"
+            plain
             icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
+            size="mini"
+            :disabled="multiple"
+            @click="handleDelete"
             v-hasPermi="['ct:maker:remove']"
-          >删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+          >删除
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="warning"
+            plain
+            icon="el-icon-download"
+            size="mini"
+            @click="handleExport"
+            v-hasPermi="['ct:maker:export']"
+          >导出
+          </el-button>
+        </el-col>
 
-    <pagination
-      :total="total"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
-      @pagination="getList"
-    />
+        <el-col :span="1.5">
+          <el-button
+            type="warning"
+            plain
+            icon="el-icon-sort"
+            size="mini"
+            @click="handleSort"
+            v-show="sortVisible"
+            v-hasPermi="['ct:maker:edit']"
+          >保存排序
+          </el-button>
+        </el-col>
+
+
+        <right-toolbar :showSearch.sync="showSearch" @controlSortable="handleSortable" @queryTable="getList"
+                       :columns="columns"/>
+      </el-row>
+
+      <el-table v-loading="loading" :data="makerList" @selection-change="handleSelectionChange" ref="dataTable"
+                row-key="dicomMakerId">
+        <el-table-column type="selection" width="55" align="center" class-name="allowDrag"/>
+        <el-table-column label="序号" align="center" min-width="70" class-name="allowDrag" v-if="columns[0].visible">
+          <template slot-scope="scope">
+            <span>{{ queryParams.pageSize * (queryParams.pageNum - 1) + scope.$index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="instanceID" align="center" key="instanceUid" prop="instanceUid" min-width="120"
+                         class-name="allowDrag" v-if="columns[1].visible"/>
+        <el-table-column label="研究id" align="center" key="studyUid" prop="studyUid" min-width="120"
+                         class-name="allowDrag" v-if="columns[2].visible"/>
+        <el-table-column label="序列UId" align="center" key="seriesUid" prop="seriesUid" min-width="120"
+                         class-name="allowDrag" v-if="columns[3].visible"/>
+        <el-table-column label="ct拍摄时间" align="center" key="studyDate" prop="studyDate" min-width="120"
+                         class-name="allowDrag" v-if="columns[4].visible"/>
+        <el-table-column label="身份证号" align="center" key="patCardId" prop="patCardId" min-width="120"
+                         class-name="allowDrag" v-if="columns[5].visible"/>
+        <el-table-column label="病人姓名" align="center" key="patientName" prop="patientName" min-width="120"
+                         class-name="allowDrag" v-if="columns[6].visible"/>
+        <el-table-column label="标记医生" align="center" key="makerDoctor" prop="makerDoctor" min-width="120"
+                         class-name="allowDrag" v-if="columns[7].visible"/>
+        <el-table-column label="医院名" align="center" key="makerEnterpriseName" prop="makerEnterpriseName"
+                         min-width="120" class-name="allowDrag" v-if="columns[8].visible"/>
+        <el-table-column label="标记时间" align="center" key="makerTime" prop="makerTime" min-width="120"
+                         class-name="allowDrag" v-if="columns[9].visible"/>
+        <el-table-column label="标记图像地址" align="center" key="markerImageAddress" prop="markerImageAddress"
+                         min-width="120" class-name="allowDrag" v-if="columns[10].visible"/>
+        <el-table-column label="备注" align="center" key="makerDescription" prop="makerDescription" min-width="120"
+                         class-name="allowDrag" v-if="columns[11].visible"/>
+        <el-table-column label="操作" align="center" min-width="160" class-name="small-padding fixed-width allowDrag">
+          <template slot-scope="scope">
+            <el-button
+              size="mini"
+              type="text"
+              icon="el-icon-edit"
+              @click="viewMakerImage(scope.row)"
+              v-hasPermi="['ct:maker:edit']"
+            >阅片
+            </el-button>
+            <el-button
+              size="mini"
+              type="text"
+              icon="el-icon-edit"
+              @click="handleUpdate(scope.row)"
+              v-hasPermi="['ct:maker:edit']"
+            >修改
+            </el-button>
+            <el-button
+              size="mini"
+              type="text"
+              icon="el-icon-delete"
+              @click="handleDelete(scope.row)"
+              v-hasPermi="['ct:maker:remove']"
+            >删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <pagination
+        :total="total"
+        :page.sync="queryParams.pageNum"
+        :limit.sync="queryParams.pageSize"
+        @pagination="getList"
+      />
     </div>
 
     <!-- 添加或修改病人标记过的dicom图像对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body v-dialogDrag v-dialogDragHeight>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item  label="单张图像instanceID" prop="instanceUid">
-          <el-input disabled v-model="form.instanceUid" placeholder="请输入单张图像instanceID" />
+        <el-form-item label="单张图像instanceID" prop="instanceUid">
+          <el-input disabled v-model="form.instanceUid" placeholder="请输入单张图像instanceID"/>
         </el-form-item>
-        <el-form-item  label="研究id" prop="studyUid">
-          <el-input disabled v-model="form.studyUid" placeholder="请输入研究id" />
+        <el-form-item label="研究id" prop="studyUid">
+          <el-input disabled v-model="form.studyUid" placeholder="请输入研究id"/>
         </el-form-item>
-        <el-form-item  label="序列UId" prop="seriesUid">
-          <el-input disabled v-model="form.seriesUid" placeholder="请输入序列UId" />
+        <el-form-item label="序列UId" prop="seriesUid">
+          <el-input disabled v-model="form.seriesUid" placeholder="请输入序列UId"/>
         </el-form-item>
-        <el-form-item  label="ct拍摄时间" prop="studyDate">
-          <el-input disabled v-model="form.studyDate" placeholder="请输入ct拍摄时间" />
+        <el-form-item label="ct拍摄时间" prop="studyDate">
+          <el-input disabled v-model="form.studyDate" placeholder="请输入ct拍摄时间"/>
         </el-form-item>
-        <el-form-item  label="身份证号" prop="patCardId">
-          <el-input disabled v-model="form.patCardId" placeholder="请输入身份证号" />
+        <el-form-item label="身份证号" prop="patCardId">
+          <el-input disabled v-model="form.patCardId" placeholder="请输入身份证号"/>
         </el-form-item>
-        <el-form-item  label="病人姓名" prop="patientName">
-          <el-input disabled v-model="form.patientName" placeholder="请输入病人姓名" />
+        <el-form-item label="病人姓名" prop="patientName">
+          <el-input disabled v-model="form.patientName" placeholder="请输入病人姓名"/>
         </el-form-item>
-        <el-form-item  label="标记医生" prop="makerDoctor">
-          <el-input disabled v-model="form.makerDoctor" placeholder="请输入标记医生" />
+        <el-form-item label="标记医生" prop="makerDoctor">
+          <el-input disabled v-model="form.makerDoctor" placeholder="请输入标记医生"/>
         </el-form-item>
-        <el-form-item  label="医院名" prop="makerEnterpriseName">
-          <el-input disabled v-model="form.makerEnterpriseName" placeholder="请输入医院名" />
+        <el-form-item label="医院名" prop="makerEnterpriseName">
+          <el-input disabled v-model="form.makerEnterpriseName" placeholder="请输入医院名"/>
         </el-form-item>
-        <el-form-item  label="标记时间" prop="makerTime">
-          <el-input disabled v-model="form.makerTime" placeholder="请输入标记时间" />
+        <el-form-item label="标记时间" prop="makerTime">
+          <el-input disabled v-model="form.makerTime" placeholder="请输入标记时间"/>
         </el-form-item>
-        <el-form-item  label="标记图像地址" prop="markerImageAddress">
-          <el-input disabled v-model="form.markerImageAddress" type="textarea" placeholder="请输入内容" />
+        <el-form-item label="标记图像地址" prop="markerImageAddress">
+          <el-input disabled v-model="form.markerImageAddress" type="textarea" placeholder="请输入内容"/>
         </el-form-item>
         <el-form-item label="备注" prop="makerDescription">
-          <el-input v-model="form.makerDescription" type="textarea" placeholder="请输入内容" />
+          <el-input v-model="form.makerDescription" type="textarea" placeholder="请输入内容"/>
         </el-form-item>
-<!--        <el-form-item  label="用来存储图像元数据，临时用" prop="makerImage">-->
-<!--          <el-input disabled v-model="form.makerImage" placeholder="请输入用来存储图像元数据，临时用" />-->
-<!--        </el-form-item>-->
+        <!--        <el-form-item  label="用来存储图像元数据，临时用" prop="makerImage">-->
+        <!--          <el-input disabled v-model="form.makerImage" placeholder="请输入用来存储图像元数据，临时用" />-->
+        <!--        </el-form-item>-->
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" :loading="submitLoading" @click="submitForm">确 定</el-button>
@@ -250,9 +273,11 @@
 </template>
 
 <script>
-import { listMaker, getMaker, delMaker, addMaker, updateMaker, updateMakerSort } from "@/api/ct/maker";
+import {listMaker, getMaker, delMaker, addMaker, updateMaker, updateMakerSort} from "@/api/ct/maker";
 import Sortable from "sortablejs";
 import {getDicomMakerByPatCardId} from "../../api/ct/maker";
+import {mapActions} from "vuex";
+
 export default {
   name: "maker",
   data() {
@@ -275,29 +300,12 @@ export default {
       makerList: [],
 
 
-
-
-
-
-
-
-
-
-
-
-
       // 病人标记过的dicom图像表格原始数据
       oldMakerList: [],
       // 排序保存按钮显示
       sortVisible: false,
       // 排序参数
-      sortable:null,
-
-
-
-
-
-
+      sortable: null,
 
 
       // 弹出层标题
@@ -363,7 +371,7 @@ export default {
       // 表单校验
       rules: {
         instanceUid: [
-          { required: true, message: "单张图像instanceID不能为空", trigger: "blur" }
+          {required: true, message: "单张图像instanceID不能为空", trigger: "blur"}
         ],
 
       }
@@ -372,27 +380,39 @@ export default {
   created() {
     this.getList();
   },
+  activated(){
+    this.getList();
+  },
   methods: {
-    viewMakerImage(row){
+    ...mapActions(['updateMakerImageList', 'makerImageInitInfo']),
+    viewMakerImage(row) {
       //将需要查看的病人patCardId，存储起来
-        this.$router.push({name: 'makerImage'})
+      this.makerImageInitInfo(row)
+      console.log(row.markerImageAddress)
+      this.$router.push({name: 'makerImage'})
     },
+
     /** 查询病人标记过的dicom图像列表 */
     getList() {
       this.loading = true;
-      let patCardId = this.$store.getters.dicomOfPatCardId
+      let patCardId = this.$store.getters.makerOfPatCardId
+
       console.log("-------------------------------", patCardId)
-      getDicomMakerByPatCardId({patCardId:patCardId}).then(response => {
-        debugger
+
+      getDicomMakerByPatCardId({patCardId: patCardId}).then(response => {
         this.makerList = response.data.items;
         this.total = response.data.total;
         this.loading = false;
+        this.updateMakerImageList(this.makerList)
       });
     },
     // 取消按钮
     cancel() {
       this.open = false;
       this.reset();
+    },
+    returnRoute() {
+      this.$router.back()
     },
     // 表单重置
     reset() {
@@ -440,7 +460,7 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.dicomMakerId)
-      this.single = selection.length!==1
+      this.single = selection.length !== 1
       this.multiple = !selection.length
     },
     /** 新增按钮操作 */
@@ -481,7 +501,7 @@ export default {
               this.submitLoading = false
             });
           }
-        }else{
+        } else {
           this.submitLoading = false;
         }
       });
@@ -490,12 +510,13 @@ export default {
     handleDelete(row) {
       const dicomMakerIds = row.dicomMakerId || this.ids;
       let that = this;
-      this.$modal.confirm('是否确认删除病人标记过的dicom图像编号为"' + dicomMakerIds + '"的数据项?').then(function() {
-          return delMaker(that.updateParamIds(dicomMakerIds));
-        }).then(() => {
-          this.getList();
-          this.$modal.msgSuccess("删除成功");
-        }).catch(() => {});
+      this.$modal.confirm('是否确认删除病人标记过的dicom图像编号为"' + dicomMakerIds + '"的数据项?').then(function () {
+        return delMaker(that.updateParamIds(dicomMakerIds));
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {
+      });
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -505,29 +526,20 @@ export default {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-,
+    ,
     /** 保存排序按钮操作 */
-    handleSort(){
+    handleSort() {
       this.$modal.confirm('是否确认保存新排序?').then(() => {
         let params = this.sortOrderListOnlyDynamic(this.makerList, this.oldMakerList, "dicomMakerId");
-        if(params.length>0) {
+        if (params.length > 0) {
           return updateMakerSort(this.updateParamIds(params));
         }
       }).then(() => {
         this.getList();
         this.sortVisible = false;
         this.$modal.msgSuccess("保存成功");
-      }).catch(() => {});
+      }).catch(() => {
+      });
     },
     /** 排序开关 */
     handleSortable(sortable) {
@@ -545,41 +557,10 @@ export default {
         })
       }
     }
-
-
-
-
-
-
-
-
-
-
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-,
+  },
   mounted() {
     this.handleSortable(false);
   }
-
-
-
-
-
-
-
-
 
 
 }
