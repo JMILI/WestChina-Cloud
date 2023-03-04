@@ -9,6 +9,8 @@ import com.westChina.common.core.domain.R;
 import com.westChina.system.api.feign.RemoteFileService;
 import com.westChina.system.api.domain.material.SysFile;
 
+import java.util.List;
+
 /**
  * 文件服务降级处理
  *
@@ -35,13 +37,17 @@ public class RemoteFileFallbackFactory implements FallbackFactory<RemoteFileServ
             }
 
             @Override
-            public R<SysFile> directUpload(MultipartFile file,String bucketName) {
+            public R<SysFile> directUploadOfMinio(MultipartFile file,String bucketName) {
                 return R.fail("上传文件失败:" + throwable.getMessage());
             }
 
             @Override
             public R<Boolean> makeMinioBucket(String bucketName) {
                 return R.fail("创建桶失败:" + throwable.getMessage());
+            }
+            @Override
+            public R<Boolean> delFileOfMinio(List<String> bucketFileNamesList, String bucketName){
+                return R.fail("删除文件失败:" + throwable.getMessage());
             }
         };
     }

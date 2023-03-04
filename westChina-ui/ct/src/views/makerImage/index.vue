@@ -84,7 +84,7 @@ import Hammer from 'hammerjs'
 import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from 'cornerstone-tools'
 import stream from "stream";
-import {makerFile} from "../../api/ct/ctFileUpload";
+import {ctFile} from "../../api/ct/ctFileUpload";
 import {addMaker} from "../../api/ct/maker";
 import {baseSystemUrl} from "../../settings";
 
@@ -209,7 +209,7 @@ export default {
           //  上传
           uploadImage.then(formDateOfMakerImage => {
             return new Promise((resolve, reject) => {
-              makerFile(formDateOfMakerImage).then(res => {
+              ctFile(formDateOfMakerImage).then(res => {
                 if (res.url !== '') {
                   //  封装对象
                   let dicomMaker = {}
@@ -223,7 +223,8 @@ export default {
                 }
               })
             })
-          }).then((dicomMaker) => {
+          })
+            .then((dicomMaker) => {
             addMaker(dicomMaker).then(res => {
               console.log(res)
             })
@@ -394,7 +395,9 @@ export default {
 
   },
   beforeRouteLeave(to, from, next) {
-    if((to.name===null)){
+    console.log("---------makerImage-----from----",from)
+    console.log("---------makerImage------to-----",to)
+    if((to.name===null)||(to.name===undefined)){
       this.$router.replace({name:'maker'})
     }else{
       next();

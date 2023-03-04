@@ -315,7 +315,7 @@ import * as cornerstoneTools from 'cornerstone-tools'
 import upload from "element-ui/packages/upload/src/ajax";
 import eventBus from "@/eventBus";
 import stream from "stream";
-import {makerFile} from "../../api/ct/ctFileUpload";
+import {ctFile} from "../../api/ct/ctFileUpload";
 import axios from "axios";
 import {getToken} from "common/src/utils/auth";
 import {addMaker} from "../../api/ct/maker";
@@ -526,7 +526,7 @@ export default {
           //  上传
           uploadImage.then(formDateOfMakerImage => {
             return new Promise((resolve, reject) => {
-              makerFile(formDateOfMakerImage).then(res => {
+              ctFile(formDateOfMakerImage).then(res => {
                 if (res.url !== '') {
                   //  封装对象
                   let dicomMaker = {}

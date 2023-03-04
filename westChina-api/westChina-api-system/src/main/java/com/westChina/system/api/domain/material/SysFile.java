@@ -25,7 +25,7 @@ public class SysFile {
     /** 文件地址 */
     private String url;
 
-    /** 文件地址 */
+    /** 文件大小 */
     private float size;
 
     public Long getId() {

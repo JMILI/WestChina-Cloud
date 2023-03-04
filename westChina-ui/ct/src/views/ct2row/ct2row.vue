@@ -539,7 +539,7 @@ import * as cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 import Hammer from 'hammerjs'
 import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from 'cornerstone-tools'
-import {ctFile, makerFile} from "../../api/ct/ctFileUpload";
+import {ctFile} from "../../api/ct/ctFileUpload";
 import stream from "stream";
 import cornerstoneFileImageLoader from "cornerstone-file-image-loader/src";
 import {addMaker} from "../../api/ct/maker";
@@ -892,7 +892,7 @@ export default {
           //  上传
           uploadImage.then(formDateOfMakerImage => {
             return new Promise((resolve, reject) => {
-              makerFile(formDateOfMakerImage).then(res => {
+              ctFile(formDateOfMakerImage).then(res => {
                 if (res.url !== '') {
                   //  封装对象
                   let dicomMaker = {}

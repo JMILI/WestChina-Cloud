@@ -281,6 +281,7 @@ import {getBucketName} from "../../api/ct/ctMinio";
 import Cookies from "~../../js-cookie";
 import {addDicom, getStudyListByPatCardId} from "../../api/ct/dicom";
 import {mapActions} from "vuex"
+import {delFile} from "../../api/ct/ctFileUpload";
 //endregion
 
 export default {
@@ -430,6 +431,17 @@ export default {
   created() {
     this.getBucketName()
     this.getList();
+
+  },
+
+  beforeRouteLeave(to, from, next) {
+    console.log("---------patient-----from----",from)
+    console.log("---------patient------to-----",to)
+    if((to.name===null)||(to.name===undefined)){
+      this.$router.replace({name:'maker'})
+    }else{
+      next();
+    }
   },
   methods: {
     //region 文件上传
@@ -1017,6 +1029,10 @@ export default {
   ,
   mounted() {
     this.handleSortable(false);
+    let bucketFileNamesList=[
+      '1.3.12.2.1107.5.1.4.77426.30000021081723585752900180143_1677848657587.png',
+    ]
+    console.log(delFile(bucketFileNamesList))
   }
   ,
   watch: {

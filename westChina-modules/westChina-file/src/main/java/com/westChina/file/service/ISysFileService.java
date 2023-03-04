@@ -29,14 +29,20 @@ public interface ISysFileService
 
 
 
-    /**
-     * 文件上传接口,直接上传
-     * @author jm
-     * @param file 上传的文件
-     * @return 访问地址
-     * @throws Exception
-     */
-    public String directUpload(MultipartFile file ,String bucketName) throws Exception;
+//    /**
+//     * 文件上传接口,直接上传
+//     * @author jm
+//     * @param file 上传的文件
+//     * @return 访问地址
+//     * @throws Exception
+//     */
+//    public String directUpload(MultipartFile file) throws Exception;
+//
+//
+//    public Boolean makeMinioBucket(String bucketName) throws Exception;
+//
+//    public  Boolean removeOne(String fileName, String bucketName);
+//
+//    public  String directUploadOfMinio(MultipartFile file, String bucketName) throws Exception;
 
-    public Boolean makeMinioBucket(String bucketName) throws Exception;
 }

@@ -39,21 +39,13 @@ public abstract class FastDfsSysFileServiceImpl implements ISysFileService
                 FilenameUtils.getExtension(file.getOriginalFilename()), null);
         return domain + "/" + storePath.getFullPath();
     }
-
     /**
      * 文件删除接口
      *
      * @param url 文件地址
-     * @return 删除状态
-     * @throws Exception
+     * @return 结果
      */
-    @Override
-    public Boolean deleteFile(String url) throws Exception{
+    public Boolean deleteFile(String url) throws Exception {
         return true;
-    }
-
-    @Override
-    public String directUpload(MultipartFile file, String bucketName) throws Exception {
-        return null;
     }
 }

@@ -10,6 +10,7 @@ import com.westChina.common.log.enums.BusinessType;
 import com.westChina.common.redis.service.RedisService;
 import com.westChina.common.security.annotation.RequiresPermissions;
 import com.westChina.common.security.service.TokenService;
+import com.westChina.ct.domain.CtPatients;
 import com.westChina.ct.domain.DicomMaker;
 import com.westChina.system.api.domain.material.SysFile;
 import com.westChina.system.api.feign.RemoteFileService;
@@ -24,6 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
 @RestController
 @RequestMapping("/upload")
 public class ctUploadController extends BaseController {
@@ -42,6 +45,7 @@ public class ctUploadController extends BaseController {
 
     /**
      * 上传病人ct图像,
+     *
      * @param file
      * @return
      * @throws IOException
@@ -49,62 +53,61 @@ public class ctUploadController extends BaseController {
     @Log(title = "上传病人ct图像", businessType = BusinessType.UPDATE)
     @PostMapping("/ctFile")
     public AjaxResult ctFile(MultipartFile file) throws IOException {
-
-//        readDicomInfo(file);
         LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
-        System.out.printf("bucketName ",bucketName);
-        R<SysFile> fileResult = remoteFileService.directUpload(file, bucketName);
+        R<SysFile> fileResult = remoteFileService.directUploadOfMinio(file, bucketName);
         if (StringUtils.isNull(fileResult) || StringUtils.isNull(fileResult.getData())) {
             return AjaxResult.error("文件服务异常，请稍后再试");
         }
         String url = fileResult.getData().getUrl();
-        log.info("url" + url);
         AjaxResult ajax = AjaxResult.success("成功");
         ajax.put("url", url);
         return ajax;
     }
+
+
     /**
-     * 上传病人ct图像,
-     * @param file
-     * @return
-     * @throws IOException
+     * 删除病人信息
      */
-    @Log(title = "上传病人标记图像", businessType = BusinessType.UPDATE)
-    @PostMapping("/ctImage")
-    public AjaxResult ctImage(MultipartFile file) throws IOException {
+    @Log(title = "删除文件", businessType = BusinessType.DELETE)
+    @DeleteMapping("/delFile")
+    public AjaxResult delFile(@RequestBody List<String> bucketFileNamesList) {
         LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
-        System.out.printf("bucketName ",bucketName);
-        R<SysFile> fileResult = remoteFileService.directUpload(file, bucketName);
-        if (StringUtils.isNull(fileResult) || StringUtils.isNull(fileResult.getData())) {
-            return AjaxResult.error("文件服务异常，请稍后再试");
+        R<Boolean> result =  remoteFileService.delFileOfMinio(bucketFileNamesList, bucketName);
+        AjaxResult ajax = AjaxResult.success(result.getMsg());
+        if (!result.getData()){
+            ajax = AjaxResult.error(result.getMsg());
         }
-        String url = fileResult.getData().getUrl();
-        log.info("url" + url);
-        AjaxResult ajax = AjaxResult.success("成功");
-        ajax.put("url", url);
         return ajax;
     }
-    @GetMapping(value = "/test")
-    public void test(String dicomMaker) {
-        System.out.println(dicomMaker);
-    }
-    public void readDicomInfo(MultipartFile file) throws IOException {
 
-//        DicomInputStream dis = new DicomInputStream(transferToFile(file));
-//        Attributes d = dis.readDataset();
-//        System.out.println("---------"+d.getString(Tag.PatientName));
-//        System.out.println("---------"+d.getString(Tag.StudyDescription));
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public File transferToFile(MultipartFile multipartFile) {
 //        选择用缓冲区来实现这个转换即使用java 创建的临时文件 使用 MultipartFile.transferto()方法 。
         File file = null;
         try {
             String originalFilename = multipartFile.getOriginalFilename();
-            assert originalFilename != null:"文件名为空字符";
+            assert originalFilename != null : "文件名为空字符";
             String[] filename = originalFilename.split("\\.");
-            file=File.createTempFile(filename[0], filename[1]);
+            file = File.createTempFile(filename[0], filename[1]);
             multipartFile.transferTo(file);
             file.deleteOnExit();
         } catch (IOException e) {
@@ -112,7 +115,8 @@ public class ctUploadController extends BaseController {
         }
         return file;
     }
-    public String tranByte2String(byte[] b){
+
+    public String tranByte2String(byte[] b) {
         return new String(b);
     }
 

@@ -383,6 +383,7 @@ export default {
   activated(){
     this.getList();
   },
+
   methods: {
     ...mapActions(['updateMakerImageList', 'makerImageInitInfo']),
     viewMakerImage(row) {

@@ -66,9 +66,4 @@ public abstract class LocalSysFileServiceImpl implements ISysFileService {
         }
         return false;
     }
-
-    @Override
-    public String directUpload(MultipartFile file, String bucketName) throws Exception {
-        return null;
-    }
 }
