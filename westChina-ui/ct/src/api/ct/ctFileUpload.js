@@ -34,9 +34,9 @@ export function delBucketName(query) {
   })
 }
 // 删除序列文件夹
-export function delSeriesFile(query) {
+export function delFolderFiles(query) {
   return request({
-    url: '/ct/upload/delSeriesFile',
+    url: '/ct/upload/delFolderFiles',
     method: 'delete',
     params: query
   })

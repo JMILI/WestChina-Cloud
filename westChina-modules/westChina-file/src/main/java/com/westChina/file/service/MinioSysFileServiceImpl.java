@@ -370,7 +370,7 @@ public class MinioSysFileServiceImpl extends AMinioSysFileService {
                         minioClient.listObjects(
                                 ListObjectsArgs.builder()
                                         .bucket(bucketName)
-                                        .recursive(false)
+                                        .recursive(true)
                                         .prefix(folders)
                                         .build());
                 list.forEach(e -> {

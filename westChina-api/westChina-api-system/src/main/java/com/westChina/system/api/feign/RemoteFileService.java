@@ -57,6 +57,7 @@ public interface RemoteFileService {
     public R<Boolean> delFileOfMinio(@RequestBody List<String> bucketFileNamesList,@RequestParam(value = "bucketName") String bucketName);
     @DeleteMapping(value = "/removeBucketName")
     public R<Boolean> removeBucketName(@RequestParam(value = "bucketName") String bucketName);
-    @DeleteMapping(value = "/removeFolderFile")
-    public R<Boolean> removeFolderFile(@RequestParam(value = "bucketName") String bucketName,@RequestParam(value = "folderName") String folderName);
+
+    @DeleteMapping(value = "/removeFolderFilesOfMinio")
+    public R<Boolean> removeFolderFilesOfMinio(@RequestParam("bucketName") String bucketName,@RequestParam("folderName") String folderName);
 }

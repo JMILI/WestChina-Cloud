@@ -8,10 +8,7 @@ import com.westChina.common.core.web.domain.AjaxResult;
 import com.westChina.common.log.annotation.Log;
 import com.westChina.common.log.enums.BusinessType;
 import com.westChina.common.redis.service.RedisService;
-import com.westChina.common.security.annotation.RequiresPermissions;
 import com.westChina.common.security.service.TokenService;
-import com.westChina.ct.domain.CtPatients;
-import com.westChina.ct.domain.DicomMaker;
 import com.westChina.system.api.domain.material.SysFile;
 import com.westChina.system.api.feign.RemoteFileService;
 import com.westChina.system.api.model.LoginUser;
@@ -98,34 +95,35 @@ public class ctUploadController extends BaseController {
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
         R<Boolean> result = remoteFileService.delFileOfMinio(bucketFileNamesList, bucketName);
         AjaxResult ajax = AjaxResult.success(result.getMsg());
-        if (!result.getData()) {
-            ajax = AjaxResult.error(result.getMsg());
+        if(result.getData()){
+            return AjaxResult.success(result.getMsg());
+        }else{
+            return AjaxResult.error(result.getMsg());
         }
-        return ajax;
     }
 
     @Log(title = "从minio删除某个桶：bucketName", businessType = BusinessType.DELETE)
     @DeleteMapping("/delBucketName")
     public AjaxResult delBucketName(String bucketName) {
         R<Boolean> result = remoteFileService.removeBucketName(bucketName);
-        return AjaxResult.success(result.getMsg());
+        if(result.getData()){
+            return AjaxResult.success(result.getMsg());
+        }else{
+            return AjaxResult.error(result.getMsg());
+        }
     }
 
-    @Log(title = "从minio删除病人的某个序列文件夹", businessType = BusinessType.DELETE)
-    @DeleteMapping("/delSeriesFile")
-    public AjaxResult delSeriesFile(String folderName) {
+    @Log(title = "从minio删除病人的某个文件夹内所有对象", businessType = BusinessType.DELETE)
+    @DeleteMapping("/delFolderFiles")
+    public AjaxResult delFolderFiles(String folderName) {
         LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
-        R<Boolean> result = remoteFileService.removeFolderFile(bucketName,folderName);
-        return AjaxResult.success(result.getMsg());
-    }
-    @Log(title = "从minio删除病人的某个序列文件夹", businessType = BusinessType.DELETE)
-    @DeleteMapping("/delStudyFile")
-    public AjaxResult delStudyFile(String folderName) {
-        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
-        String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
-        R<Boolean> result = remoteFileService.removeFolderFile(bucketName,folderName);
-        return AjaxResult.success(result.getMsg());
+        R<Boolean> result = remoteFileService.removeFolderFilesOfMinio(bucketName,folderName);
+        if(result.getData()){
+            return AjaxResult.success(result.getMsg());
+        }else{
+            return AjaxResult.error(result.getMsg());
+        }
     }
 
 

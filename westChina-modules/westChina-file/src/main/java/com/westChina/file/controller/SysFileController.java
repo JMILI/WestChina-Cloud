@@ -123,7 +123,7 @@ public class SysFileController {
     @DeleteMapping("removeBucketName")
     public R<Boolean> removeBucketName(String bucketName) {
         try {
-            return R.ok(minioSysFileServiceImpl.removeBucket(bucketName));
+            return R.ok(minioSysFileServiceImpl.removeBucket(bucketName),"删除桶以及其内所有文件成功");
         } catch (Exception e) {
             log.error("文件删除失败", e);
             return R.fail(false, e.getMessage());
@@ -132,10 +132,10 @@ public class SysFileController {
     /**
      *  删除桶中某个文件夹内所有文件
      */
-    @DeleteMapping("removeFolderFile")
-    public R<Boolean> removeFolderFile(String bucketName,String folderName) {
+    @DeleteMapping("removeFolderFilesOfMinio")
+    public R<Boolean> removeFolderFilesOfMinio(String bucketName,String folderName) {
         try {
-            return R.ok(minioSysFileServiceImpl.deleteFolder(bucketName,folderName));
+            return R.ok(minioSysFileServiceImpl.deleteFolder(bucketName,folderName),"删除文件夹内所有对象成功");
         } catch (Exception e) {
             log.error("文件删除失败", e);
             return R.fail(false, e.getMessage());
