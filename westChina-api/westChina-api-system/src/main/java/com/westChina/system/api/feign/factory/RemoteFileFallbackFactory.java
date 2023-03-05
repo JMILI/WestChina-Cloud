@@ -49,6 +49,16 @@ public class RemoteFileFallbackFactory implements FallbackFactory<RemoteFileServ
             public R<Boolean> delFileOfMinio(List<String> bucketFileNamesList, String bucketName){
                 return R.fail("删除文件失败:" + throwable.getMessage());
             }
+
+            @Override
+            public R<Boolean> removeBucketName(String bucketName) {
+                return R.fail("删除桶失败:" + throwable.getMessage());
+            }
+
+            @Override
+            public R<Boolean> removeFolderFile(String bucketName, String folderName) {
+                return R.fail("删除序列文件失败:" + throwable.getMessage());
+            }
         };
     }
 }

@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/upload")
@@ -42,6 +43,25 @@ public class ctUploadController extends BaseController {
     @Autowired
     private RemoteTenantService remoteTenantService;
     private static final Logger log = LoggerFactory.getLogger(ctUploadController.class);
+
+    /**
+     * 获取租户的对象存储桶：minio里面的桶
+     * @param enterpriseName 企业账号
+     * @return
+     */
+    @GetMapping(value = "/getBucketName")
+    public AjaxResult getBucketName(String enterpriseName) {
+        // feign本地调用 tenant的服务，请求minio桶名称
+        R<String> data = new R<String>();
+        data.setData("");
+        data.setMsg("失败");
+        data = remoteTenantService.getBucketNameByEnterpriseName(enterpriseName);
+        if (!Objects.equals(data.getData(), null)) {
+            return AjaxResult.success(data.getMsg(), data.getData());
+        } else {
+            return AjaxResult.error(data.getMsg(), "");
+        }
+    }
 
     /**
      * 上传病人ct图像,
@@ -67,57 +87,46 @@ public class ctUploadController extends BaseController {
 
 
     /**
-     * 删除病人信息
+     * 从minio批量删除某些文件
+     * @param bucketFileNamesList 文件名列表
+     * @return
      */
-    @Log(title = "删除文件", businessType = BusinessType.DELETE)
+    @Log(title = "从minio删除某些文件", businessType = BusinessType.DELETE)
     @DeleteMapping("/delFile")
     public AjaxResult delFile(@RequestBody List<String> bucketFileNamesList) {
         LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
-        R<Boolean> result =  remoteFileService.delFileOfMinio(bucketFileNamesList, bucketName);
+        R<Boolean> result = remoteFileService.delFileOfMinio(bucketFileNamesList, bucketName);
         AjaxResult ajax = AjaxResult.success(result.getMsg());
-        if (!result.getData()){
+        if (!result.getData()) {
             ajax = AjaxResult.error(result.getMsg());
         }
         return ajax;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public File transferToFile(MultipartFile multipartFile) {
-//        选择用缓冲区来实现这个转换即使用java 创建的临时文件 使用 MultipartFile.transferto()方法 。
-        File file = null;
-        try {
-            String originalFilename = multipartFile.getOriginalFilename();
-            assert originalFilename != null : "文件名为空字符";
-            String[] filename = originalFilename.split("\\.");
-            file = File.createTempFile(filename[0], filename[1]);
-            multipartFile.transferTo(file);
-            file.deleteOnExit();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return file;
+    @Log(title = "从minio删除某个桶：bucketName", businessType = BusinessType.DELETE)
+    @DeleteMapping("/delBucketName")
+    public AjaxResult delBucketName(String bucketName) {
+        R<Boolean> result = remoteFileService.removeBucketName(bucketName);
+        return AjaxResult.success(result.getMsg());
     }
 
-    public String tranByte2String(byte[] b) {
-        return new String(b);
+    @Log(title = "从minio删除病人的某个序列文件夹", businessType = BusinessType.DELETE)
+    @DeleteMapping("/delSeriesFile")
+    public AjaxResult delSeriesFile(String folderName) {
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+        String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
+        R<Boolean> result = remoteFileService.removeFolderFile(bucketName,folderName);
+        return AjaxResult.success(result.getMsg());
     }
+    @Log(title = "从minio删除病人的某个序列文件夹", businessType = BusinessType.DELETE)
+    @DeleteMapping("/delStudyFile")
+    public AjaxResult delStudyFile(String folderName) {
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+        String bucketName = remoteTenantService.getBucketNameByEnterpriseName(loginUser.getEnterpriseName()).getData();
+        R<Boolean> result = remoteFileService.removeFolderFile(bucketName,folderName);
+        return AjaxResult.success(result.getMsg());
+    }
+
 
 }

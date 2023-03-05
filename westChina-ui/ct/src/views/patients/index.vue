@@ -277,7 +277,7 @@ import {
 import Sortable from "sortablejs";
 import {getToken} from "common/src/utils/auth";
 import dicomParser from "dicom-parser";
-import {getBucketName} from "../../api/ct/ctMinio";
+import {delBucketName, delSeriesFile, getBucketName} from "../../api/ct/ctFileUpload";
 import Cookies from "~../../js-cookie";
 import {addDicom, getStudyListByPatCardId} from "../../api/ct/dicom";
 import {mapActions} from "vuex"
@@ -1028,11 +1028,12 @@ export default {
   }
   ,
   mounted() {
-    this.handleSortable(false);
-    let bucketFileNamesList=[
-      '1.3.12.2.1107.5.1.4.77426.30000021081723585752900180143_1677848657587.png',
-    ]
-    console.log(delFile(bucketFileNamesList))
+    // this.handleSortable(false);
+    // let bucketFileNamesList=[
+    //   '1.3.12.2.1107.5.1.4.77426.30000021081723585752900180143_1677848657587.png',
+    // ]
+    // console.log(delFile(bucketFileNamesList))
+    console.log(delSeriesFile({seriesFileName:'20210611004551/9'}))
   }
   ,
   watch: {
