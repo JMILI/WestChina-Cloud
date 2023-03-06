@@ -319,6 +319,7 @@ import {ctFile} from "../../api/ct/ctFileUpload";
 import axios from "axios";
 import {getToken} from "common/src/utils/auth";
 import {addMaker} from "../../api/ct/maker";
+import {mmToPx, pxToMM} from "../../utils/generator/convertPx2Mm";
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -408,6 +409,8 @@ export default {
       // wheelEvents: ['mousewheel', 'DOMMouseScroll'],
       canvasStack: {
         currentImageIdIndex: 0,
+        isUPOrDown: 0,
+        currentImageId: "",
         imageIds: []
       },
       divTempWidth: 'calc(100vw - 200px)',
@@ -416,7 +419,7 @@ export default {
 
       makerInfoList: {},
       makerFlag: true,
-      isDisplaySave:false,
+      isDisplaySave: false,
     }
   },
   created() {
@@ -438,18 +441,93 @@ export default {
     //监听滚动事件
     canvas.addEventListener(cornerstoneTools.EVENTS.MOUSE_WHEEL, this.handleScroll, false)
     canvas.addEventListener(cornerstoneTools.EVENTS.MEASUREMENT_COMPLETED, function (params) {
-      //得到image
-      let imageSave = cornerstone.getImage(canvas)
-      that.makerImageDeal(imageSave, canvas)
+      let mm = params.detail
+      if(mm.toolName==='CircleRoi'){
+        let info ={}
+        info= mm.measurementData.cachedStats
+        let area = info.area
+        let radius = info.radius
+        let perimeter = info.perimeter
+        for (const perimeterElement in info) {
+          console.log("mm:",info[perimeterElement])
+          console.log("px:",mmToPx(info[perimeterElement]))
+        }
+      }else if(mm.toolName==='FreehandRoi'){
 
+      }else if(mm.toolName==='EllipticalRoi'){
+
+      }else if(mm.toolName==='Length'){
+        console.log(mm.measurementData.length)
+        console.log(mmToPx(mm.measurementData.length))
+
+
+      }else if(mm.toolName==='FreehandRoi'){
+
+      }
+      console.log(mm)
+
+      that.makerImageDeal()
     });
+
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
     that.initListCanvas()
   },
   methods: {
-    makerImageDeal(imageSave, canvas) {
+    displayOneCanvasImage() {
       let that = this
+      const canvas = this.$refs.canvas
+      console.log("-------------------展示第_张---------", that.canvasStack.currentImageIdIndex)
+      let tempIndex = that.canvasStack.currentImageIdIndex
+      return cornerstone.loadAndCacheImage(that.canvasStack.imageIds[tempIndex])
+        .then(function (image) {
+          //设置视口
+          let viewport = {}
+          viewport.scale = 1
+          viewport.invert = that.getInvert
+          viewport.hflip = that.getHflip
+          viewport.vflip = that.getVflip
+          // viewport.pixelReplication = that.getPixelReplication
+          // viewport.translation.x=100
+          // viewport.translation.y=100
+          // // viewport.voi.windowCenter=100
+          // // viewport.voi.windowWidth=200
+          // viewport.pixelReplication=
+          // console.log("获取图像信息", viewport)
+          //打印，看数据
+          // console.log('----------------image-----------------', image)
+          //设置图像视口
+          // const viewport = cornerstone.getDefaultViewportForImage(
+          //   canvas,
+          //   image,
+          // )
+          // const views = cornerstone.getViewport(canvas)
+          // console.log("获取图像信息", image)
+          //显示
+          // let canvas=this.$refs.canvas
+          // canvas.style.width = "100%"
+          // canvas.style.height = "calc(100vh - 84px)"
+          cornerstone.displayImage(canvas, image, viewport)
+          // 图像信息显示
+          that.canvasStack.currentImageId = image.imageId
+
+          that.imageInfos(image)
+        })
+    },
+    makerImageDeal() {
+      let that = this
+      //canvas中包含标注信息
+      let canvas = that.$refs.canvas
+      //主要用来获取图像信息，这些信息里不包含标注的信息
+      // console.log(cornerstone.getImage(canvas))
+
+      let cachedImagesList = cornerstone.imageCache.cachedImages
+      let imageSave = null
+      for (const item of cachedImagesList) {
+        if (item.imageId === that.canvasStack.currentImageId) {
+          imageSave = item.image
+        }
+      }
       //解析图像信息
       const byteArray = imageSave.data.byteArray
       const dataSet = dicomParser.parseDicom(byteArray)
@@ -472,12 +550,16 @@ export default {
       makerInfo.makerDescription = ''
       //生成png照片
       const viewport = cornerstone.getViewport(canvas)
-      const zoom = viewport.scale.toFixed(3)
+      const zoom = viewport.scale.toFixed(5)
+      console.log("zoom:",zoom)
       const cols = imageSave.columns * zoom
       const rows = imageSave.rows * zoom
       let myCanvas = document.createElement('canvas')
+      console.log("cols:",cols)
+      console.log("rows:",rows)
       let canvasTemp = canvas.firstElementChild
-      // console.log("打印",canvasTemp)
+
+
       myCanvas = that.cropCanvas(
         canvasTemp,
         Math.round(canvasTemp.width / 2 - cols / 2),
@@ -488,10 +570,10 @@ export default {
       // canvas.toDataURL 返回的是一串Base64编码的URL，当然,浏览器自己肯定支持
       // 指定格式 PNG
       let base64Image = myCanvas.toDataURL("image/png");
-      console.log(base64Image)
+      // console.log(base64Image)
       // image.src = myCanvas.toDataURL("image/png")
       let datetime = new Date().getTime()
-      let fileName = "/"+makerInfo.instanceUid + "_" + datetime + ".png"
+      let fileName = "/" + makerInfo.instanceUid + "_" + datetime + ".png"
       let fileOfImage = that.dataURLtoFile(base64Image, fileName)
       //记录信息
       //canvas类型图像信息，方便后面上传，数据库表中没有该字段，临时存储起来,
@@ -501,20 +583,21 @@ export default {
       makerImage.fileOfImage = fileOfImage
       makerImage.imageSave = imageSave
       makerInfo.makerImage = makerImage
+      console.log("打印",cornerstone)
+      console.log("打印",cornerstoneTools)
+
       // //将此次标记图像和信息存储到页面中
-      console.log(that.makerInfoList)
       that.makerInfoList[instanceUid] = makerInfo
       that.makerFlag = false
       that.$nextTick(() => {
         that.makerFlag = true
-        that.isDisplaySave=true
+        that.isDisplaySave = true
       });
-      console.log(that.makerInfoList)
     },
     submitUpload() {
       let that = this
       that.$modal.loading("正在上传数据中");
-      const upload = new Promise((resolve,reject) => {
+      const upload = new Promise((resolve, reject) => {
         for (let makerInfoListKey in that.makerInfoList) {
           //上传前处理
           let tempDicomMaker = that.makerInfoList[makerInfoListKey]
@@ -550,14 +633,14 @@ export default {
       })
 
       //上传完之后，清空列表
-      upload.then((resolve,reject) => {
+      upload.then((resolve, reject) => {
         that.$nextTick(() => {
           that.makerInfoList = {}
           that.makerFlag = true
-          that.isDisplaySave=false
-          setTimeout(()=>{
-          that.$modal.closeLoading();
-          },500)
+          that.isDisplaySave = false
+          setTimeout(() => {
+            that.$modal.closeLoading();
+          }, 500)
         });
       })
     },
@@ -585,7 +668,7 @@ export default {
       for (let i = 0; i < byteString.length; i++) {
         u8Arr[i] = byteString.charCodeAt(i);
       }
-      console.log(u8Arr)
+      // console.log(u8Arr)
       return new File([u8Arr], fileName, options);
     },
     isCanvas(i) {
@@ -598,6 +681,8 @@ export default {
     viewImage(row) {
       let canvas = this.$refs.canvas
       cornerstone.displayImage(canvas, row.makerImage.imageSave)
+      // cornerstone.drawImage(row.makerImage.imageSave)
+      this.imageInfos(row.makerImage.imageSave)
     },
 
 
@@ -619,9 +704,6 @@ export default {
       // draw the canvas in the new resized temp canvas
       newCanvas.getContext('2d').drawImage(canvas, x, y, width, height, 0, 0, width, height)
       return newCanvas
-    },
-    listenerDisplayCanvas() {
-      this.initListCanvas()
     },
     showDicom() {
       let that = this
@@ -675,126 +757,106 @@ export default {
       }
     },
 
-    displayOneCanvasImage() {
-      let that = this
-      const canvas = this.$refs.canvas
-      // console.log("-------------------展示第_张---------", that.canvasStack.currentImageIdIndex)
-      let tempIndex = that.canvasStack.currentImageIdIndex
-      return cornerstone.loadImage(that.canvasStack.imageIds[tempIndex])
-        .then(function (image) {
-          //设置视口
-          let viewport = {}
-          // viewport.scale=1
-          viewport.invert = that.getInvert
-          viewport.hflip = that.getHflip
-          viewport.vflip = that.getVflip
-          // viewport.pixelReplication = that.getPixelReplication
-          // viewport.translation.x=100
-          // viewport.translation.y=100
-          // // viewport.voi.windowCenter=100
-          // // viewport.voi.windowWidth=200
-          // viewport.pixelReplication=
-          // console.log("获取图像信息", viewport)
-          //打印，看数据
-          // console.log('----------------image-----------------', image)
-          //设置图像视口
-          // const viewport = cornerstone.getDefaultViewportForImage(
-          //   canvas,
-          //   image,
-          // )
-          // const views = cornerstone.getViewport(canvas)
-          // console.log("获取图像信息", image)
-          //显示
-          // let canvas=this.$refs.canvas
 
-          // canvas.style.width = "100%"
-          // canvas.style.height = "calc(100vh - 84px)"
-          cornerstone.displayImage(canvas, image, viewport)
-          // cornerstone.resize(canvas)
-          // 图像信息显示
-          that.imageInfos(image)
-        })
-    },
     //图像信息处理
     imageInfos(image) {
       let that = this
       //region dicom 信息解析映射
-      // console.log('image.data.byteArray', image.data.byteArray)
       const byteArray = image.data.byteArray
       const dataSet = dicomParser.parseDicom(byteArray)
+      that.$nextTick(() => {
+        that.patient.patientId = dataSet.string('x00100020')
+        that.patient.patientName = dataSet.string("x00100010")
+        that.patient.patientBirthDate = dataSet.string('x00100030')
+        that.patient.patientSex = dataSet.string('x00100040')
+        that.patient.patientAge = dataSet.string('x00101010')
+        that.patient.sopInstanceUid = dataSet.string('x00080018')
+        // console.log(that.patient.sopInstanceUid)
+        that.studyInfo.studyDescription = dataSet.string('x00081030')
+        that.studyInfo.protocolName = dataSet.string('x00181030')
+        that.studyInfo.accession = dataSet.string('x00080050')
+        that.studyInfo.studyId = dataSet.string('x00200010')
+        that.studyInfo.studyDate = dataSet.string('x00080020')
+        that.studyInfo.studyTime = dataSet.string('x00080030')
 
-      that.patient.patientId = dataSet.string('x00100020')
-      that.patient.patientName = dataSet.string("x00100010")
-      that.patient.patientBirthDate = dataSet.string('x00100030')
-      that.patient.patientSex = dataSet.string('x00100040')
-      that.patient.patientAge = dataSet.string('x00101010')
-      that.patient.sopInstanceUid = dataSet.string('x00080018')
-      console.log(that.patient.sopInstanceUid)
-      that.studyInfo.studyDescription = dataSet.string('x00081030')
-      that.studyInfo.protocolName = dataSet.string('x00181030')
-      that.studyInfo.accession = dataSet.string('x00080050')
-      that.studyInfo.studyId = dataSet.string('x00200010')
-      that.studyInfo.studyDate = dataSet.string('x00080020')
-      that.studyInfo.studyTime = dataSet.string('x00080030')
+        that.seriesInfo.seriesDescription = dataSet.string('x0008103e')
+        that.seriesInfo.series = dataSet.string('x00200011')
+        that.seriesInfo.modality = dataSet.string('x00080060')
+        that.seriesInfo.bodyPart = dataSet.string('x00180015')
+        that.seriesInfo.seriesDate = dataSet.string('x00080021')
+        that.seriesInfo.seriesTime = dataSet.string('x00080031')
 
-      that.seriesInfo.seriesDescription = dataSet.string('x0008103e')
-      that.seriesInfo.series = dataSet.string('x00200011')
-      that.seriesInfo.modality = dataSet.string('x00080060')
-      that.seriesInfo.bodyPart = dataSet.string('x00180015')
-      that.seriesInfo.seriesDate = dataSet.string('x00080021')
-      that.seriesInfo.seriesTime = dataSet.string('x00080031')
+        that.instanceInfo.instance = dataSet.string('x00200013')
+        that.instanceInfo.acquisition = dataSet.string('x00200012')
+        that.instanceInfo.acquisitionDate = dataSet.string('x00080022')
+        that.instanceInfo.acquisitionTime = dataSet.string('x00080032')
+        that.instanceInfo.contentDate = dataSet.string('x00080023')
+        that.instanceInfo.contentTime = dataSet.string('x00080033')
 
-      that.instanceInfo.instance = dataSet.string('x00200013')
-      that.instanceInfo.acquisition = dataSet.string('x00200012')
-      that.instanceInfo.acquisitionDate = dataSet.string('x00080022')
-      that.instanceInfo.acquisitionTime = dataSet.string('x00080032')
-      that.instanceInfo.contentDate = dataSet.string('x00080023')
-      that.instanceInfo.contentTime = dataSet.string('x00080033')
+        that.imageInfo.rows = dataSet.string('x00280010')
+        that.imageInfo.columns = dataSet.string('x00280011')
+        that.imageInfo.photometricInter = dataSet.string('x00280004')
+        that.imageInfo.imageType = dataSet.string('x00080008')
+        that.imageInfo.bitsAllocated = dataSet.string('x00280100')
+        that.imageInfo.bitsStored = dataSet.string('x00280101')
+        that.imageInfo.highBit = dataSet.string('x00280102')
+        that.imageInfo.pixelRepre = dataSet.string('x00280103')
+        that.imageInfo.rescaleSlope = dataSet.string('x00281053')
+        that.imageInfo.rescaleIntercept = dataSet.string('x00281052')
+        that.imageInfo.imagePositionPatient = dataSet.string('x00200032')
+        that.imageInfo.imageOrientationPatient = dataSet.string('x00200037')
+        that.imageInfo.pixelSpacing = dataSet.string('x00280030')
+        that.imageInfo.samplesPerPixel = dataSet.string('x00280002')
 
-      that.imageInfo.rows = dataSet.string('x00280010')
-      that.imageInfo.columns = dataSet.string('x00280011')
-      that.imageInfo.photometricInter = dataSet.string('x00280004')
-      that.imageInfo.imageType = dataSet.string('x00080008')
-      that.imageInfo.bitsAllocated = dataSet.string('x00280100')
-      that.imageInfo.bitsStored = dataSet.string('x00280101')
-      that.imageInfo.highBit = dataSet.string('x00280102')
-      that.imageInfo.pixelRepre = dataSet.string('x00280103')
-      that.imageInfo.rescaleSlope = dataSet.string('x00281053')
-      that.imageInfo.rescaleIntercept = dataSet.string('x00281052')
-      that.imageInfo.imagePositionPatient = dataSet.string('x00200032')
-      that.imageInfo.imageOrientationPatient = dataSet.string('x00200037')
-      that.imageInfo.pixelSpacing = dataSet.string('x00280030')
-      that.imageInfo.samplesPerPixel = dataSet.string('x00280002')
+        that.equipmentInfo.manufacturer = dataSet.string('x00080070')
+        that.equipmentInfo.model = dataSet.string('x00081090')
+        that.equipmentInfo.stationName = dataSet.string('x00081010')
+        that.equipmentInfo.AETitle = dataSet.string('x00020016')
+        that.equipmentInfo.institutionName = dataSet.string('x00080080')
+        that.equipmentInfo.softwareVersion = dataSet.string('x00181020')
+        that.equipmentInfo.implementationVersionName = dataSet.string('x00020013')
 
-      that.equipmentInfo.manufacturer = dataSet.string('x00080070')
-      that.equipmentInfo.model = dataSet.string('x00081090')
-      that.equipmentInfo.stationName = dataSet.string('x00081010')
-      that.equipmentInfo.AETitle = dataSet.string('x00020016')
-      that.equipmentInfo.institutionName = dataSet.string('x00080080')
-      that.equipmentInfo.softwareVersion = dataSet.string('x00181020')
-      that.equipmentInfo.implementationVersionName = dataSet.string('x00020013')
-
-      that.UIDS.studyUID = dataSet.string('x0020000d')
-      that.UIDS.seriesUID = dataSet.string('x0020000e')
-      that.UIDS.instanceUID = dataSet.string('x00080018')
-      that.UIDS.SOPClassUID = dataSet.string('x00080016')
-      that.UIDS.transferSyntaxUID = dataSet.string('x00020010')
-      that.UIDS.frameOfReferenceUID = dataSet.string('x00200052')
-      //endregion
-
-      //region 存储标记图像的信息
-      // let tempMakerImage={}
-
-      //endregion
+        that.UIDS.studyUID = dataSet.string('x0020000d')
+        that.UIDS.seriesUID = dataSet.string('x0020000e')
+        that.UIDS.instanceUID = dataSet.string('x00080018')
+        that.UIDS.SOPClassUID = dataSet.string('x00080016')
+        that.UIDS.transferSyntaxUID = dataSet.string('x00020010')
+        that.UIDS.frameOfReferenceUID = dataSet.string('x00200052')
+      })
     },
 
     //滚动处理
     handleScroll(e) {
-      //滚动 展示下一个图像
+      //滚动 展示一个图像
+      let up = -1
+      let down = 1
+      let upOrDown = e.detail.direction
+      let isUPOrDown = this.canvasStack.isUPOrDown
+      let currentIndex = this.canvasStack.currentImageIdIndex
+      if (isUPOrDown === 0 && upOrDown === up) {
+        //想要看上一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，还是展示第一张
+      } else if (isUPOrDown === 0 && upOrDown === down) {
+        //想要看下一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，展示下一张
+        this.canvasStack.isUPOrDown = down
+        this.canvasStack.currentImageIdIndex = currentIndex + down
+      } else if (isUPOrDown === down && upOrDown === up) {
+        //想要看上一张，发现isUPOrDown===1，也就是上次也是鼠标滚轮下移操作，，展示上一张
+        this.canvasStack.isUPOrDown = up
+        this.canvasStack.currentImageIdIndex = currentIndex + up + up
+      } else if (isUPOrDown === down && upOrDown === down) {
+
+      } else if (isUPOrDown === up && upOrDown === up) {
+
+      } else if (isUPOrDown === up && upOrDown === down) {
+        this.canvasStack.isUPOrDown = down
+        this.canvasStack.currentImageIdIndex = currentIndex + down
+      }
       this.displayOneCanvasImage();
     },
     changeInvert() {
+      console.log("changeInvert1:", this.canvasStack.currentImageIdIndex)
       this.displayOneCanvasImage();
+      console.log("changeInvert2:", this.canvasStack.currentImageIdIndex)
     },
     getPatientData(value) {
       let that = this
@@ -810,6 +872,9 @@ export default {
               let newPath = 'wadouri:' + path + '/' + i.toString() + '.dcm'
               temp.imageIds.push(newPath)
               that.imageIds.push(newPath)
+              if (i === 1) {
+                that.canvasStack.currentImageId = path
+              }
               that.canvasStack.imageIds.push(newPath)
             }
           })
@@ -841,7 +906,9 @@ export default {
         this.divTempWidth = 'calc(100vw - 200px)'
         this.divTempWidth2 = 'calc(100vw - 200px)'
       }
+      console.log("changeWidth:", this.canvasStack.currentImageIdIndex)
       this.displayOneCanvasImage()
+      console.log("changeWidth:", this.canvasStack.currentImageIdIndex)
     },
     /*
     设置默认的ct图像提供操作。
@@ -865,9 +932,7 @@ export default {
       }
       that.showDicom()
     },
-    ownData(row) {
-      // console.log('---', row)
-    },
+
     /**
      * 点击更换当前正在阅片的图像
      * @param row
@@ -925,15 +990,6 @@ export default {
       console.log("isopen", this.$store.getters.sidebar.opened)
       return this.$store.getters.sidebar.opened
     },
-    /**
-     * 样式开关
-     * @returns {boolean}
-     */
-    // isCollapse() {
-    //   this.isOpen = this.$store.getters.sidebar.opened
-    //   console.log("isopen", isOpen)
-    //   return this.$store.getters.sidebar.opened
-    // },
     //  endregion
     studySeriesList() {
       return this.$store.getters.studySeriesList
@@ -941,7 +997,9 @@ export default {
   },
   watch: {
     getInvert: function () {
-      this.displayOneCanvasImage()
+      console.log("changeInvert1:", this.canvasStack.currentImageIdIndex)
+      this.displayOneCanvasImage();
+      console.log("changeInvert2:", this.canvasStack.currentImageIdIndex)
     },
     getHflip: function () {
       this.displayOneCanvasImage()
