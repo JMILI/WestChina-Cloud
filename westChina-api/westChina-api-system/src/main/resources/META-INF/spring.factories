@@ -1,0 +1,7 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.westChina.system.api.feign.factory.RemoteUserFallbackFactory,\
+  com.westChina.system.api.feign.factory.RemoteConfigFallbackFactory,\
+  com.westChina.system.api.feign.factory.RemoteLogFallbackFactory, \
+  com.westChina.system.api.feign.factory.RemoteFileFallbackFactory,\
+  com.westChina.system.api.feign.factory.RemoteSourceFallbackFactory,\
+  com.westChina.system.api.feign.factory.RemoteEnterpriseFallbackFactory

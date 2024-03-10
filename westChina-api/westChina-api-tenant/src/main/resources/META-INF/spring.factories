@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.westChina.tenant.api.feign.factory.RemoteTenantFallbackFactory

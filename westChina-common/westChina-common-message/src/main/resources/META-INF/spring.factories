@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.westChina.common.message.config.MessageConfig, \
+  com.westChina.common.message.service.impl.ProducerServiceImpl

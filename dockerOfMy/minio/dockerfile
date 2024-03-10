@@ -1,0 +1,10 @@
+FROM minio/minio
+# author
+MAINTAINER westChina
+
+# 挂载目录
+VOLUME /home/westChina/minio
+# 创建目录
+RUN mkdir -p /home/westChina/minio
+# 指定路径
+WORKDIR /home/westChina/minio

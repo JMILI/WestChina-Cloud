@@ -1,0 +1,7 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.westChina.common.datasource.config.properties.SourceProperties,\
+  com.westChina.common.datasource.config.MyDynamicDataSourceConfig,\
+  com.westChina.common.datasource.provider.dynamicDataSourceLoading, \
+  com.westChina.common.datasource.synchronization.SourceSynchronization
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.westChina.common.datasource.env.ApplicationSeataInitializer

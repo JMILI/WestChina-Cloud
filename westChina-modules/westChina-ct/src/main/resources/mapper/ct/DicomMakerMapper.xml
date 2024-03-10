@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.westChina.ct.mapper.DicomMakerMapper">
+
+    <resultMap type="DicomMaker" id="dicomMakerResult">
+        <id property="dicomMakerId" column="dicom_maker_id"/>
+        <result property="instanceUid" column="instance_uid"/>
+        <result property="studyUid" column="study_uid"/>
+        <result property="seriesUid" column="series_uid"/>
+        <result property="studyDate" column="study_date"/>
+        <result property="patCardId" column="pat_card_id"/>
+        <result property="patientName" column="patient_name"/>
+        <result property="makerDoctor" column="maker_doctor"/>
+        <result property="makerEnterpriseName" column="maker_enterprise_name"/>
+        <result property="makerTime" column="maker_time"/>
+        <result property="makerImageAddress" column="maker_image_address"/>
+        <result property="makerDescription" column="maker_description"/>
+        <result property="makerImage" column="maker_image"/>
+        <result property="makerColumns" column="maker_columns"/>
+        <result property="makerRows" column="maker_rows"/>
+        <result property="makerColumnPixelSpacing" column="maker_column_pixel_spacing"/>
+        <result property="makerRowPixelSpacing" column="maker_row_pixel_spacing"/>
+        <result property="makerSlope" column="maker_slope"/>
+        <result property="makerIntercept" column="maker_intercept"/>
+        <result property="makerWindowCenter" column="maker_window_center"/>
+        <result property="makerWindowWidth" column="maker_window_width"/>
+        <result property="makerIsDicom" column="maker_is_dicom"/>
+        <result property="makerScale" column="maker_scale"/>
+        <result property="sort" column="sort"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createName" column="create_name"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateName" column="update_name"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select e.dicom_maker_id,
+               e.instance_uid,
+               e.study_uid,
+               e.series_uid,
+               e.study_date,
+               e.pat_card_id,
+               e.patient_name,
+               e.maker_doctor,
+               e.maker_enterprise_name,
+               e.maker_time,
+               e.maker_image_address,
+               e.maker_description,
+               e.maker_image,
+               e.maker_columns,
+               e.maker_rows,
+               e.maker_column_pixel_spacing,
+               e.maker_row_pixel_spacing,
+               e.maker_slope,
+               e.maker_intercept,
+               e.maker_window_center,
+               e.maker_window_width,
+               e.maker_is_dicom,
+               e.maker_scale,
+               e.sort,
+               e.create_by,
+               e.create_time,
+               e.update_by,
+               e.update_time,
+               e.remark
+
+        from dicom_maker e
+    </sql>
+
+    <select id="selectDicomMakerList" parameterType="DicomMaker" resultMap="dicomMakerResult">
+        <include refid="selectVo"/>
+        where 1 = 1
+        <if test="instanceUid != null  and instanceUid != ''">and e.instance_uid = #{instanceUid}</if>
+        <if test="studyUid != null  and studyUid != ''">and e.study_uid = #{studyUid}</if>
+        <if test="seriesUid != null  and seriesUid != ''">and e.series_uid = #{seriesUid}</if>
+        <if test="studyDate != null  and studyDate != ''">and e.study_date = #{studyDate}</if>
+        <if test="patCardId != null  and patCardId != ''">and e.pat_card_id = #{patCardId}</if>
+        <if test="patientName != null  and patientName != ''">and e.patient_name like concat('%', #{patientName}, '%')
+        </if>
+        <if test="makerDoctor != null  and makerDoctor != ''">and e.maker_doctor = #{makerDoctor}</if>
+        <if test="makerEnterpriseName != null  and makerEnterpriseName != ''">and e.maker_enterprise_name like
+            concat('%', #{makerEnterpriseName}, '%')
+        </if>
+        <if test="makerTime != null  and makerTime != ''">and e.maker_time = #{makerTime}</if>
+        <if test="makerImageAddress != null  and makerImageAddress != ''">and e.maker_image_address =
+            #{makerImageAddress}
+        </if>
+        <if test="makerDescription != null  and makerDescription != ''">and e.maker_description = #{makerDescription}
+        </if>
+        <if test="sort != null  and sort != ''">and e.sort = #{sort}</if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+        order by e.sort
+    </select>
+
+    <select id="selectDicomMakerByDicomMakerId" parameterType="DicomMaker" resultMap="dicomMakerResult">
+        <include refid="selectVo"/>
+        where e.dicom_maker_id = #{dicomMakerId} and e.del_flag = 0
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <insert id="insertDicomMaker" parameterType="DicomMaker">
+        insert into dicom_maker
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">dicom_maker_id ,</if>
+            <if test="instanceUid != null and instanceUid != ''">instance_uid ,</if>
+            <if test="studyUid != null">study_uid ,</if>
+            <if test="seriesUid != null">series_uid ,</if>
+            <if test="studyDate != null">study_date ,</if>
+            <if test="patCardId != null">pat_card_id ,</if>
+            <if test="patientName != null">patient_name ,</if>
+            <if test="makerDoctor != null">maker_doctor ,</if>
+            <if test="makerEnterpriseName != null">maker_enterprise_name ,</if>
+            <if test="makerTime != null">maker_time ,</if>
+            <if test="makerImageAddress != null">maker_image_address ,</if>
+            <if test="makerDescription != null">maker_description ,</if>
+            <if test="makerImage != null">maker_image ,</if>
+            <if test="makerColumns != null">maker_columns ,</if>
+            <if test="makerRows != null">maker_rows ,</if>
+            <if test="makerColumnPixelSpacing != null">maker_column_pixel_spacing ,</if>
+            <if test="makerRowPixelSpacing != null">maker_row_pixel_spacing ,</if>
+            <if test="makerSlope != null">maker_slope ,</if>
+            <if test="makerIntercept != null">maker_intercept ,</if>
+            <if test="makerWindowCenter != null">maker_window_center ,</if>
+            <if test="makerWindowWidth != null">maker_window_width ,</if>
+            <if test="makerIsDicom != null">maker_is_dicom ,</if>
+            <if test="makerScale != null">maker_scale ,</if>
+            <if test="sort != null and sort != ''">sort ,</if>
+            <if test="createBy != null">create_by ,</if>
+            <if test="remark != null">remark ,</if>
+            <if test="enterpriseId != null">tenant_id ,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">#{snowflakeId} ,</if>
+            <if test="instanceUid != null and instanceUid != ''">#{instanceUid} ,</if>
+            <if test="studyUid != null">#{studyUid} ,</if>
+            <if test="seriesUid != null">#{seriesUid} ,</if>
+            <if test="studyDate != null">#{studyDate} ,</if>
+            <if test="patCardId != null">#{patCardId} ,</if>
+            <if test="patientName != null">#{patientName} ,</if>
+            <if test="makerDoctor != null">#{makerDoctor} ,</if>
+            <if test="makerEnterpriseName != null">#{makerEnterpriseName} ,</if>
+            <if test="makerTime != null">#{makerTime} ,</if>
+            <if test="makerImageAddress != null">#{makerImageAddress} ,</if>
+            <if test="makerDescription != null">#{makerDescription} ,</if>
+            <if test="makerImage != null">#{makerImage} ,</if>
+            <if test="makerColumns != null">#{makerColumns} ,</if>
+            <if test="makerRows != null">#{makerRows} ,</if>
+            <if test="makerColumnPixelSpacing != null">#{makerColumnPixelSpacing} ,</if>
+            <if test="makerRowPixelSpacing != null">#{makerRowPixelSpacing} ,</if>
+            <if test="makerSlope != null">#{makerSlope} ,</if>
+            <if test="makerIntercept != null">#{makerIntercept} ,</if>
+            <if test="makerWindowCenter != null">#{makerWindowCenter} ,</if>
+            <if test="makerWindowWidth != null">#{makerWindowWidth} ,</if>
+            <if test="makerIsDicom != null">#{makerIsDicom} ,</if>
+            <if test="makerScale != null">#{makerScale} ,</if>
+            <if test="sort != null and sort != ''">#{sort} ,</if>
+            <if test="createBy != null">#{createBy} ,</if>
+            <if test="remark != null">#{remark} ,</if>
+            <if test="enterpriseId != null">#{enterpriseId} ,</if>
+        </trim>
+    </insert>
+
+    <update id="updateDicomMaker" parameterType="DicomMaker">
+        update dicom_maker
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="instanceUid != null and instanceUid != ''">instance_uid = #{instanceUid} ,</if>
+            <if test="studyUid != null">study_uid = #{studyUid} ,</if>
+            <if test="seriesUid != null">series_uid = #{seriesUid} ,</if>
+            <if test="studyDate != null">study_date = #{studyDate} ,</if>
+            <if test="patCardId != null">pat_card_id = #{patCardId} ,</if>
+            <if test="patientName != null">patient_name = #{patientName} ,</if>
+            <if test="makerDoctor != null">maker_doctor = #{makerDoctor} ,</if>
+            <if test="makerEnterpriseName != null">maker_enterprise_name = #{makerEnterpriseName} ,</if>
+            <if test="makerTime != null">maker_time = #{makerTime} ,</if>
+            <if test="makerImageAddress != null">maker_image_address = #{makerImageAddress} ,</if>
+            <if test="makerDescription != null">maker_description = #{makerDescription} ,</if>
+            <if test="makerImage != null">maker_image = #{makerImage} ,</if>
+            <if test="makerColumns != null">maker_columns = #{makerColumns} ,</if>
+            <if test="makerRows != null">maker_rows = #{makerRows} ,</if>
+            <if test="makerColumnPixelSpacing != null">maker_column_pixel_spacing = #{makerColumnPixelSpacing} ,</if>
+            <if test="makerRowPixelSpacing != null">maker_row_pixel_spacing = #{makerRowPixelSpacing} ,</if>
+            <if test="makerSlope != null">maker_slope = #{makerSlope} ,</if>
+            <if test="makerIntercept != null">maker_intercept = #{makerIntercept} ,</if>
+            <if test="makerWindowCenter != null">maker_window_center = #{makerWindowCenter} ,</if>
+            <if test="makerWindowWidth != null">maker_window_width = #{makerWindowWidth} ,</if>
+            <if test="makerIsDicom != null">maker_is_dicom = #{makerIsDicom} ,</if>
+            <if test="makerScale != null">maker_scale = #{makerScale} ,</if>
+            <if test="sort != null and sort != ''">sort = #{sort} ,</if>
+            <if test="remark != null">remark = #{remark} ,</if>
+        </trim>
+        where dicom_maker_id = #{dicomMakerId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <update id="updateDicomMakerSort" parameterType="DicomMaker">
+        update dicom_maker set sort =
+        <foreach collection="params.Ids" item="item" index="index" separator=" " open="case dicom_maker_id" close="end">
+            when #{item.dicomMakerId} then #{item.sort}
+        </foreach>
+        where dicom_maker_id in
+        <foreach collection="params.Ids" item="item" index="index" separator="," open="(" close=")">
+            #{item.dicomMakerId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <delete id="deleteDicomMakerByDicomMakerId" parameterType="DicomMaker">
+        update dicom_maker
+        set del_flag = 1
+        where dicom_maker_id = #{dicomMakerId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+    <delete id="deleteDicomMakerByDicomMakerIds" parameterType="DicomMaker">
+        update dicom_maker
+        set del_flag = 1
+        where dicom_maker_id in
+        <foreach item="dicomMakerId" collection="params.Ids" open="(" separator="," close=")">
+            #{dicomMakerId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+
+    <!--自己写的-->
+    <select id="getDicomMakerByPatCardId" parameterType="DicomMaker" resultMap="dicomMakerResult">
+        <include refid="selectVo"/>
+        where 1 = 1
+        <if test="instanceUid != null  and instanceUid != ''">and e.instance_uid = #{instanceUid}</if>
+        <if test="studyUid != null  and studyUid != ''">and e.study_uid = #{studyUid}</if>
+        <if test="seriesUid != null  and seriesUid != ''">and e.series_uid = #{seriesUid}</if>
+        <if test="patCardId != null  and patCardId != ''">and e.pat_card_id = #{patCardId}</if>
+        <if test="patientName != null  and patientName != ''">and e.patient_name like concat('%', #{patientName}, '%')
+        </if>
+        <if test="makerDoctor != null  and makerDoctor != ''">and e.maker_doctor like concat('%', #{makerDoctor}, '%')
+        </if>
+        <if test="makerEnterpriseName != null  and makerEnterpriseName != ''">and e.maker_enterprise_name like
+            concat('%', #{makerEnterpriseName}, '%')
+        </if>
+
+        <if test="sort != null  and sort != ''">and e.sort = #{sort}</if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+        order by e.sort
+    </select>
+
+
+</mapper>

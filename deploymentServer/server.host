@@ -1,0 +1,76 @@
+upstream westChinaServer{
+        server 192.168.41.10:5000;
+}
+server {
+    listen 5000 default_server;
+    listen [::]:5000 default_server;
+    server_name  192.168.41.10:5000;
+    server_name_in_redirect off;
+    charset utf-8;
+
+    location / {
+        rewrite  ^/(.*) http://$server_name/main last;
+    }
+
+    location /test {
+        alias   /home/tune01/test/;
+        try_files $uri $uri/ /index.html =404;
+        index  index.html index.htm;
+    }
+
+    location /main {
+        alias   /home/tune01/westChina/ui/main/;
+        try_files $uri $uri/ /index.html =404;
+        index  index.html index.htm;
+    }
+
+    location /administrator {
+        alias   /home/tune01/westChina/ui/administrator/;
+        try_files $uri $uri/ /index.html =404;
+        index  index.html index.htm;
+    }
+
+    location /ct {
+        alias   /home/tune01/westChina/ui/ct/;
+        try_files $uri $uri/ /index.html =404;
+        index  index.html index.htm;
+    }
+
+    location /prod-api/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://westChinaBackend:8080/;
+    }
+
+    location /api-ct/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://westChinaBackend:8090/;
+    }
+
+    location /api-ct-upload/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://westChinaBackend:8080/;
+    }
+
+    location /api-ct-minio/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://westChinaBackend:9000/;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+
+    location = /50x.html {
+        root   html;
+    }
+}

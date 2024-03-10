@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.westChina.ct.mapper.CtDicomMapper">
+
+    <resultMap type="CtDicom" id="ctDicomResult">
+        <id     property="dicomId"                  column="dicom_id"                 />
+        <result property="patCardId"                column="pat_card_id"              />
+        <result property="dicomCtTime"              column="dicom_ct_time"            />
+        <result property="dicomCtStudyUid"          column="dicom_ct_study_uid"       />
+        <result property="dicomCtSeriesUid"         column="dicom_ct_series_uid"      />
+        <result property="dicomCtBody"              column="dicom_ct_body"            />
+        <result property="dicomCtPath"              column="dicom_ct_path"            />
+        <result property="dicomCtCount"             column="dicom_ct_count"           />
+        <result property="dicomCtDescription"      column="dicom_ct_description"    />
+        <result property="sort"                     column="sort"                     />
+        <result property="createBy"                 column="create_by"                />
+        <result property="createName"               column="create_name"              />
+        <result property="createTime"               column="create_time"              />
+        <result property="updateBy"                 column="update_by"                />
+        <result property="updateName"               column="update_name"              />
+        <result property="updateTime"               column="update_time"              />
+        <result property="remark"                   column="remark"                   />
+    </resultMap>
+
+    <sql id="selectVo">
+        select e.dicom_id, e.pat_card_id, e.dicom_ct_time, e.dicom_ct_study_uid, e.dicom_ct_series_uid, e.dicom_ct_body, e.dicom_ct_path, e.dicom_ct_count, e.dicom_ct_description, e.sort, e.create_by, e.create_time, e.update_by, e.update_time, e.remark
+
+        from ct_dicom e
+    </sql>
+
+    <select id="selectDicomList" parameterType="CtDicom" resultMap="ctDicomResult">
+        <include refid="selectVo"/>
+        where 1 = 1
+        <if test="patCardId != null  and patCardId != ''">                    and e.pat_card_id = #{patCardId}                       </if>
+        <if test="dicomCtTime != null  and dicomCtTime != ''">                and e.dicom_ct_time = #{dicomCtTime}                   </if>
+        <if test="dicomCtStudyUid != null  and dicomCtStudyUid != ''">        and e.dicom_ct_study_uid = #{dicomCtStudyUid}          </if>
+        <if test="dicomCtSeriesUid != null  and dicomCtSeriesUid != ''">      and e.dicom_ct_series_uid = #{dicomCtSeriesUid}        </if>
+        <if test="dicomCtBody != null  and dicomCtBody != ''">                and e.dicom_ct_body = #{dicomCtBody}                   </if>
+        <if test="dicomCtPath != null  and dicomCtPath != ''">                and e.dicom_ct_path = #{dicomCtPath}                   </if>
+        <if test="dicomCtCount != null ">                                     and e.dicom_ct_count = #{dicomCtCount}                 </if>
+        <if test="dicomCtDescription != null  and dicomCtDescription != ''">    and e.dicom_ct_description = #{dicomCtDescription}   </if>
+        <if test="sort != null  and sort != ''">                              and e.sort = #{sort}                                   </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+        order by e.sort
+    </select>
+
+    <select id="selectDicomByDicomId" parameterType="CtDicom" resultMap="ctDicomResult">
+        <include refid="selectVo"/>
+        where e.dicom_id = #{dicomId}  and e.del_flag = 0
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <insert id="insertDicom" parameterType="CtDicom">
+        insert into ct_dicom
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">                                                dicom_id                ,</if>
+            <if test="patCardId != null and patCardId != ''">                              pat_card_id             ,</if>
+            <if test="dicomCtTime != null">                                                dicom_ct_time           ,</if>
+            <if test="dicomCtStudyUid != null">                                            dicom_ct_study_uid      ,</if>
+            <if test="dicomCtSeriesUid != null">                                           dicom_ct_series_uid     ,</if>
+            <if test="dicomCtBody != null">                                                dicom_ct_body           ,</if>
+            <if test="dicomCtPath != null">                                                dicom_ct_path           ,</if>
+            <if test="dicomCtCount != null">                                               dicom_ct_count          ,</if>
+            <if test="dicomCtDescription != null">                                        dicom_ct_description   ,</if>
+            <if test="sort != null and sort != ''">                                        sort                    ,</if>
+            <if test="createBy != null">                                                   create_by               ,</if>
+            <if test="remark != null">                                                     remark                  ,</if>
+            <if test="enterpriseId != null">                                               tenant_id               ,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">                                                #{snowflakeId}         ,</if>
+            <if test="patCardId != null and patCardId != ''">                              #{patCardId}            ,</if>
+            <if test="dicomCtTime != null">                                                #{dicomCtTime}          ,</if>
+            <if test="dicomCtStudyUid != null">                                            #{dicomCtStudyUid}      ,</if>
+            <if test="dicomCtSeriesUid != null">                                           #{dicomCtSeriesUid}     ,</if>
+            <if test="dicomCtBody != null">                                                #{dicomCtBody}          ,</if>
+            <if test="dicomCtPath != null">                                                #{dicomCtPath}          ,</if>
+            <if test="dicomCtCount != null">                                               #{dicomCtCount}         ,</if>
+            <if test="dicomCtDescription != null">                                        #{dicomCtDescription}    ,</if>
+            <if test="sort != null and sort != ''">                                        #{sort}                 ,</if>
+            <if test="createBy != null">                                                   #{createBy}             ,</if>
+            <if test="remark != null">                                                     #{remark}               ,</if>
+            <if test="enterpriseId != null">                                               #{enterpriseId}         ,</if>
+         </trim>
+    </insert>
+
+    <update id="updateDicom" parameterType="CtDicom">
+        update ct_dicom
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="patCardId != null and patCardId != ''">                              pat_card_id = #{patCardId}            ,</if>
+            <if test="dicomCtTime != null">                                                dicom_ct_time = #{dicomCtTime}        ,</if>
+            <if test="dicomCtStudyUid != null">                                            dicom_ct_study_uid = #{dicomCtStudyUid}       ,</if>
+            <if test="dicomCtSeriesUid != null">                                           dicom_ct_series_uid = #{dicomCtSeriesUid}         ,</if>
+            <if test="dicomCtBody != null">                                                dicom_ct_body = #{dicomCtBody}        ,</if>
+            <if test="dicomCtPath != null">                                                dicom_ct_path = #{dicomCtPath}        ,</if>
+            <if test="dicomCtCount != null">                                               dicom_ct_count = #{dicomCtCount}      ,</if>
+            <if test="dicomCtDescription != null">                                        dicom_ct_description = #{dicomCtDescription}              ,</if>
+            <if test="sort != null and sort != ''">                                        sort = #{sort}                        ,</if>
+            <if test="remark != null">                                                     remark = #{remark}                    ,</if>
+        </trim>
+        where dicom_id = #{dicomId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <update id="updateDicomSort" parameterType="CtDicom">
+        update ct_dicom set sort =
+        <foreach collection="params.Ids" item="item" index="index" separator=" " open="case dicom_id" close="end">
+            when #{item.dicomId} then #{item.sort}
+        </foreach>
+        where dicom_id in
+        <foreach collection="params.Ids" item="item" index="index" separator="," open="(" close=")">
+            #{item.dicomId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </update>
+
+    <delete id="deleteDicomByDicomId" parameterType="CtDicom">
+        update ct_dicom
+        set del_flag = 1
+        where dicom_id = #{dicomId}
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+    <delete id="deleteDicomByDicomIds" parameterType="CtDicom">
+        update ct_dicom
+        set del_flag = 1
+        where dicom_id in
+        <foreach item="dicomId" collection="params.Ids" open="(" separator="," close=")">
+            #{dicomId}
+        </foreach>
+        <!-- 数据范围过滤 -->
+        ${params.updateScope}
+    </delete>
+
+
+
+
+
+<!--自己写的-->
+        <select id="getDicomListByPatCardId" parameterType="CtDicom" resultMap="ctDicomResult">
+            <include refid="selectVo"/>
+            where 1 = 1
+            <if test="patCardId != null  and patCardId != ''">                    and e.pat_card_id = #{patCardId}                       </if>
+            <if test="dicomCtTime != null  and dicomCtTime != ''">                and e.dicom_ct_time = #{dicomCtTime}                   </if>
+            <if test="dicomCtStudyUid != null  and dicomCtStudyUid != ''">        and e.dicom_ct_study_uid = #{dicomCtStudyUid}          </if>
+            <if test="dicomCtSeriesUid != null  and dicomCtSeriesUid != ''">      and e.dicom_ct_series_uid = #{dicomCtSeriesUid}        </if>
+            <if test="dicomCtBody != null  and dicomCtBody != ''">                and e.dicom_ct_body = #{dicomCtBody}                   </if>
+            <if test="dicomCtPath != null  and dicomCtPath != ''">                and e.dicom_ct_path = #{dicomCtPath}                   </if>
+            <if test="dicomCtCount != null ">                                     and e.dicom_ct_count = #{dicomCtCount}                 </if>
+            <if test="dicomCtDescription != null ">                               and e.dicom_ct_description = #{dicomCtDescription}        </if>
+            <if test="sort != null ">                                             and e.sort = #{sort}                                   </if>
+            <if test="createBy != null ">                                         and e.create_by = #{createBy}                          </if>
+            <if test="createTime != null ">                                       and e.create_time = #{createTime}                      </if>
+            <if test="updateBy != null ">                                         and e.update_by = #{updateBy}                          </if>
+            <if test="updateTime != null ">                                       and e.update_time = #{updateTime}                      </if>
+            <if test="remark != null  and remark != ''">                          and e.remark = #{remark}                               </if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
+            order by e.sort
+        </select>
+
+
+
+
+</mapper>

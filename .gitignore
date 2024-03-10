@@ -1,0 +1,73 @@
+# Project exclude paths
+/westChina-api/westChina-api-system/target/
+/westChina-api/westChina-api-tenant/target/
+/westChina-auth/target/
+/westChina-common/westChina-common-core/target/
+/westChina-common/westChina-common-datascope/target/
+/westChina-common/westChina-common-datasource/target/
+/westChina-common/westChina-common-log/target/
+/westChina-common/westChina-common-message/target/
+/westChina-common/westChina-common-redis/target/
+/westChina-common/westChina-common-security/target/
+/westChina-common/westChina-common-socket/target/
+/westChina-common/westChina-common-swagger/target/
+/westChina-gateway/target/
+/westChina-modules/westChina-ct/target/
+/westChina-modules/westChina-file/target/
+/westChina-modules/westChina-gen/target/
+/westChina-modules/westChina-job/target/
+/westChina-modules/westChina-system/target/
+/westChina-modules/westChina-tenant/target/
+/westChina-visual/westChina-monitor/target/
+/logs/
+/tempCode-gen/
+/deploymentServer/runall/
+/docker/
+/sql/
+*.jar
+######################################################################
+# Build Tools
+
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+######################################################################
+# IDE
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### JRebel ###
+rebel.xml
+### NetBeans ###
+nbproject/private/
+build/*
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+######################################################################
+# Others
+*.log
+*.xml.versionsBackup
+*.swp
+
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml
