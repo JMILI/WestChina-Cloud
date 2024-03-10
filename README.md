@@ -10,7 +10,7 @@
    - 软件可扩展
    - 数据源物理隔离
    - 基于微服务
-# 项目部署或开发@xueyitiantang
+# 项目部署或开发
 开发或部署步骤参考[思维导图](https://www.processon.com/view/link/6523b3a0ec6dd11d4673142f)
 也可以参考xueyi-cloud的部署流程，大致相当，理解xueyi-cloud的部署过程，就理解了本项目的部署过程
 部分功能阅览：
