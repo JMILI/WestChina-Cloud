@@ -110,6 +110,7 @@ cd ct && npm run build:prod
 
 
 # 肿瘤识别项目推荐(有兴趣的同志可以为本系统添加该部分功能)：
+
 1：基于深度学习的肿瘤辅助诊断系统，以图像分割为核心，利用人工智能完成肿瘤区域的识别勾画并提供肿瘤区域的特征来辅助医生进行诊断。有完整的模型构建、后端架设、工业级部署和前端访问功能。
 https://github.com/xming521/CTAI
 ![img1111.png](img/img1111.png)
@@ -122,8 +123,10 @@ https://github.com/Klepackp/azure_tumor_recognition
 
 4：differential-feature-map-neural-network-DFNN-
  https://github.com/hzluyali/differential-feature-map-neural-network-DFNN-
+
 5:视频
 https://www.bilibili.com/video/BV1kG411T7tr/?spm_id_from=333.337.search-card.all.click&vd_source=f4140c1808e7f9c6e8d8aacb45614ae1
+
 6：【肺结节识别】3D Deep Leaky Noisy-or Network论文
 https://zhuanlan.zhihu.com/p/51922663
 https://github.com/lfz/DSB2017
