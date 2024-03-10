@@ -37,17 +37,17 @@
 
 3. 打包好的jar包如下:
 
-   ![img_1.png](img_1.png)
+   ![img_1.png](img/img1.png)
 4. 
 ### 前端打包
 
-![img_2.png](img_2.png)
+![img_2.png](img/img2.png)
 
 上面三个图如下：
 
-![img_3.png](img_3.png)
-![img_4.png](img_4.png)
-![img_5.png](img_5.png)
+![img_3.png](img/img3.png)
+![img_4.png](img/img4.png)
+![img_5.png](img/img5.png)
 
 打包：
 ```
@@ -62,21 +62,21 @@ cd ct && npm run build:prod
 
 上传到服务器：
 
-![img_7.png](img_7.png)
+![img_7.png](img/img7.png)
 
 **运行 sh runall.sh start all 即可全部启动**
 
 ### 前端启动
 安装好nginx ,并配置好
 
-![img_8.png](img_8.png)
+![img_8.png](img/img8.png)
 设置服务启动文件参数
-![img_9.png](img/img_9.png)
+![img_9.png](img/img9.png)
 
 重启nginx即可
 访问http://westchinaui:5000/即可
 ### 各类服务以及端口对应关系
-![img_10.png](img/img_10.png)
+![img_10.png](img/img10.png)
 # 部分功能阅览：
 ![img_2.png](img/img_2.png)
 ![img.png](img/img.png)
