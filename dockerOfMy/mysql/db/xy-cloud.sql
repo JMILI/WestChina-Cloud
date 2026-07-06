@@ -43,6 +43,89 @@ create table ct_patients
     comment '病人信息表';
 
 
+DROP TABLE IF EXISTS `dicom_maker`;
+CREATE TABLE `dicom_maker`
+(
+    `dicom_maker_id`        bigint       NOT NULL COMMENT 'id',
+    `instance_uid`          varchar(500) NOT NULL COMMENT '单张图像instanceID',
+    `study_uid`             varchar(500) NULL     DEFAULT NULL COMMENT '研究id',
+    `series_uid`            varchar(500) NULL     DEFAULT NULL COMMENT '序列UId',
+    `study_date`            varchar(30)  NULL     DEFAULT NULL COMMENT 'ct拍摄时间',
+    `pat_card_id`           varchar(20)  NULL     DEFAULT NULL COMMENT '身份证号',
+    `patient_name`          varchar(1000) NULL    DEFAULT NULL COMMENT '病人姓名',
+    `maker_doctor`          varchar(50)  NULL     DEFAULT NULL COMMENT '标记医生',
+    `maker_enterprise_name` varchar(50)  NULL     DEFAULT NULL COMMENT '医院名',
+    `maker_time`            varchar(30)  NULL     DEFAULT NULL COMMENT '标记时间',
+    `maker_image_address`   varchar(500) NULL     DEFAULT NULL COMMENT '标记图像地址',
+    `maker_description`     varchar(1000) NULL    DEFAULT NULL COMMENT '备注',
+    `maker_image`           varchar(50)  NULL     DEFAULT NULL COMMENT '用来存储图像元数据，临时用',
+    `maker_columns`         int          NULL     DEFAULT NULL COMMENT '列值',
+    `maker_rows`            int          NULL     DEFAULT NULL COMMENT '行值',
+    `maker_column_pixel_spacing` double    NULL     DEFAULT NULL COMMENT '列像素间距',
+    `maker_row_pixel_spacing`    double    NULL     DEFAULT NULL COMMENT '行像素间距',
+    `maker_slope`           int          NULL     DEFAULT NULL COMMENT '转换系数，用于像素到CT值的转换',
+    `maker_intercept`       int          NULL     DEFAULT NULL COMMENT '截距，用于像素到CT值的转换',
+    `maker_window_center`   int          NULL     DEFAULT NULL COMMENT '窗位',
+    `maker_window_width`    int          NULL     DEFAULT NULL COMMENT '窗宽',
+    `maker_is_dicom`        tinyint      NULL     DEFAULT NULL COMMENT '是否时dicom p10格式文件',
+    `maker_scale`           double       NULL     DEFAULT NULL COMMENT '缩放比例',
+    `sort`                  int UNSIGNED NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `create_by`             bigint       NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`           datetime     NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`             bigint       NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`           datetime     NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark`                varchar(1000) NULL    DEFAULT NULL COMMENT '备注',
+    `del_flag`              tinyint      NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    `tenant_id`             bigint       NOT NULL COMMENT '租户Id',
+    PRIMARY KEY (`dicom_maker_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = '病人标记过的dicom图像表'
+  ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for dicom_ai_lesion
+-- ----------------------------
+DROP TABLE IF EXISTS `dicom_ai_lesion`;
+CREATE TABLE `dicom_ai_lesion`
+(
+    `dicom_ai_lesion_id`     bigint       NOT NULL COMMENT 'id',
+    `source_dicom_id`        bigint       NULL     DEFAULT NULL COMMENT '原始序列dicom_id',
+    `study_uid`              varchar(500) NULL     DEFAULT NULL COMMENT '研究id',
+    `series_uid`             varchar(500) NULL     DEFAULT NULL COMMENT '序列UId',
+    `study_date`             varchar(30)  NULL     DEFAULT NULL COMMENT 'ct拍摄时间',
+    `pat_card_id`            varchar(20)  NULL     DEFAULT NULL COMMENT '身份证号',
+    `patient_name`           varchar(1000) NULL    DEFAULT NULL COMMENT '病人姓名',
+    `body_part`              varchar(100) NULL     DEFAULT NULL COMMENT '检查部位',
+    `detect_doctor`          varchar(50)  NULL     DEFAULT NULL COMMENT '识别医生',
+    `detect_enterprise_name` varchar(50)  NULL     DEFAULT NULL COMMENT '医院名',
+    `detect_time`            varchar(30)  NULL     DEFAULT NULL COMMENT '识别时间',
+    `ai_series_path`         varchar(1000) NULL    DEFAULT NULL COMMENT 'AI序列最后一张dcm路径',
+    `image_count`            int          NULL     DEFAULT NULL COMMENT '序列切片数量',
+    `lesion_count`           int          NULL     DEFAULT 0 COMMENT '检出病灶数量',
+    `lesions_json`           mediumtext   NULL COMMENT '病灶识别结果JSON',
+    `engine`                 varchar(100) NULL     DEFAULT NULL COMMENT '推理引擎',
+    `disclaimer`             varchar(1000) NULL    DEFAULT NULL COMMENT '免责声明',
+    `description`            varchar(1000) NULL    DEFAULT NULL COMMENT '备注',
+    `detect_mode`            varchar(20)  NULL     DEFAULT 'series' COMMENT '识别模式 series|single',
+    `instance_uid`           varchar(128) NULL     DEFAULT NULL COMMENT '标记层 SOP Instance UID',
+    `source_slice_index`     int          NULL     DEFAULT NULL COMMENT '原始序列层索引0-based',
+    `sort`                   int UNSIGNED NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `create_by`              bigint       NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`            datetime     NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`              bigint       NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`            datetime     NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark`                 varchar(1000) NULL    DEFAULT NULL COMMENT '备注',
+    `del_flag`               tinyint      NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    `tenant_id`              bigint       NOT NULL COMMENT '租户Id',
+    PRIMARY KEY (`dicom_ai_lesion_id`) USING BTREE,
+    KEY `idx_ai_lesion_pat_card` (`pat_card_id`) USING BTREE,
+    KEY `idx_ai_lesion_source_dicom` (`source_dicom_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = 'AI识别病灶结果序列表'
+  ROW_FORMAT = Dynamic;
+
 
 DROP TABLE IF EXISTS `ct_dicom`;
 create table ct_dicom
@@ -56,6 +139,7 @@ create table ct_dicom
     dicom_ct_body       varchar(100) null comment '检查的身体部位',
     dicom_ct_path       varchar(1000) null comment '序列第一张的存储地址',
     dicom_ct_count      int null comment '一个序列的dicom数量',
+    dicom_ct_description varchar(1000) null comment '备注',
     sort                int unsigned default 0 not null comment '显示顺序',
     create_by           bigint null comment '创建者',
     create_time         datetime default CURRENT_TIMESTAMP null comment '创建时间',
@@ -1081,25 +1165,46 @@ INSERT INTO `sys_menu`
 VALUES (20200, 0, '系统监控', 'monitor', NULL, '', 'N', 'N', 'N', 'N', 'M', 'Y', '', 'xy_monitor', 4, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '系统监控目录', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20210, 20200, 'Sentinel控制台', 'http://westChinaBackend:8718', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20210, 20200, 'Sentinel控制台', 'http://127.0.0.1:8718', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:sentinel:list', 'xy_sentinel', 1, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '流量控制菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20220, 20200, 'Nacos控制台', 'http://westChinaBackend:8848/nacos', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20220, 20200, 'Nacos控制台', 'http://127.0.0.1:8848/nacos', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:nacos:list', 'xy_nacos', 2, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '服务治理菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20230, 20200, 'Admin控制台', 'http://localhost:9100/login', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20230, 20200, 'Admin控制台', 'http://127.0.0.1:9100/login', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:server:list', 'xy_server', 3, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '服务监控菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20240, 20200, 'rabbit控制台', 'http://westChinaBackend:15672/#/', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20240, 20200, 'rabbit控制台', 'http://127.0.0.1:15672/#/', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:rabbitmq:list', 'xy_rabbit', 4, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '消息队列菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20300, 0, '系统工具', 'tool', NULL, '', 'N', 'N', 'N', 'N', 'M', 'Y', '', 'xy_tool', 5, '0', 0,
+VALUES (1628296473714249728, 20200, 'minio控制台', 'http://127.0.0.1:9001', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+        '', 'xy_source', 5, '0', -2, '2023-02-22 07:31:46', NULL, NULL, 'MinIO对象存储控制台', 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628293334747533312, 20000, '对象存储管理', 'bucket', 'tenant/bucket/index', '', 'N', 'N', 'N', 'N', 'C', 'Y',
+        'tenant:bucket:list', 'example', 2, '0', -2, '2023-02-22 07:19:17', -2, '2023-02-22 08:11:41', NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628303911859474432, 1628293334747533312, '对象存储空间查询', '', NULL, NULL, 'N', 'N', 'N', 'Y', 'F', 'Y',
+        'tenant:bucket:query', '#', 1, '0', -2, '2023-02-22 08:01:19', NULL, NULL, NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628304092340359168, 1628293334747533312, '对象存储空间新增', '', NULL, NULL, 'N', 'N', 'N', 'Y', 'F', 'Y',
+        'tenant:bucket:add', '#', 2, '0', -2, '2023-02-22 08:02:02', NULL, NULL, NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628304264768192512, 1628293334747533312, '对象存储空间修改', '', NULL, NULL, 'N', 'N', 'N', 'Y', 'F', 'Y',
+        'tenant:bucket:edit', '#', 3, '0', -2, '2023-02-22 08:02:43', NULL, NULL, NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628304455491575808, 1628293334747533312, '对象存储空间删除', '', NULL, NULL, 'N', 'N', 'N', 'Y', 'F', 'Y',
+        'tenant:bucket:remove', '#', 4, '0', -2, '2023-02-22 08:03:29', NULL, NULL, NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (1628304597242298368, 1628293334747533312, '对象存储空间导出', '', NULL, NULL, 'N', 'N', 'N', 'Y', 'F', 'Y',
+        'tenant:bucket:export', '#', 5, '0', -2, '2023-02-22 08:04:03', NULL, NULL, NULL, 0, 2, -1);
+INSERT INTO `sys_menu`
+VALUES (20300, 0, '系统工具', 'tool', NULL, '', 'N', 'N', 'N', 'N', 'M', 'N', '', 'xy_tool', 5, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '系统工具目录', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20310, 20300, '表单构建', 'build', 'tool/build/index', '', 'N', 'N', 'N', 'N', 'C', 'Y', 'tool:build:list',
+VALUES (20310, 20300, '表单构建', 'build', 'tool/build/index', '', 'N', 'N', 'N', 'N', 'C', 'N', 'tool:build:list',
         'xy_build', 1, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '表单构建菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20320, 20300, '代码生成', 'gen', 'tool/gen/index', '', 'N', 'N', 'N', 'N', 'C', 'Y', 'tool:gen:list', 'xy_code', 2,
+VALUES (20320, 20300, '代码生成', 'gen', 'tool/gen/index', '', 'N', 'N', 'N', 'N', 'C', 'N', 'tool:gen:list', 'xy_code', 2,
         '0', 0, '2022-03-06 21:36:38', NULL, NULL, '代码生成菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
 VALUES (20321, 20320, '生成查询', '#', '', '', 'N', 'N', 'N', 'N', 'F', 'N', 'tool:gen:query', '#', 1, '0', 0,
@@ -1120,7 +1225,7 @@ INSERT INTO `sys_menu`
 VALUES (20326, 20320, '生成代码', '#', '', '', 'N', 'N', 'N', 'N', 'F', 'N', 'tool:gen:code', '#', 6, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20330, 20300, '系统接口', 'http://westChinaBackend:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20330, 20300, '系统接口', 'http://127.0.0.1:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'N',
         'tool:swagger:list', 'xy_swagger', 3, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '系统接口菜单', 0, 2, -1);
 
 -- ----------------------------
@@ -1492,12 +1597,12 @@ VALUES (0, '默认系统',
 INSERT INTO `xy_system`
 VALUES (1, 'CT系统',
         '{\"materialId\":\"1\",\"materialNick\":\"1.jpg\",\"materialUrl\":\"https://images.gitee.com/uploads/images/2021/1101/141155_f3dfce1d_7382127.jpeg\",\"materialOriginalUrl\":\"https://images.gitee.com/uploads/images/2021/1101/141155_f3dfce1d_7382127.jpeg\",\"hiddenVisible\":false}',
-        'http://localhost:83', 'Y', 'N', '1', 'Y', 'Y', 0, '0', NULL, '2022-03-06 13:19:52', NULL,
+        'http://127.0.0.1:5000/ct/', 'Y', 'N', '1', 'Y', 'Y', 0, '0', NULL, '2022-03-06 13:19:52', NULL,
         '2022-03-06 19:44:06', 'ct阅片系统', 0, 0);
 INSERT INTO `xy_system`
 VALUES (2, '租户管理系统',
         '{\"materialId\":\"1\",\"materialNick\":\"1.jpg\",\"materialUrl\":\"https://images.gitee.com/uploads/images/2021/1101/141601_d68e92a4_7382127.jpeg\",\"materialOriginalUrl\":\"https://images.gitee.com/uploads/images/2021/1101/141601_d68e92a4_7382127.jpeg\",\"hiddenVisible\":false}',
-        'http://localhost:81', 'N', 'Y', '1', 'Y', 'Y', 0, '0', NULL, '2022-03-06 13:19:52', NULL, NULL, '租户管理系统', 0,
+        'http://127.0.0.1:5000/administrator/', 'N', 'Y', '1', 'Y', 'Y', 0, '0', NULL, '2022-03-06 13:19:52', NULL, NULL, '租户管理系统', 0,
         -1);
 
 -- ----------------------------
@@ -1652,7 +1757,34 @@ CREATE TABLE `xy_tenant_strategy_source`
 INSERT INTO `xy_tenant_strategy_source`
 VALUES (1, 1, 'Y', 0);
 
+-- ----------------------------
+-- Table structure for xy_tenant_bucket
+-- ----------------------------
+DROP TABLE IF EXISTS `xy_tenant_bucket`;
+CREATE TABLE `xy_tenant_bucket`
+(
+    `bucket_id`          bigint                                                        NOT NULL COMMENT '桶Id',
+    `bucket_name`        varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '桶名',
+    `bucket_tenant_id`   bigint                                                        NOT NULL COMMENT '桶所属的租户',
+    `bucket_tenant_name` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '桶所属的租户名',
+    `sort`               int UNSIGNED                                                  NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `status`             char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci      NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+    `create_by`          bigint                                                        NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`        datetime                                                      NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`          bigint                                                        NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`        datetime                                                      NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `del_flag`           tinyint                                                       NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    PRIMARY KEY (`bucket_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = '对象存储表，存储租户的桶信息'
+  ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Records of xy_tenant_bucket
+-- ----------------------------
+INSERT INTO `xy_tenant_bucket`
+VALUES (1628304805795631104, 'common', -1, 'superadmin', 0, '0', -2, '2023-02-22 08:04:52', NULL, NULL, 0);
 
 
 

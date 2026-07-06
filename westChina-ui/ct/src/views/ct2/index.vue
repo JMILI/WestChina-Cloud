@@ -1,87 +1,25 @@
 <template>
-  <div class="ct-container"
-       :style="{
-         width:divTempWidth,
-       }
-">
-    <!--div 方病人CT序列列 表-->
-    <el-scrollbar style="height:100%">
-      <div class="left" v-show="openStudySeries">
-
-        <el-collapse v-model="activeNames" class="left-collapse">
-          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
-            <el-card v-for="item in makerInfoList"
-                     :body-style="{ padding: '0px' }">
-              <div class="left-label-item" @click="viewImage(item)">
-                <div>图像id：{{ item.instanceUid }}</div>
-                <div>拍摄CT时间：{{ item.studyDate }}</div>
-                <div class="bottom clearfix">
-                  <span class="time">标记日期:{{ item.makerTime }}</span>
-                </div>
-              </div>
-            </el-card>
-            <div v-if="isDisplaySave" class="left-label-item-save">
-
-              <el-button class="uploader-btn" @click="submitUpload">保存</el-button>
-              <br>
-              <span class="noteOfMe"> 解释：点击保存按钮，系统将上传标记的图像!!!</span>
-
-            </div>
-          </el-collapse-item>
-
-
-          <el-collapse-item title="病人study列表" name="2" class="left-study">
-
-            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key"
-                         class="left-study-collapse"
-
-            >
-              <!--              study-->
-              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3"
-              >
-                <!--                @click="listenerDisplayCanvas()"-->
-                <!--                series-->
-                <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
-                         :childrenIndex="studySeriesList[key][childrenKey].dicomId"
-                         :body-style="{ padding: '0px' }"
-                         @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
-                >
-                  <div
-                    :ref="studySeriesList[key][childrenKey].dicomId"
-                    class="ct-image1"
-                  >
-                  </div>
-                  <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
-                  <div style="padding: 14px;" class="left-study-collapse-item"
-                       @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
-                  >
-                    <div>id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
-                    <div>研究id：{{ studySeriesList[key][childrenKey].dicomCtStudyUid }}</div>
-                    <div>序列id：{{ studySeriesList[key][childrenKey].dicomCtSeriesUid }}</div>
-                    <div>检查部位：{{ studySeriesList[key][childrenKey].dicomCtBody }}</div>
-                    <div class="bottom clearfix">
-                      <span class="time">日期:{{ studySeriesList[key][childrenKey].dicomCtTime }}</span>
-                      <!--                      <el-button type="text" class="button" @click="ownData(studySeriesList[key][childrenKey])">操作按钮-->
-                      <!--                      </el-button>-->
-                    </div>
-                  </div>
-                </el-card>
-              </el-collapse-item>
-
-            </el-collapse>
-          </el-collapse-item>
-
-        </el-collapse>
-
-      </div>
-    </el-scrollbar>
-    <!--    </div>-->
-
+  <div class="ct-container">
+    <aside v-if="openStudySeries" class="study-aside">
+      <study-side-panel
+        ref="studyPanel"
+        :maker-flag="makerFlag"
+        :maker-info-list="makerInfoList"
+        :is-display-save="isDisplaySave"
+        :study-series-list="studySeriesList"
+        :ai-lesion-items="aiLesionItems"
+        :active-series-id="activeSeriesDicomId"
+        :active-ai-lesion-id="activeAiLesionId"
+        @view-image="viewImage"
+        @view-ai-lesion="viewAiLesionSeries"
+        @submit-upload="submitUpload"
+        @change-series="changeCurrentImagesIds"
+        @hook:mounted="onStudyPanelMounted"
+      />
+    </aside>
+    <div class="viewports-wrap viewports-wrap--single">
     <div
       class="ct-father-Open"
-      :style="{
-         width:divTempWidth2,
-       }"
       oncontextmenu=" return false"
       onmousedown="return false">
       <!--      图像-->
@@ -295,7 +233,29 @@
       </div>
       <!--endregion-->
     </div>
-
+    <lesion-detect-log-panel
+      :visible="lesionLogPanelVisible"
+      :loading="lesionDetectLoading"
+      :progress="lesionDetectProgress"
+      :stage="lesionDetectStage"
+      :logs="lesionDetectLogs"
+      :stats="lesionDetectStats"
+      @close="closeLesionLogPanel"
+    />
+    </div>
+    <lesion-result-panel
+      :visible="aiLesionPanelVisible"
+      :offset-right="lesionLogPanelVisible ? 350 : 0"
+      :lesions="aiLesionList"
+      :disclaimer="aiLesionDisclaimer"
+      :engine="aiEngine"
+      :screening="aiScreeningData"
+      :instance-uid="aiInstanceUid"
+      :detect-mode="aiDetectMode"
+      :slice-index="aiSliceIndex"
+      @close="closeLesionPanel"
+      @select="jumpToLesionSlice"
+    />
   </div>
 
 </template>
@@ -313,6 +273,17 @@ import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from '@cornerstoneTools'
 import {ctFile} from "../../api/ct/ctFileUpload";
 import {addMaker} from "../../api/ct/maker";
+import StudySidePanel from './components/StudySidePanel'
+import LesionResultPanel from './components/LesionResultPanel'
+import LesionDetectLogPanel from './components/LesionDetectLogPanel'
+import lesionDetectMixin from '@/mixins/lesionDetect'
+import { getAiLesionByPatCardId } from '@/api/ct/aiLesion'
+import { enrichAiLesionRecord, lesionResultFromSavedRecord } from '@/utils/aiLesionSeries'
+import { findSeriesMeta, syncCornerstoneStackState } from '@/utils/lesionDetect'
+import {
+  hydrateStudySeriesList,
+  studySeriesNeedsImageIds
+} from '@/utils/studyImageIds'
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -326,9 +297,13 @@ cornerstoneWebImageLoader.external.cornerstone = cornerstone
 //endregion
 export default {
   name: 'ct2',
+  mixins: [lesionDetectMixin],
+  components: { StudySidePanel, LesionResultPanel, LesionDetectLogPanel },
   data() {
     return {
-      activeNames: ['1', '2', '3'],
+      activeSeriesDicomId: null,
+      activeAiLesionId: null,
+      aiLesionItems: [],
       //region dicom 各个部分信息
       patient: {
         patientId: null,
@@ -417,14 +392,20 @@ export default {
   },
   created() {
     let that = this
-    //这里可以拿到数据
+    const bucketName = that.$store.getters.bucketName
     let studyList = that.$store.getters.studySeriesList
+    if (bucketName && studySeriesNeedsImageIds(studyList)) {
+      studyList = hydrateStudySeriesList(studyList, bucketName)
+      that.updatePatientsStudySeries(studyList)
+    }
     for (let studyListKey in studyList) {
       for (let studyListKeyKey in studyList[studyListKey]) {
-        that.studyCanvasList[studyList[studyListKey][studyListKeyKey].dicomId] = studyList[studyListKey][studyListKeyKey].imageIds[0]
+        const series = studyList[studyListKey][studyListKeyKey]
+        if (series.imageIds && series.imageIds[0]) {
+          that.studyCanvasList[series.dicomId] = series.imageIds[0]
+        }
       }
     }
-
   },
   mounted() {
 
@@ -450,57 +431,29 @@ export default {
     that.initCanvas()
     //下面：initListCanvas的初始化必须进行
     that.initListCanvas()
+    that.loadSavedAiLesions()
   },
 
   methods: {
     displayOneCanvasImage() {
       let that = this
       const canvas = this.$refs.canvas
-      // console.log("tools", cornerstoneTools)
-      // console.log("-------------------展示第_张---------", that.canvasStack.currentImageIdIndex)
       let tempIndex = that.canvasStack.currentImageIdIndex
       return cornerstone.loadAndCacheImage(that.canvasStack.imageIds[tempIndex])
         .then(function (image) {
-
-          let dealImageInfo = new Promise((resolve, reject) => {
-            // 图像信息显示
-            that.canvasStack.currentImageId = image.imageId
-            that.imageInfos(image)
-            // console.log(image)
-            resolve()
-          })
-          dealImageInfo.then(() => {
-            //设置视口
-            let viewport = {}
-            viewport.scale = that.scaleOfMe
-            viewport.invert = that.getInvert
-            viewport.hflip = that.getHflip
-            viewport.vflip = that.getVflip
-            // viewport.pixelReplication = that.getPixelReplication
-            // viewport.translation.x=100
-            // viewport.translation.y=100
-            // // viewport.voi.windowCenter=100
-            // // viewport.voi.windowWidth=200
-            // viewport.pixelReplication=
-            // console.log("获取图像信息", viewport)
-            //打印，看数据
-            // console.log('----------------image-----------------', image)
-            //设置图像视口
-            // const viewport = cornerstone.getDefaultViewportForImage(
-            //   canvas,
-            //   image,
-            // )
-            // const views = cornerstone.getViewport(canvas)
-            // console.log("获取图像信息", image)
-            //显示
-            // let canvas=this.$refs.canvas
-            // canvas.style.width = "100%"
-            // canvas.style.height = "calc(100vh - 84px)"
-            cornerstone.displayImage(canvas, image, viewport)
-          })
-
+          that.canvasStack.currentImageId = image.imageId
+          that.imageInfos(image)
+          const viewport = {
+            scale: that.scaleOfMe,
+            invert: that.getInvert,
+            hflip: that.getHflip,
+            vflip: that.getVflip
+          }
+          cornerstone.displayImage(canvas, image, viewport)
+          if (that.aiLesionPanelVisible) {
+            that.$nextTick(() => that.syncLesionOverlaysForCurrentSlice())
+          }
         })
-
     },
     makerImageDeal() {
       let that = this
@@ -578,12 +531,13 @@ export default {
       let makerImage = {}
       makerImage.fileOfImage = fileOfImage
       makerImage.imageSave = imageSave
+      makerImage.previewUrl = base64Image
       makerInfo.makerImage = makerImage
       // console.log("打印",cornerstone)
       // console.log("打印",cornerstoneTools)
 
       // //将此次标记图像和信息存储到页面中
-      that.makerInfoList[instanceUid] = makerInfo
+      that.$set(that.makerInfoList, instanceUid, makerInfo)
       that.makerFlag = false
       that.$nextTick(() => {
         that.makerFlag = true
@@ -719,13 +673,8 @@ export default {
 
     },
     initTools(canvas) {
-      //stack滚动工具
+      //stack滚动工具：仅维护 stack 状态，滚轮由 handleScroll 统一处理，避免与 StackScroll 双触发导致层位错乱
       let that = this
-      const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
-      cornerstoneTools.addTool(StackScrollMouseWheelTool)
-      //激活
-      cornerstoneTools.setToolActive('StackScrollMouseWheel', {})
-      //增加堆栈管理工具
       cornerstoneTools.addStackStateManager(canvas, ['stack'])
       cornerstoneTools.addToolState(canvas, 'stack', that.canvasStack)
       that.styleOfCanvas()
@@ -743,17 +692,12 @@ export default {
       cornerstoneTools.textStyle.setFont(`16px ${fontFamily}`);
     },
     initListCanvas() {
-      let that = this
-      setTimeout(() => {
-        for (const temp in that.studyCanvasList) {
-          let tempCanvas = that.$refs[temp][0]
-          let address = that.studyCanvasList[temp]
-          cornerstone.enable(tempCanvas)
-          cornerstone.loadImage(address).then(function (image) {
-            cornerstone.displayImage(tempCanvas, image)
-          })
-        }
-      }, 300)
+      if (this.$refs.studyPanel) {
+        this.$refs.studyPanel.loadThumbnails()
+      }
+    },
+    onStudyPanelMounted() {
+      this.$nextTick(() => this.initListCanvas())
     },
 
 
@@ -844,74 +788,62 @@ export default {
       })
     },
 
-    //滚动处理
+    //滚动处理：层索引与当前显示图像严格一致
     handleScroll(e) {
-      //滚动 展示一个图像
-      let up = -1
-      let down = 1
-      let upOrDown = e.detail.direction
-      let isUPOrDown = this.canvasStack.isUPOrDown
-      let currentIndex = this.canvasStack.currentImageIdIndex
-      if (isUPOrDown === 0 && upOrDown === up) {
-        //想要看上一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，还是展示第一张
-      } else if (isUPOrDown === 0 && upOrDown === down) {
-        //想要看下一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，展示下一张
-        this.canvasStack.isUPOrDown = down
-        this.canvasStack.currentImageIdIndex = currentIndex + down
-      } else if (isUPOrDown === down && upOrDown === up) {
-        //想要看上一张，发现isUPOrDown===1，也就是上次也是鼠标滚轮下移操作，，展示上一张
-        this.canvasStack.isUPOrDown = up
-        this.canvasStack.currentImageIdIndex = currentIndex + up + up
-      } else if (isUPOrDown === down && upOrDown === down) {
-
-      } else if (isUPOrDown === up && upOrDown === up) {
-
-      } else if (isUPOrDown === up && upOrDown === down) {
-        this.canvasStack.isUPOrDown = down
-        this.canvasStack.currentImageIdIndex = currentIndex + down
+      const direction = e.detail && e.detail.direction
+      if (direction !== 1 && direction !== -1) return
+      const len = this.canvasStack.imageIds.length
+      if (!len) return
+      const current = this.canvasStack.currentImageIdIndex
+      const next = Math.max(0, Math.min(len - 1, current + direction))
+      if (next === current) return
+      this.setStackIndex(next)
+    },
+    setStackIndex(index) {
+      this.canvasStack.currentImageIdIndex = index
+      this.canvasStack.isUPOrDown = 0
+      this.canvasStack.isInvertAboutUpAndDown = 0
+      const canvas = this.$refs.canvas
+      if (canvas) {
+        syncCornerstoneStackState(canvas, this.canvasStack)
       }
-      this.displayOneCanvasImage();
-      //设置，翻转，像素翻转的标志变量
-      this.canvasStack.isInvertAboutUpAndDown = this.canvasStack.isUPOrDown
+      this.displayOneCanvasImage()
     },
     /*
     改变视图样式
      */
     changeWidth() {
-      console.log(this.isOpen, this.openStudySeries)
-      if (this.isOpen === true && this.openStudySeries === true) {
-        this.divTempWidth = 'calc(100vw - 200px)'
-        this.divTempWidth2 = 'calc(80vw - 200px)'
-      } else if (this.isOpen === false && this.openStudySeries === true) {
-        this.divTempWidth = 'calc(100vw - 54px)'
-        this.divTempWidth2 = 'calc(80vw - 54px)'
-      } else if (this.isOpen === false && this.openStudySeries === false) {
-        this.divTempWidth = 'calc(100vw - 54px)'
-        this.divTempWidth2 = 'calc(100vw - 54px)'
-      } else {
-        this.divTempWidth = 'calc(100vw - 200px)'
-        this.divTempWidth2 = 'calc(100vw - 200px)'
-      }
+      this.$nextTick(() => {
+        const canvas = this.$refs.canvas
+        if (canvas) {
+          cornerstone.resize(canvas)
+        }
+        if (this.openStudySeries) {
+          this.initListCanvas()
+        }
+      })
+    },
+    resizeViewerLayout() {
+      this.changeWidth()
     },
     /*
     设置默认的ct图像提供操作。
      */
     initCanvas() {
       const that = this
-      let studyList = this.studySeriesList
-      for (let studyListKey in studyList) {
-        let flag = false
-        for (let studyListKeyKey in studyList[studyListKey]) {
-          if (studyList[studyListKey][studyListKeyKey].imageIds.length > 0) {
-            // that.canvasStack.imageIds=that.imageIds
-            that.canvasStack.imageIds = studyList[studyListKey][studyListKeyKey].imageIds
-            flag = true
-            break
+      const seriesItems = []
+      const studyList = this.studySeriesList || {}
+      for (const studyKey in studyList) {
+        for (const seriesKey in studyList[studyKey]) {
+          const item = studyList[studyKey][seriesKey]
+          if (item && item.imageIds && item.imageIds.length > 0) {
+            seriesItems.push(item)
           }
         }
-        if (flag === true) {
-          break
-        }
+      }
+      if (seriesItems.length > 0) {
+        that.canvasStack.imageIds = seriesItems[0].imageIds
+        that.activeSeriesDicomId = seriesItems[0].dicomId
       }
       that.showDicom()
     },
@@ -920,13 +852,96 @@ export default {
      * 点击更换当前正在阅片的图像
      * @param row
      */
-    changeCurrentImagesIds(row) {
+    changeCurrentImagesIds(row, options) {
       console.log("-------", row)
+      this.activeSeriesDicomId = row.dicomId
+      this.activeAiLesionId = row.isAiLesionSeries ? row.dicomAiLesionId : null
       this.canvasStack.imageIds = row.imageIds
       this.canvasStack.currentImageIdIndex = 0
+      this.canvasStack.isUPOrDown = 0
+      this.canvasStack.isInvertAboutUpAndDown = 0
+      const canvas = this.$refs.canvas
+      if (canvas) {
+        syncCornerstoneStackState(canvas, this.canvasStack)
+      }
       this.displayOneCanvasImage()
+      this.onSeriesSwitchedForLesion(row, options)
     },
-    ...mapActions(['updateMakerNeed', 'setDefaultStudy']),
+    loadSavedAiLesions() {
+      const patCardId = this.$store.getters.patCardId
+      const bucketName = this.$store.getters.bucketName
+      if (!patCardId || !bucketName) return
+
+      getAiLesionByPatCardId({ patCardId }).then((res) => {
+        const list = (res.data || []).map((item) =>
+          enrichAiLesionRecord(item, bucketName, { studySeriesList: this.studySeriesList })
+        )
+        this.aiLesionItems = list
+        list.forEach((item) => {
+          const result = lesionResultFromSavedRecord(item)
+          this.$store.commit('SET_LESION_RESULT', {
+            dicomId: String(item.dicomId),
+            result
+          })
+          if (item.sourceDicomId != null) {
+            this.$store.commit('SET_LESION_RESULT', {
+              dicomId: String(item.sourceDicomId),
+              result: { ...result, linkedAiDicomId: item.dicomId }
+            })
+          }
+        })
+        this.openPendingAiLesionIfAny()
+      }).catch(() => {})
+    },
+    openPendingAiLesionIfAny() {
+      const pendingId = this.$store.getters.pendingAiLesionId
+      if (!pendingId) return
+      const target = this.aiLesionItems.find(
+        (item) => String(item.dicomAiLesionId) === String(pendingId)
+      )
+      if (target) {
+        this.viewAiLesionSeries(target)
+      }
+      this.$store.dispatch('setPendingAiLesionId', null)
+    },
+    viewAiLesionSeries(item) {
+      if (!item || !item.sourceDicomId) {
+        this.$message.warning('AI 识别记录缺少原始序列信息')
+        return
+      }
+      const sourceDicomId = String(item.sourceDicomId)
+      const found = findSeriesMeta(this.studySeriesList, sourceDicomId)
+      if (!found || !found.series || !found.series.imageIds || !found.series.imageIds.length) {
+        this.$message.warning('原始 CT 序列未加载，无法展示识别标记')
+        return
+      }
+      const aiDicomId = String(item.dicomId)
+      const cached =
+        this.$store.getters.lesionResultsByDicomId[aiDicomId] ||
+        this.$store.getters.lesionResultsByDicomId[sourceDicomId]
+      const result = cached || lesionResultFromSavedRecord(item)
+      this.$store.commit('SET_LESION_RESULT', { dicomId: sourceDicomId, result })
+      this.$store.commit('SET_LESION_RESULT', { dicomId: aiDicomId, result })
+      this.activeAiLesionId = item.dicomAiLesionId
+      // 在原始序列上叠加标记，避免加载 AI 副本 DICOM 时的解析错误
+      this.changeCurrentImagesIds(found.series, { fromLesion: true, fromAiLesion: true })
+      const jumpSlice = item.sourceSliceIndex != null
+        ? item.sourceSliceIndex
+        : (result.sliceIndex != null ? result.sliceIndex : null)
+      if (jumpSlice != null && this.canvasStack) {
+        this.canvasStack.currentImageIdIndex = Math.max(
+          0,
+          Math.min(jumpSlice, (this.canvasStack.imageIds || []).length - 1)
+        )
+        syncCornerstoneStackState(this.$refs.canvas, this.canvasStack)
+        this.displayOneCanvasImage().then(() => {
+          this.applyLesionResultToViewer(sourceDicomId)
+        })
+        return
+      }
+      this.applyLesionResultToViewer(sourceDicomId)
+    },
+    ...mapActions(['updateMakerNeed', 'setDefaultStudy', 'updatePatientsStudySeries']),
     //提供下面的监视变量的使用，getInvert，getHflip，getVflip，getPixelReplication
     watchAssist() {
       this.canvasStack.currentImageIdIndex = this.canvasStack.currentImageIdIndex - this.canvasStack.isInvertAboutUpAndDown
@@ -999,7 +1014,7 @@ export default {
     getPixelReplication: function () {
       this.watchAssist()
     },
-    openStudySeries: function () {
+    openStudySeries(val) {
       this.changeWidth()
       this.watchAssist()
     },
@@ -1007,10 +1022,14 @@ export default {
       this.changeWidth()
       this.watchAssist()
     },
-    //  监视并修改样式宽度
+    lesionLogPanelVisible(val) {
+      this.$nextTick(() => this.resizeViewerLayout())
+    },
+    'canvasStack.currentImageIdIndex'() {
+      // 滚轮切层后由 displayOneCanvasImage 完成渲染再同步 overlay
+    },
 
-  },
-  components: {}
+  }
 }
 
 </script>
@@ -1033,136 +1052,42 @@ export default {
 }
 
 .ct-container {
-
   box-sizing: border-box;
-  //width: 100%;
-  //height: 100%;
-  //--openStudyWidth:200px;
-  //width: var(--width); //设置为变量
+  width: 100%;
   height: calc(100vh - 84px);
-  //transition: width 0.28s;
   background-color: #282c34;
   display: flex;
   flex-direction: row;
-  //设置 滚动条，x轴隐藏
-  ::v-deep .el-scrollbar__wrap {
-    overflow-x: hidden;
+  overflow: hidden;
+
+  .study-aside {
+    flex-shrink: 0;
+    width: 18vw;
+    min-width: 210px;
+    max-width: 280px;
+    height: 100%;
+    overflow: hidden;
+    background: #282c34;
+    padding: 0 2px;
+    box-sizing: border-box;
   }
 
-  .left {
-    padding-left: 5px;
-    width: 20vw;
-    height: 100vh;
-    background-color: #282c34 !important;
-    //字体颜色
-    color: white !important;
+  .viewports-wrap {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    background: #000;
+    overflow: hidden;
 
-    .left-collapse {
-      //width: 100%;
-      //height: 100%;
-      background-color: #282c34 !important;
-      display: block;
-
-      ::v-deep .el-collapse-item__header {
-        background-color: #282c34 !important;
-        color: #e3a5a5 !important;
-        border-bottom-color: #f8f6f6;
-        font-size: 10px;
-      }
-
-      ::v-deep .el-collapse-item__wrap {
-        background-color: #17191c !important;
-        color: white !important;
-      }
-
-      ::v-deep .el-collapse-item__content {
-        padding-bottom: 0px;
-      }
-
-      ::v-deep .el-card {
-        border-radius: 28px;
-        border: 3px solid #e6ebf5;
-        background-color: #FFFFFF;
-        overflow: hidden;
-        color: #303133;
-        -webkit-transition: 0.3s;
-        transition: 0.3s;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        margin-right: 5px;
-      }
-
-      .left-label {
-        .left-label-item {
-          background-color: #282c34 !important;
-          color: white !important;
-          font-size: 10px;
-          width: 20vw;
-          padding: 14px;
-        }
-
-        .left-label-item-save {
-          background-color: #282c34 !important;
-          color: #e3a5a5 !important;
-          font-size: 10px;
-          width: 20vw;
-          height: auto;
-
-          ::v-deep.uploader-btn {
-            margin: 3% 23.6%;
-          }
-
-          ::v-deep .el-button--medium {
-            width: 50%;
-            font-size: 14px;
-            border-radius: 22px;
-            background-color: #343536;
-            border: none;
-            color: white;
-          }
-
-          .noteOfMe {
-            margin-bottom: 1%;
-          }
-
-        }
-      }
-
-      .left-study {
-        display: block;
-
-        .left-study-collapse {
-          background-color: #282c34 !important;
-          color: white !important;
-          display: block;
-
-          .left-study-collapse-item {
-
-            .ct-image1 {
-              width: 20vw;
-              height: 35vh;
-              display: block;
-              //阻止所有鼠标事件
-              pointer-events: none;
-              background-color: #000 !important;
-            }
-
-            background-color: #282c34 !important;
-            font-size: 10px;
-            color: white;
-            display: block;
-          }
-        }
-      }
+    &--single {
+      flex-direction: row;
     }
-
-
   }
 
   .ct-father-Open {
-    //width: 70%;
-    //height: 100%;
-    //width: var(--width2);/\*/
+    flex: 1;
+    min-width: 0;
     height: 100%;
     position: relative;
     background-color: #000 !important;

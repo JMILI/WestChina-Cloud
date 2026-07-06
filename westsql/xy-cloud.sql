@@ -69,6 +69,48 @@ CREATE TABLE `dicom_maker`
   COLLATE = utf8mb4_general_ci COMMENT = '病人标记过的dicom图像表'
   ROW_FORMAT = DYNAMIC;
 -- ----------------------------
+-- Table structure for dicom_ai_lesion
+-- ----------------------------
+DROP TABLE IF EXISTS `dicom_ai_lesion`;
+CREATE TABLE `dicom_ai_lesion`
+(
+    `dicom_ai_lesion_id`     bigint                                                         NOT NULL COMMENT 'id',
+    `source_dicom_id`        bigint                                                         NULL     DEFAULT NULL COMMENT '原始序列dicom_id',
+    `study_uid`              varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '研究id',
+    `series_uid`             varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '序列UId',
+    `study_date`             varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT 'ct拍摄时间',
+    `pat_card_id`            varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '身份证号',
+    `patient_name`           varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '病人姓名',
+    `body_part`              varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '检查部位',
+    `detect_doctor`          varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '识别医生',
+    `detect_enterprise_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '医院名',
+    `detect_time`            varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '识别时间',
+    `ai_series_path`         varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT 'AI序列最后一张dcm路径',
+    `image_count`            int                                                            NULL     DEFAULT NULL COMMENT '序列切片数量',
+    `lesion_count`           int                                                            NULL     DEFAULT 0 COMMENT '检出病灶数量',
+    `lesions_json`           mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci      NULL COMMENT '病灶识别结果JSON',
+    `engine`                 varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '推理引擎',
+    `disclaimer`             varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '免责声明',
+    `description`            varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `detect_mode`            varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT 'series' COMMENT '识别模式 series|single',
+    `instance_uid`           varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '标记层 SOP Instance UID',
+    `source_slice_index`     int                                                            NULL     DEFAULT NULL COMMENT '原始序列层索引0-based',
+    `sort`                   int UNSIGNED                                                   NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `create_by`              bigint                                                         NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`            datetime                                                       NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`              bigint                                                         NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`            datetime                                                       NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark`                 varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `del_flag`               tinyint                                                        NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    `tenant_id`              bigint                                                         NOT NULL COMMENT '租户Id',
+    PRIMARY KEY (`dicom_ai_lesion_id`) USING BTREE,
+    KEY `idx_ai_lesion_pat_card` (`pat_card_id`) USING BTREE,
+    KEY `idx_ai_lesion_source_dicom` (`source_dicom_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = 'AI识别病灶结果序列表'
+  ROW_FORMAT = DYNAMIC;
+-- ----------------------------
 -- Table structure for ct_dicom
 -- ----------------------------
 DROP TABLE IF EXISTS `ct_dicom`;
@@ -1240,13 +1282,13 @@ INSERT INTO `sys_menu`
 VALUES (20240, 20200, 'rabbit控制台', 'http://westChinaBackend:15672/#/', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
         'monitor:rabbitmq:list', 'xy_rabbit', 4, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '消息队列菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20300, 0, '系统工具', 'tool', NULL, '', 'N', 'N', 'N', 'N', 'M', 'Y', '', 'xy_tool', 5, '0', 0,
+VALUES (20300, 0, '系统工具', 'tool', NULL, '', 'N', 'N', 'N', 'N', 'M', 'N', '', 'xy_tool', 5, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '系统工具目录', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20310, 20300, '表单构建', 'build', 'tool/build/index', '', 'N', 'N', 'N', 'N', 'C', 'Y', 'tool:build:list',
+VALUES (20310, 20300, '表单构建', 'build', 'tool/build/index', '', 'N', 'N', 'N', 'N', 'C', 'N', 'tool:build:list',
         'xy_build', 1, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '表单构建菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20320, 20300, '代码生成', 'gen', 'tool/gen/index', '', 'N', 'N', 'N', 'N', 'C', 'Y', 'tool:gen:list', 'xy_code',
+VALUES (20320, 20300, '代码生成', 'gen', 'tool/gen/index', '', 'N', 'N', 'N', 'N', 'C', 'N', 'tool:gen:list', 'xy_code',
         2, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '代码生成菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
 VALUES (20321, 20320, '生成查询', '#', '', '', 'N', 'N', 'N', 'N', 'F', 'N', 'tool:gen:query', '#', 1, '0', 0,
@@ -1267,7 +1309,7 @@ INSERT INTO `sys_menu`
 VALUES (20326, 20320, '生成代码', '#', '', '', 'N', 'N', 'N', 'N', 'F', 'N', 'tool:gen:code', '#', 6, '0', 0,
         '2022-03-06 21:36:38', NULL, NULL, '', 0, 2, -1);
 INSERT INTO `sys_menu`
-VALUES (20330, 20300, '系统接口', 'http://westChinaUI:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'Y',
+VALUES (20330, 20300, '系统接口', 'http://westChinaUI:8080/swagger-ui/index.html', '', '', 'N', 'N', 'Y', 'N', 'C', 'N',
         'tool:swagger:list', 'xy_swagger', 3, '0', 0, '2022-03-06 21:36:38', NULL, NULL, '系统接口菜单', 0, 2, -1);
 INSERT INTO `sys_menu`
 VALUES (1628293334747533312, 20000, '对象存储管理', 'bucket', 'tenant/bucket/index', NULL, 'N', 'N', 'N', 'N', 'C', 'Y',

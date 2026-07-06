@@ -2,15 +2,22 @@ version: '3.8'
 services:
   westChina-nacos:
     container_name: westChina-nacos
-    image: nacos/nacos-server
-    build:
-      context: ./nacos
+    image: nacos/nacos-server:v2.0.4
     environment:
       - MODE=standalone
+      - JVM_XMS=256m
+      - JVM_XMX=512m
+      - JVM_XMN=128m
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=westChina-mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=xy-config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=123456
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     restart: always
     volumes:
       - ./nacos/logs/:/home/nacos/logs
-      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
     ports:
       - "8848:8848"
       - "9848:9848"
@@ -41,19 +48,20 @@ services:
     ]
     environment:
       MYSQL_DATABASE: "xy-config"
-      MYSQL_home_PASSWORD: "123456"
+      MYSQL_ROOT_PASSWORD: "123456"
   westChina-redis:
     container_name: westChina-redis
     image: redis
+    user: "0:0"
     build:
       context: ./redis
     ports:
       - "6379:6379"
     restart: always
     volumes:
-      - ./redis/conf/redis.conf:/home/westChina/redis/redis.conf
+      - ./redis/conf/redis.conf:/etc/redis/redis.conf:ro
       - ./redis/data:/data
-    command: redis-server /home/westChina/redis/redis.conf
+    command: redis-server /etc/redis/redis.conf
   westChina-rabbit:
     container_name: westChina-rabbit
     image: rabbitmq:management

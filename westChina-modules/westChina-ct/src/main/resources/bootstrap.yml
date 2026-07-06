@@ -2,6 +2,14 @@
 server:
   port: 9800
 
+# CT AI 推理服务（Python FastAPI，scripts/start-ai.sh）
+ct:
+  ai:
+    base-url: http://127.0.0.1:9810
+    enabled: true
+    connect-timeout-ms: 5000
+    read-timeout-ms: 2400000
+
 # Spring
 spring:
   application:

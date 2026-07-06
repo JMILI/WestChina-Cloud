@@ -1,5 +1,3 @@
-
-
 const getters = {
   sidebar: state => state.app.sidebar,
   size: state => state.app.size,
@@ -25,7 +23,6 @@ const getters = {
   defaultRoutes: state => state.permission.defaultRoutes,
   sidebarRouters: state => state.permission.sidebarRouters,
 
-
   invert: state => state.ctTools.invert,
   hflip: state => state.ctTools.hflip,
   vflip: state => state.ctTools.vflip,
@@ -41,6 +38,19 @@ const getters = {
   isShowUIDS: state => state.ctTools.isShowUIDS,
 
   openStudy: state => state.ctTools.openStudy,
+  lesionDetectTick: state => state.ctTools.lesionDetectTick,
+  lesionDetectLoading: state => state.ctTools.lesionDetectLoading,
+  lesionDetectPayload: state => state.ctTools.lesionDetectPayload,
+  lesionSeriesDialogVisible: state => state.ctTools.lesionSeriesDialogVisible,
+  lesionResultsByDicomId: state => state.ctTools.lesionResultsByDicomId,
+  lesionDetectLogs: state => state.ctTools.lesionDetectLogs,
+  lesionDetectProgress: state => state.ctTools.lesionDetectProgress,
+  lesionDetectStage: state => state.ctTools.lesionDetectStage,
+  lesionDetectStats: state => state.ctTools.lesionDetectStats,
+  lesionLogPanelVisible: state => state.ctTools.lesionLogPanelVisible,
+  lesionDetectEngine: state => state.ctTools.lesionDetectEngine,
+  lesionDetectSubEngine: state => state.ctTools.lesionDetectSubEngine,
+  lesionEngineCatalog: state => state.ctTools.lesionEngineCatalog,
 
   patCardId: state => state.ctPatientInfo.patCardId,
   patName: state => state.ctPatientInfo.patName,
@@ -53,16 +63,9 @@ const getters = {
   makerImageList: state => state.makerImage.makerImageList,
   makerImageInitInfo: state => state.makerImage.makerImageInitInfo,
 
-  // columnPixelSpacingOfMe: state => state.makerToolsOfMe.columnPixelSpacingOfMe,
-  // columnsOfMe: state => state.makerToolsOfMe.columnsOfMe,
-  // interceptOfMe: state => state.makerToolsOfMe.interceptOfMe,
-  // rowsOfMe: state => state.makerToolsOfMe.rowsOfMe,
-  // rowPixelSpacingOfMe: state => state.makerToolsOfMe.rowPixelSpacingOfMe,
-  // slopeOfMe: state => state.makerToolsOfMe.slopeOfMe,
-  // windowCenterOfMe: state => state.makerToolsOfMe.windowCenterOfMe,
-  // windowWidthOfMe: state => state.makerToolsOfMe.windowWidthOfMe,
-  // scaleOfMe: state => state.makerToolsOfMe.scaleOfMe,
+  aiLesionOfPatCardId: state => state.aiLesion.aiLesionOfPatCardId,
+  pendingAiLesionId: state => state.aiLesion.pendingAiLesionId,
 
-  makerNeed:state=>state.makerToolsOfMe.makerNeed,
+  makerNeed: state => state.makerToolsOfMe.makerNeed,
 }
 export default getters

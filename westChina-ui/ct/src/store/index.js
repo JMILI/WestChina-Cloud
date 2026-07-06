@@ -11,8 +11,9 @@ import ctPatientInfo from "./modules/ctPatientInfo"
 import dicom from "./modules/dicom";
 import makerImage from "./modules/makerImage";
 import makerToolsOfMe from "./modules/makerToolsOfMe"
+import aiLesion from "./modules/aiLesion"
 
-import persistedState from 'vuex-persistedstate'
+import { createPersistPlugin } from '@/utils/vuexPersist'
 
 Vue.use(Vuex)
 
@@ -28,21 +29,10 @@ const store = new Vuex.Store({
     dicom,
     makerImage,
     makerToolsOfMe,
+    aiLesion,
   },
   getters,
-  plugins: [persistedState(
-    {
-      storage: window.sessionStorage,
-      // reducer(val) {
-      //   return {
-      //     // 只储存state中的assessmentData
-      //     patCardId: val.ctPatientInfo.state.patCardId,
-      //     patName:val.ctPatientInfo.state.patName,
-      //   }
-      // }
-
-    }
-  )],
+  plugins: [createPersistPlugin()],
 
 })
 

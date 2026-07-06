@@ -1,0 +1,5 @@
+# 可选：MONAI LUNA16 RetinaNet 肺结节检测（首次运行下载 bundle，约 200MB+）
+# torch / torchvision 由 install-ai-engines.sh 单独安装
+monai>=1.4.0
+pytorch-ignite>=0.4.11
+itk>=5.3.0

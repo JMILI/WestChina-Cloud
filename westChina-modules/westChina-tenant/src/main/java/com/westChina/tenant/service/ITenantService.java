@@ -91,4 +91,9 @@ public interface ITenantService {
      * @return 租户信息
      */
     public Tenant mainCheckTenantByTenantId(Tenant tenant);
+
+    /**
+     * 统计策略下未删除的租户数量
+     */
+    public int mainCountActiveTenantByStrategyIds(Tenant tenant);
 }

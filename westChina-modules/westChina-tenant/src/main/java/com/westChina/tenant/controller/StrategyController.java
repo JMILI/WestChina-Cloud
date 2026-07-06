@@ -12,7 +12,9 @@ import com.westChina.common.redis.utils.DataSourceUtils;
 import com.westChina.common.security.annotation.RequiresPermissions;
 import com.westChina.system.api.feign.RemoteSourceService;
 import com.westChina.tenant.api.domain.strategy.Strategy;
+import com.westChina.tenant.domain.Tenant;
 import com.westChina.tenant.service.IStrategyService;
+import com.westChina.tenant.service.ITenantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +31,9 @@ public class StrategyController extends BaseController {
 
     @Autowired
     private IStrategyService tenantStrategyService;
+
+    @Autowired
+    private ITenantService tenantService;
 
     @Autowired
     private RemoteSourceService remoteSourceService;
@@ -107,6 +112,17 @@ public class StrategyController extends BaseController {
     @Log(title = "数据源策略", businessType = BusinessType.DELETE)
     @DeleteMapping
     public AjaxResult remove(@RequestBody Strategy strategy) {
+        Tenant tenantCheck = new Tenant();
+        tenantCheck.setParams(strategy.getParams());
+        if (tenantService.mainCountActiveTenantByStrategyIds(tenantCheck) > 0) {
+            return AjaxResult.error("该策略仍有关联租户，请先删除或调整租户后再删除策略！");
+        }
+        for (Long strategyId : ParamsUtils.IdsObjectToLongList(strategy.getParams().get("Ids"))) {
+            Strategy item = tenantStrategyService.mainSelectStrategyById(new Strategy(strategyId));
+            if (item != null && StringUtils.equals(BaseConstants.Status.NORMAL.getCode(), item.getStatus())) {
+                return AjaxResult.error("请先停用策略「" + item.getName() + "」后再删除！");
+            }
+        }
         int rows = tenantStrategyService.mainDeleteStrategyByIds(strategy);
         DataSourceUtils.deleteSourceCaches(ParamsUtils.IdsObjectToLongList(strategy.getParams().get("Ids")));
         return toAjax(rows);

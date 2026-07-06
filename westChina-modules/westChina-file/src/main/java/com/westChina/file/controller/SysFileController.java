@@ -145,4 +145,20 @@ public class SysFileController {
             return R.fail(false, e.getMessage());
         }
     }
+
+    /**
+     * 复制 DICOM 序列到新目录
+     */
+    @PostMapping("copyDicomSeriesOfMinio")
+    public R<Integer> copyDicomSeriesOfMinio(String bucketName, String sourceFolder, String destFolder,
+        int imageCount, Integer sourceSliceIndex) {
+        try {
+            int copied = minioSysFileServiceImpl.copyDicomSeries(
+                bucketName, sourceFolder, destFolder, imageCount, sourceSliceIndex);
+            return R.ok(copied, "复制成功");
+        } catch (Exception e) {
+            log.error("复制 DICOM 序列失败", e);
+            return R.fail(e.getMessage());
+        }
+    }
 }

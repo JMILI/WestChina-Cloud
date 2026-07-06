@@ -356,6 +356,70 @@ public class MinioSysFileServiceImpl extends AMinioSysFileService {
      * @param folder     文件或文件夹名称
      * @since tarzan LIU
      */
+    /**
+     * 复制 DICOM 序列（1.dcm ~ imageCount.dcm）到新目录。
+     * sourceSliceIndex 有值时仅复制该层到目标 1.dcm（单层识别存档）。
+     */
+    public int copyDicomSeries(String bucketName, String sourceFolder, String destFolder, int imageCount,
+        Integer sourceSliceIndex) {
+        if (StringUtils.isBlank(bucketName) || StringUtils.isBlank(sourceFolder)
+            || StringUtils.isBlank(destFolder)) {
+            return 0;
+        }
+        String srcPrefix = sourceFolder.endsWith("/") ? sourceFolder : sourceFolder + "/";
+        String dstPrefix = destFolder.endsWith("/") ? destFolder : destFolder + "/";
+        int copied = 0;
+        try {
+            if (sourceSliceIndex != null && sourceSliceIndex > 0) {
+                copyOneDicomObject(bucketName, srcPrefix + sourceSliceIndex + ".dcm", dstPrefix + "1.dcm");
+                return 1;
+            }
+            if (imageCount <= 0) {
+                return 0;
+            }
+            for (int i = 1; i <= imageCount; i++) {
+                String srcKey = srcPrefix + i + ".dcm";
+                String dstKey = dstPrefix + i + ".dcm";
+                if (!objectExists(bucketName, srcKey)) {
+                    log.warn("copyDicomSeries skip missing object: {}/{}", bucketName, srcKey);
+                    continue;
+                }
+                copyOneDicomObject(bucketName, srcKey, dstKey);
+                copied++;
+            }
+            if (copied <= 0) {
+                throw new RuntimeException("源目录下未找到可复制的 DICOM 文件");
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("copyDicomSeries failed, bucket={}, source={}, dest={}, count={}, slice={}",
+                bucketName, sourceFolder, destFolder, imageCount, sourceSliceIndex, e);
+            throw new RuntimeException("复制 DICOM 序列失败: " + e.getMessage(), e);
+        }
+        return copied;
+    }
+
+    private boolean objectExists(String bucketName, String objectKey) {
+        try {
+            minioClient.statObject(
+                StatObjectArgs.builder().bucket(bucketName).object(objectKey).build());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void copyOneDicomObject(String bucketName, String srcKey, String dstKey) throws Exception {
+        minioClient.copyObject(
+            CopyObjectArgs.builder()
+                .bucket(bucketName)
+                .object(dstKey)
+                .source(CopySource.builder().bucket(bucketName).object(srcKey).build())
+                .build()
+        );
+    }
+
     public void deleteFolder(String bucketName, String folder) {
         try {
             if (StringUtils.isNotBlank(folder)) {

@@ -60,4 +60,11 @@ public interface RemoteFileService {
 
     @DeleteMapping(value = "/removeFolderFilesOfMinio")
     public R<Boolean> removeFolderFilesOfMinio(@RequestBody List<String> dicomImageList,@RequestParam(value = "bucketName") String bucketName);
+
+    @PostMapping(value = "/copyDicomSeriesOfMinio")
+    public R<Integer> copyDicomSeriesOfMinio(@RequestParam(value = "bucketName") String bucketName,
+        @RequestParam(value = "sourceFolder") String sourceFolder,
+        @RequestParam(value = "destFolder") String destFolder,
+        @RequestParam(value = "imageCount") int imageCount,
+        @RequestParam(value = "sourceSliceIndex", required = false) Integer sourceSliceIndex);
 }

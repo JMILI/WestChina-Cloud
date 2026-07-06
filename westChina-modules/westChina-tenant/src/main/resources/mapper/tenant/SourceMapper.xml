@@ -56,14 +56,14 @@
     <sql id="containVo">
         select e.source_id, e.name, e.database_type, e.is_change, e.slave, e.type, e.status
         from xy_tenant_source e
-        left join xy_tenant_separation ts on ts.read_id = e.source_id
+        left join xy_tenant_separation ts on ts.read_id = e.source_id and ts.del_flag = 0
     </sql>
 
     <sql id="subVo">
         select e.source_id, e.name, e.database_type, e.slave, e.type, e.sort, e.status,
                ts.read_id as sub_source_id, ts.read_slave as sub_slave
         from xy_tenant_source e
-                 left join xy_tenant_separation ts on ts.write_id = e.source_id
+                 left join xy_tenant_separation ts on ts.write_id = e.source_id and ts.del_flag = 0
     </sql>
 
     <select id="mainSelectSourceList" parameterType="Source" resultMap="SourceResult">
@@ -164,18 +164,22 @@
 
     <delete id="mainDeleteSourceById" parameterType="Source">
         update xy_tenant_source
-        set del_flag = 1
+        set del_flag = 1,
+            status = '1',
+            name = CONCAT('_del_', source_id)
         where source_id = #{sourceId} and is_change != 'Y' and del_flag = 0
     </delete>
 
     <delete id="mainDeleteSeparationByValueId" parameterType="Source">
-        delete from xy_tenant_separation
-        where write_id = #{sourceId} or read_id = #{sourceId}
+        update xy_tenant_separation
+        set del_flag = 1
+        where del_flag = 0 and (write_id = #{sourceId} or read_id = #{sourceId})
     </delete>
 
     <delete id="mainDeleteSeparationBySourceId" parameterType="Source">
-        delete from xy_tenant_separation
-        where write_id = #{sourceId}
+        update xy_tenant_separation
+        set del_flag = 1
+        where del_flag = 0 and write_id = #{sourceId}
         <if test="type != null and type == '0'"> and read_id != #{sourceId}</if>
     </delete>
 

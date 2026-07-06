@@ -39,7 +39,7 @@
         select e.strategy_id, e.name, e.tenant_amount, e.source_amount, e.is_change, e.sort, e.status, e.create_by, e.create_time, e.update_by, e.update_time,
                b.source_id as sub_source_id, b.name as sub_name, tss.is_main as is_main, b.slave as sub_slave, b.status as sub_status
         from xy_tenant_strategy e
-        left join xy_tenant_strategy_source tss on tss.strategy_id = e.strategy_id
+        left join xy_tenant_strategy_source tss on tss.strategy_id = e.strategy_id and tss.del_flag = 0
         left join xy_tenant_source b on b.source_id = tss.source_id
     </sql>
 
@@ -108,14 +108,18 @@
 
     <delete id="mainDeleteStrategyById" parameterType="Strategy">
         update xy_tenant_strategy
-        set del_flag = 1
+        set del_flag = 1,
+            name = CONCAT('_del_', strategy_id),
+            status = '1'
         where strategy_id = #{strategyId}
           and del_flag = 0 and is_change = 'N'
     </delete>
 
     <delete id="mainDeleteStrategyByIds" parameterType="Strategy">
         update xy_tenant_strategy
-        set del_flag = 1
+        set del_flag = 1,
+            name = CONCAT('_del_', strategy_id),
+            status = '1'
         where del_flag = 0 and is_change = 'N' and strategy_id in
         <foreach item="strategyId" collection="params.Ids" open="(" separator="," close=")">
             #{strategyId}
@@ -123,20 +127,27 @@
     </delete>
 
     <delete id="mainDeleteSourceByStrategyId" parameterType="Strategy">
+        update xy_tenant_strategy_source tsc
+        inner join xy_tenant_strategy ts on ts.strategy_id = tsc.strategy_id
+        set tsc.del_flag = 1
+        where ts.is_change = 'N' and tsc.del_flag = 0 and tsc.strategy_id = #{strategyId}
+    </delete>
+
+    <delete id="mainDeleteSourceByStrategyIds" parameterType="Strategy">
+        update xy_tenant_strategy_source tsc
+        inner join xy_tenant_strategy ts on ts.strategy_id = tsc.strategy_id
+        set tsc.del_flag = 1
+        where ts.is_change = 'N' and tsc.del_flag = 0 and tsc.strategy_id in
+        <foreach item="strategyId" collection="params.Ids" open="(" separator="," close=")">
+            #{strategyId}
+        </foreach>
+    </delete>
+
+    <delete id="mainDeleteSourceByStrategyIdForUpdate" parameterType="Strategy">
         delete tsc
         from xy_tenant_strategy_source tsc
         left join xy_tenant_strategy ts on ts.strategy_id = tsc.strategy_id
         where ts.is_change = 'N' and tsc.strategy_id = #{strategyId}
-    </delete>
-
-    <delete id="mainDeleteSourceByStrategyIds" parameterType="Strategy">
-        delete tsc
-        from xy_tenant_strategy_source tsc
-        left join xy_tenant_strategy ts on ts.strategy_id = tsc.strategy_id
-        where ts.is_change = 'N' and tsc.strategy_id in
-        <foreach item="strategyId" collection="params.Ids" open="(" separator="," close=")">
-            #{strategyId}
-        </foreach>
     </delete>
     
     <insert id="mainBatchSource" parameterType="Strategy">

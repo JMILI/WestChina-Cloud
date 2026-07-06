@@ -83,3 +83,57 @@
   height: auto !important; // 让固定列的高自适应，且设置!important覆盖ele-ui的默认样式
   bottom: 0px !important; // 固定列默认设置了定位，    position: absolute;top: 0;left: 0;只需要再设置一下bottom的值，让固定列和父元素的底部出现距离即可
 }
+
+// CT 阅片 / AI 面板暗色滚动条（细窄、无箭头、悬停橙金色）
+@mixin ct-dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(240, 169, 110, 0.52) rgba(36, 40, 49, 0.55);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-button,
+  &::-webkit-scrollbar-button:start:decrement,
+  &::-webkit-scrollbar-button:end:increment {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(36, 40, 49, 0.65);
+    border-radius: 6px;
+    margin: 3px 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(122, 127, 135, 0.95) 0%, rgba(93, 99, 106, 0.95) 100%);
+    border-radius: 6px;
+    border: 1px solid rgba(28, 32, 40, 0.75);
+    min-height: 36px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #f0a96e 0%, #d8894f 100%);
+    border-color: rgba(240, 169, 110, 0.35);
+  }
+
+  &::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #ffbe84 0%, #e89a58 100%);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+.ai-lesion-panel,
+.lesion-log-panel__body,
+.study-side-panel,
+.dicom-tooltip-inner,
+.lesion-series-dialog .el-dialog__body,
+.algorithm-explain-dialog .el-dialog__body {
+  @include ct-dark-scrollbar;
+}

@@ -58,6 +58,13 @@ public class RemoteFileFallbackFactory implements FallbackFactory<RemoteFileServ
             public R<Boolean> removeFolderFilesOfMinio(List<String> dicomImageList, String bucketName){
                 return R.fail("删除文件失败:" + throwable.getMessage());
             }
+
+            @Override
+            public R<Integer> copyDicomSeriesOfMinio(String bucketName, String sourceFolder, String destFolder,
+                int imageCount, Integer sourceSliceIndex) {
+                return R.fail("复制 DICOM 序列失败:" + throwable.getMessage()
+                    + "（请确认 westChina-file 服务已启动并注册到 Nacos）");
+            }
         };
     }
 }

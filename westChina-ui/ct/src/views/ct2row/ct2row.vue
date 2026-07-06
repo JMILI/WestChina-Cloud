@@ -1,85 +1,22 @@
 <template>
-  <div class="ct-container"
-       :style="{
-         width:divTempWidth,
-       }"
-  >
-    <el-scrollbar>
-      <div class="left" v-show="openStudySeries">
-        <el-collapse v-model="activeNames" class="left-collapse">
-          <el-collapse-item v-if="makerFlag" title="标记管理" name="1" class="left-label">
-            <el-card v-for="item in makerInfoList"
-                     :body-style="{ padding: '0px' }">
-              <div class="left-label-item" @click="viewImage(item)">
-                <div>图像id：{{ item.instanceUid }}</div>
-                <div>拍摄CT时间：{{ item.studyDate }}</div>
-                <div class="bottom clearfix">
-                  <span class="time">标记日期:{{ item.makerTime }}</span>
-                </div>
-              </div>
-            </el-card>
-            <div v-if="isDisplaySave" class="left-label-item-save">
-
-              <el-button class="uploader-btn" @click="submitUpload">保存</el-button>
-              <br>
-              <span class="noteOfMe"> 解释：点击保存按钮，系统将上传标记的图像!!!</span>
-
-            </div>
-          </el-collapse-item>
-
-
-          <el-collapse-item title="病人study列表" name="2" class="left-study">
-
-            <el-collapse v-model="activeNames" v-for="(index,key) in studySeriesList" :index="key"
-                         class="left-study-collapse"
-
-            >
-              <!--              study-->
-              <el-collapse-item :title="'studyID:'+key" class="left-study-collapse left-study-collapse-item" name="3">
-                <!--                series-->
-                <el-card v-for="(childrenIndex,childrenKey) in studySeriesList[key]"
-                         :childrenIndex="studySeriesList[key][childrenKey].dicomId"
-                         :body-style="{ padding: '0px' }"
-
-                >
-                  <div
-                    :ref="studySeriesList[key][childrenKey].dicomId"
-                    class="ct-image1"
-                  >
-
-                  </div>
-                  <!--  <img src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png" class="image">-->
-                  <div style="padding: 14px;" class="left-study-collapse-item"
-                       @click="changeCurrentImagesIds(studySeriesList[key][childrenKey])"
-                  >
-                    <div>id：{{ studySeriesList[key][childrenKey].dicomId }}</div>
-                    <div>研究id：{{ studySeriesList[key][childrenKey].dicomCtStudyUid }}</div>
-                    <div>序列id：{{ studySeriesList[key][childrenKey].dicomCtSeriesUid }}</div>
-                    <div>检查部位：{{ studySeriesList[key][childrenKey].dicomCtBody }}</div>
-                    <div class="bottom clearfix">
-                      <span class="time">日期:{{ studySeriesList[key][childrenKey].dicomCtTime }}</span>
-                      <!--                      <el-button type="text" class="button" @click="ownData(studySeriesList[key][childrenKey])">操作按钮-->
-                      <!--                      </el-button>-->
-                    </div>
-                  </div>
-                </el-card>
-              </el-collapse-item>
-
-            </el-collapse>
-
-          </el-collapse-item>
-
-
-        </el-collapse>
-
-
-      </div>
-    </el-scrollbar>
+  <div class="ct-container">
+    <aside v-if="openStudySeries" class="study-aside">
+      <study-side-panel
+        ref="studyPanel"
+        :maker-flag="makerFlag"
+        :maker-info-list="makerInfoList"
+        :is-display-save="isDisplaySave"
+        :study-series-list="studySeriesList"
+        :active-series-id="activeSeriesDicomId"
+        @view-image="viewImage"
+        @submit-upload="submitUpload"
+        @change-series="changeCurrentImagesIds"
+        @hook:mounted="onStudyPanelMounted"
+      />
+    </aside>
+    <div class="viewports-wrap viewports-wrap--double">
     <div
       class="ct-father-Open1"
-      :style="{
-         width:divTempWidth1,
-       }"
       oncontextmenu="return false"
       onmousedown="return false"
     >
@@ -299,9 +236,6 @@
     </div>
     <div
       class="ct-father-Open2"
-      :style="{
-         width:divTempWidth2,
-       }"
       oncontextmenu="return false"
       onmousedown="return false"
     >
@@ -519,6 +453,26 @@
       </div>
       <!--endregion-->
     </div>
+    </div>
+    <lesion-detect-log-panel
+      :visible="lesionLogPanelVisible"
+      :loading="lesionDetectLoading"
+      :progress="lesionDetectProgress"
+      :stage="lesionDetectStage"
+      :logs="lesionDetectLogs"
+      :stats="lesionDetectStats"
+      @close="closeLesionLogPanel"
+    />
+    <lesion-result-panel
+      :visible="aiLesionPanelVisible"
+      :offset-right="lesionLogPanelVisible ? 350 : 0"
+      :lesions="aiLesionList"
+      :disclaimer="aiLesionDisclaimer"
+      :engine="aiEngine"
+      :screening="aiScreeningData"
+      @close="closeLesionPanel"
+      @select="jumpToLesionSlice"
+    />
   </div>
 
 
@@ -540,6 +494,10 @@ import * as cornerstoneTools from '@cornerstoneTools'
 import {ctFile} from "../../api/ct/ctFileUpload";
 import cornerstoneFileImageLoader from "cornerstone-file-image-loader/src";
 import {addMaker} from "../../api/ct/maker";
+import StudySidePanel from '../ct2/components/StudySidePanel'
+import LesionResultPanel from '../ct2/components/LesionResultPanel'
+import LesionDetectLogPanel from '../ct2/components/LesionDetectLogPanel'
+import lesionDetectMixin from '@/mixins/lesionDetect'
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -555,9 +513,11 @@ cornerstoneFileImageLoader.external.cornerstone = cornerstone
 //endregion
 export default {
   name: 'ct2row',
+  mixins: [lesionDetectMixin],
+  components: { StudySidePanel, LesionResultPanel, LesionDetectLogPanel },
   data() {
     return {
-      activeNames: ['1', '2', '3'],
+      activeSeriesDicomId: null,
       fileList: [],
       //region 展示图像的第一列：id="dicomImage1"  各个部分信息
       patient1: {
@@ -800,8 +760,9 @@ export default {
         that.makerImageDeal()
       })
     });
-    that.initListCanvas()
     that.initTwoCanvas()
+    that.initCanvas()
+    that.initListCanvas()
   },
   methods: {
     ...mapActions(['updateMakerNeed','setDefaultStudy']),
@@ -902,9 +863,10 @@ export default {
       let makerImage = {}
       makerImage.fileOfImage = fileOfImage
       makerImage.imageSave = imageSave
+      makerImage.previewUrl = base64Image
       makerInfo.makerImage = makerImage
       // //将此次标记图像和信息存储到页面中
-      that.makerInfoList[instanceUid] = makerInfo
+      that.$set(that.makerInfoList, instanceUid, makerInfo)
       that.makerFlag = false
       that.$nextTick(() => {
         that.makerFlag = true
@@ -1221,36 +1183,32 @@ export default {
     //  endregion
 
     initListCanvas() {
-      let that = this
-      setTimeout(()=>{
-        for (const temp in that.studyCanvasList) {
-          let tempCanvas = that.$refs[temp][0]
-          let address = that.studyCanvasList[temp]
-          cornerstone.enable(tempCanvas)
-          cornerstone.loadImage(address).then(function (image) {
-            cornerstone.displayImage(tempCanvas, image)
-          })
-        }
-      },300)
+      if (this.$refs.studyPanel) {
+        this.$refs.studyPanel.loadThumbnails()
+      }
     },
-    changeCurrentImagesIds(row) {
-      // console.log(row.imageIds)
+    onStudyPanelMounted() {
+      this.$nextTick(() => this.initListCanvas())
+    },
+    changeCurrentImagesIds(row, options = {}) {
+      this.activeSeriesDicomId = row.dicomId
+      if (!options.fromLesion) {
+        this.inEffectCanvas = 1
+      }
       if (this.inEffectCanvas == 1) {
         this.canvasStack1.imageIds = row.imageIds
         this.canvasStack1.currentImageIdIndex = 0
         this.canvasStack1.currentImageId = row.imageIds[0]
-        // console.log(row.imageIds[0])
-        this.inEffectImageId =  row.imageIds[0]
+        this.inEffectImageId = row.imageIds[0]
         this.displayCanvas()
       } else if (this.inEffectCanvas == 2) {
         this.canvasStack2.imageIds = row.imageIds
         this.canvasStack2.currentImageIdIndex = 0
         this.canvasStack2.currentImageId = row.imageIds[0]
-        // console.log(row.imageIds[0])
-        this.inEffectImageId =  row.imageIds[0]
+        this.inEffectImageId = row.imageIds[0]
         this.displayCanvas()
       }
-
+      this.onSeriesSwitchedForLesion(row, options)
     },
     initTwoCanvas() {
       let that = this
@@ -1264,6 +1222,35 @@ export default {
       cornerstone.enable(canvas2)
       //初始化自己的工具设置
       this.initTools()
+    },
+    initCanvas() {
+      const seriesItems = this.collectAllSeries()
+      if (seriesItems.length === 0) return
+
+      this.inEffectCanvas = 1
+      this.changeCurrentImagesIds(seriesItems[0])
+
+      if (seriesItems.length > 1) {
+        const second = seriesItems[1]
+        this.canvasStack2.imageIds = second.imageIds
+        this.canvasStack2.currentImageIdIndex = 0
+        this.canvasStack2.currentImageId = second.imageIds[0]
+        this.inEffectImageId = second.imageIds[0]
+        this.displayCanvas2()
+      }
+    },
+    collectAllSeries() {
+      const items = []
+      const studyList = this.studySeriesList || {}
+      for (const studyKey in studyList) {
+        for (const seriesKey in studyList[studyKey]) {
+          const item = studyList[studyKey][seriesKey]
+          if (item && item.imageIds && item.imageIds.length > 0) {
+            items.push(item)
+          }
+        }
+      }
+      return items
     },
     initTools() {
       //stack滚动工具
@@ -1554,6 +1541,27 @@ export default {
       }
     },
 
+    getLesionViewerContext() {
+      if (this.inEffectCanvas === 2) {
+        return {
+          canvas: this.$refs.canvas2,
+          stack: this.canvasStack2,
+          bodyPart: this.seriesInfo2 && this.seriesInfo2.bodyPart,
+          studyUid: this.UIDS2 && this.UIDS2.studyUID,
+          seriesUid: this.UIDS2 && this.UIDS2.seriesUID,
+          activeSeriesDicomId: this.activeSeriesDicomId
+        }
+      }
+      return {
+        canvas: this.$refs.canvas1,
+        stack: this.canvasStack1,
+        bodyPart: this.seriesInfo1 && this.seriesInfo1.bodyPart,
+        studyUid: this.UIDS1 && this.UIDS1.studyUID,
+        seriesUid: this.UIDS1 && this.UIDS1.seriesUID,
+        activeSeriesDicomId: this.activeSeriesDicomId
+      }
+    },
+
     /**
      * 滚动处理
      * @param e
@@ -1680,25 +1688,21 @@ export default {
 // endregion
 
     changeWidth() {
-      // console.log(this.isOpen, this.openStudySeries)
-      if (this.isOpen === true && this.openStudySeries === true) {
-        this.divTempWidth = 'calc(100vw - 200px)'
-        this.divTempWidth1 = 'calc(40vw - 100px)'
-        this.divTempWidth2 = 'calc(40vw - 100px)'
-      } else if (this.isOpen === false && this.openStudySeries === true) {
-        this.divTempWidth = 'calc(100vw - 54px)'
-        this.divTempWidth1 = 'calc(40vw - 27px)'
-        this.divTempWidth2 = 'calc(40vw - 27px)'
-      } else if (this.isOpen === false && this.openStudySeries === false) {
-        this.divTempWidth = 'calc(100vw - 54px)'
-        this.divTempWidth1 = 'calc(50vw - 27px)'
-        this.divTempWidth2 = 'calc(50vw - 27px)'
-      } else {
-        //true flase
-        this.divTempWidth = 'calc(100vw - 200px)'
-        this.divTempWidth1 = 'calc(50vw - 100px)'
-        this.divTempWidth2 = 'calc(50vw - 100px)'
-      }
+      this.$nextTick(() => {
+        const canvas1 = this.$refs.canvas1
+        const canvas2 = this.$refs.canvas2
+        if (canvas1) cornerstone.resize(canvas1)
+        if (canvas2) cornerstone.resize(canvas2)
+        if (this.canvasStack1.imageIds.length > 0) {
+          this.displayCanvas1()
+        }
+        if (this.canvasStack2.imageIds.length > 0) {
+          this.displayCanvas2()
+        }
+        if (this.openStudySeries) {
+          this.initListCanvas()
+        }
+      })
     },
 
 
@@ -1780,7 +1784,7 @@ export default {
     },
     //  endregion
     //region 窗口变化监视
-    openStudySeries: function () {
+    openStudySeries(val) {
       this.changeWidth()
       this.watchAssist(false)
     },
@@ -1788,9 +1792,14 @@ export default {
       this.changeWidth()
       this.watchAssist(false)
     },
+    'canvasStack1.currentImageIdIndex'() {
+      if (this.inEffectCanvas === 1) this.syncLesionOverlaysForCurrentSlice()
+    },
+    'canvasStack2.currentImageIdIndex'() {
+      if (this.inEffectCanvas === 2) this.syncLesionOverlaysForCurrentSlice()
+    },
     //  endregion
-  },
-  components: {}
+  }
 }
 
 </script>
@@ -1827,144 +1836,42 @@ export default {
 }
 
 .ct-container {
-
+  width: 100%;
   height: calc(100vh - 84px);
   background-color: #282c34;
   display: flex;
   flex-direction: row;
-  //设置 滚动条，x轴隐藏
-  ::v-deep .el-scrollbar__wrap {
-    overflow-x: hidden;
-  }
+  overflow: hidden;
 
-
-  .left {
-    padding-left: 5px;
-    width: 20vw;
-    height: 100vh;
-    background-color: #282c34 !important;
-    //字体颜色
-    color: white !important;
-
-    .left-collapse {
-      //width: 100%;
-      //height: 100%;
-      background-color: #282c34 !important;
-      display: block;
-
-      ::v-deep .el-collapse-item__header {
-        background-color: #282c34 !important;
-        color: #e3a5a5 !important;
-        border-bottom-color: #f8f6f6;
-        font-size: 10px;
-      }
-
-      ::v-deep .el-collapse-item__wrap {
-        background-color: #17191c !important;
-        color: white !important;
-        //border-color: white !important;
-      }
-
-      ::v-deep .el-collapse-item__content {
-        padding-bottom: 0px;
-      }
-
-      ::v-deep .el-card {
-        border-radius: 28px;
-        border: 3px solid #e6ebf5;
-        background-color: #FFFFFF;
-        overflow: hidden;
-        color: #303133;
-        -webkit-transition: 0.3s;
-        transition: 0.3s;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        margin-right: 5px;
-      }
-
-      .left-label {
-        .left-label-item {
-          background-color: #282c34 !important;
-          color: white !important;
-          font-size: 10px;
-          width: 20vw;
-          padding: 14px;
-        }
-
-        .left-label-item-save {
-          background-color: #282c34 !important;
-          color: #e3a5a5 !important;
-          font-size: 10px;
-          width: 20vw;
-          height: auto;
-
-          ::v-deep.uploader-btn {
-            margin: 3% 23.6%;
-          }
-
-          ::v-deep .el-button--medium {
-            width: 50%;
-            font-size: 14px;
-            border-radius: 22px;
-            background-color: #343536;
-            border: none;
-            color: white;
-          }
-
-          .noteOfMe {
-            margin-bottom: 1%;
-          }
-
-        }
-      }
-
-      .left-study {
-        display: block;
-
-        .left-study-collapse {
-          background-color: #282c34 !important;
-          color: white !important;
-          display: block;
-
-          .left-study-collapse-item {
-
-            .ct-image1 {
-              width: 20vw;
-              height: 35vh;
-              display: block;
-              pointer-events: none;
-              background-color: #000 !important;
-            }
-
-            background-color: #282c34 !important;
-            font-size: 10px;
-            color: white;
-            display: block;
-          }
-        }
-      }
-    }
-
-
-  }
-
-  .ct-father-Open1 {
-
+  .study-aside {
+    flex-shrink: 0;
+    width: 18vw;
+    min-width: 210px;
+    max-width: 280px;
     height: 100%;
-    width: 100%;
-    position: relative;
-    color: white;
+    overflow: hidden;
+    background: #282c34;
+    padding: 0 2px;
+    box-sizing: border-box;
+  }
 
-    .ct-image {
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
+  .viewports-wrap {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    background: #000;
+
+    &--double {
+      flex-direction: row;
     }
   }
 
+  .ct-father-Open1,
   .ct-father-Open2 {
+    flex: 1;
+    min-width: 0;
     height: 100%;
-    width: 100%;
     position: relative;
     color: white;
 
@@ -1974,7 +1881,6 @@ export default {
       background-color: #000000;
     }
   }
-
 }
 
 

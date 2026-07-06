@@ -31,7 +31,7 @@ module.exports = {
   baseSystemUrl: 'http://westChinaUI',
   // baseSystemUrl: 'http://westChinaUI:5000/main/',
 
-  minioUrl: 'http://westChinaBackend:9000/',
+  minioUrl: 'http://127.0.0.1:5000/minio/',
 
 
   /**

@@ -66,6 +66,11 @@ public interface IBucketService {
      * @return 结果
      */
     public int deleteBucketByBucketIds(Bucket bucket);
+
+    /**
+     * 按租户Id批量软删除桶
+     */
+    public int deleteBucketByTenantIds(com.westChina.tenant.domain.Tenant tenant);
     /**
      * 查询对象存储，存储租户的桶信息,根据租户id查询
      *

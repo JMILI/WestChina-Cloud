@@ -84,6 +84,11 @@ public interface StrategyMapper {
     public int mainDeleteSourceByStrategyId(Strategy strategy);
 
     /**
+     * 修改策略时物理清理关联（便于重新绑定数据源）
+     */
+    public int mainDeleteSourceByStrategyIdForUpdate(Strategy strategy);
+
+    /**
      * 批量删除数据源
      *
      * @param strategy 数据源策略

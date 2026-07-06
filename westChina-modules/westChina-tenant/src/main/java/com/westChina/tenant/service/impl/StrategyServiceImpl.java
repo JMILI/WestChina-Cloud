@@ -89,7 +89,7 @@ public class StrategyServiceImpl implements IStrategyService {
     @Transactional
     public int mainUpdateStrategy(Strategy strategy) {
         if (!StringUtils.equals(OrganizeConstants.STATUS_UPDATE_OPERATION, strategy.getUpdateType())) {
-            strategyMapper.mainDeleteSourceByStrategyId(strategy);
+            strategyMapper.mainDeleteSourceByStrategyIdForUpdate(strategy);
             if (strategy.getValues() != null && strategy.getValues().size() > 0) {
                 strategyMapper.mainBatchSource(strategy);
             }

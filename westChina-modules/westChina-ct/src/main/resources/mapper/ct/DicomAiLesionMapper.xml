@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.westChina.ct.mapper.DicomAiLesionMapper">
+
+    <resultMap type="DicomAiLesion" id="dicomAiLesionResult">
+        <result property="dicomAiLesionId" column="dicom_ai_lesion_id"/>
+        <result property="sourceDicomId" column="source_dicom_id"/>
+        <result property="studyUid" column="study_uid"/>
+        <result property="seriesUid" column="series_uid"/>
+        <result property="studyDate" column="study_date"/>
+        <result property="patCardId" column="pat_card_id"/>
+        <result property="patientName" column="patient_name"/>
+        <result property="bodyPart" column="body_part"/>
+        <result property="detectDoctor" column="detect_doctor"/>
+        <result property="detectEnterpriseName" column="detect_enterprise_name"/>
+        <result property="detectTime" column="detect_time"/>
+        <result property="aiSeriesPath" column="ai_series_path"/>
+        <result property="imageCount" column="image_count"/>
+        <result property="lesionCount" column="lesion_count"/>
+        <result property="lesionsJson" column="lesions_json"/>
+        <result property="engine" column="engine"/>
+        <result property="disclaimer" column="disclaimer"/>
+        <result property="description" column="description"/>
+        <result property="detectMode" column="detect_mode"/>
+        <result property="instanceUid" column="instance_uid"/>
+        <result property="sourceSliceIndex" column="source_slice_index"/>
+        <result property="sort" column="sort"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="enterpriseId" column="tenant_id"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select e.dicom_ai_lesion_id,
+               e.source_dicom_id,
+               e.study_uid,
+               e.series_uid,
+               e.study_date,
+               e.pat_card_id,
+               e.patient_name,
+               e.body_part,
+               e.detect_doctor,
+               e.detect_enterprise_name,
+               e.detect_time,
+               e.ai_series_path,
+               e.image_count,
+               e.lesion_count,
+               e.lesions_json,
+               e.engine,
+               e.disclaimer,
+               e.description,
+               e.detect_mode,
+               e.instance_uid,
+               e.source_slice_index,
+               e.sort,
+               e.create_by,
+               e.create_time,
+               e.update_by,
+               e.update_time,
+               e.remark
+        from dicom_ai_lesion e
+    </sql>
+
+    <select id="selectDicomAiLesionList" parameterType="DicomAiLesion" resultMap="dicomAiLesionResult">
+        <include refid="selectVo"/>
+        where e.del_flag = 0
+        <if test="patCardId != null and patCardId != ''">and e.pat_card_id = #{patCardId}</if>
+        <if test="sourceDicomId != null">and e.source_dicom_id = #{sourceDicomId}</if>
+        <if test="studyUid != null and studyUid != ''">and e.study_uid = #{studyUid}</if>
+        <if test="seriesUid != null and seriesUid != ''">and e.series_uid = #{seriesUid}</if>
+        ${params.dataScope}
+        order by e.create_time desc, e.sort
+    </select>
+
+    <select id="selectDicomAiLesionById" parameterType="DicomAiLesion" resultMap="dicomAiLesionResult">
+        <include refid="selectVo"/>
+        where e.dicom_ai_lesion_id = #{dicomAiLesionId} and e.del_flag = 0
+        ${params.dataScope}
+    </select>
+
+    <select id="getDicomAiLesionByPatCardId" parameterType="DicomAiLesion" resultMap="dicomAiLesionResult">
+        <include refid="selectVo"/>
+        where e.del_flag = 0
+        <if test="patCardId != null and patCardId != ''">and e.pat_card_id = #{patCardId}</if>
+        ${params.dataScope}
+        order by e.create_time desc, e.sort
+    </select>
+
+    <insert id="insertDicomAiLesion" parameterType="DicomAiLesion">
+        insert into dicom_ai_lesion
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">dicom_ai_lesion_id,</if>
+            <if test="sourceDicomId != null">source_dicom_id,</if>
+            <if test="studyUid != null">study_uid,</if>
+            <if test="seriesUid != null">series_uid,</if>
+            <if test="studyDate != null">study_date,</if>
+            <if test="patCardId != null">pat_card_id,</if>
+            <if test="patientName != null">patient_name,</if>
+            <if test="bodyPart != null">body_part,</if>
+            <if test="detectDoctor != null">detect_doctor,</if>
+            <if test="detectEnterpriseName != null">detect_enterprise_name,</if>
+            <if test="detectTime != null">detect_time,</if>
+            <if test="aiSeriesPath != null">ai_series_path,</if>
+            <if test="imageCount != null">image_count,</if>
+            <if test="lesionCount != null">lesion_count,</if>
+            <if test="lesionsJson != null">lesions_json,</if>
+            <if test="engine != null">engine,</if>
+            <if test="disclaimer != null">disclaimer,</if>
+            <if test="description != null">description,</if>
+            <if test="detectMode != null">detect_mode,</if>
+            <if test="instanceUid != null">instance_uid,</if>
+            <if test="sourceSliceIndex != null">source_slice_index,</if>
+            <if test="sort != null">sort,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="remark != null">remark,</if>
+            <if test="enterpriseId != null">tenant_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="snowflakeId != null">#{snowflakeId},</if>
+            <if test="sourceDicomId != null">#{sourceDicomId},</if>
+            <if test="studyUid != null">#{studyUid},</if>
+            <if test="seriesUid != null">#{seriesUid},</if>
+            <if test="studyDate != null">#{studyDate},</if>
+            <if test="patCardId != null">#{patCardId},</if>
+            <if test="patientName != null">#{patientName},</if>
+            <if test="bodyPart != null">#{bodyPart},</if>
+            <if test="detectDoctor != null">#{detectDoctor},</if>
+            <if test="detectEnterpriseName != null">#{detectEnterpriseName},</if>
+            <if test="detectTime != null">#{detectTime},</if>
+            <if test="aiSeriesPath != null">#{aiSeriesPath},</if>
+            <if test="imageCount != null">#{imageCount},</if>
+            <if test="lesionCount != null">#{lesionCount},</if>
+            <if test="lesionsJson != null">#{lesionsJson},</if>
+            <if test="engine != null">#{engine},</if>
+            <if test="disclaimer != null">#{disclaimer},</if>
+            <if test="description != null">#{description},</if>
+            <if test="detectMode != null">#{detectMode},</if>
+            <if test="instanceUid != null">#{instanceUid},</if>
+            <if test="sourceSliceIndex != null">#{sourceSliceIndex},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="enterpriseId != null">#{enterpriseId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateDicomAiLesion" parameterType="DicomAiLesion">
+        update dicom_ai_lesion
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="description != null">description = #{description},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = now()
+        </trim>
+        where dicom_ai_lesion_id = #{dicomAiLesionId}
+        ${params.updateScope}
+    </update>
+
+    <update id="deleteDicomAiLesionById" parameterType="DicomAiLesion">
+        update dicom_ai_lesion set del_flag = 1
+        where dicom_ai_lesion_id = #{dicomAiLesionId}
+        ${params.updateScope}
+    </update>
+
+    <update id="deleteDicomAiLesionByIds" parameterType="DicomAiLesion">
+        update dicom_ai_lesion set del_flag = 1
+        where dicom_ai_lesion_id in
+        <foreach item="id" collection="params.Ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ${params.updateScope}
+    </update>
+</mapper>

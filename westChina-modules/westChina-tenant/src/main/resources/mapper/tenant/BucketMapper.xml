@@ -49,9 +49,7 @@
 
     <select id="selectBucketByBucketId" parameterType="Bucket" resultMap="bucketResult">
         <include refid="selectVo"/>
-        where e.bucket_id = #{bucketId}
-        <!-- 数据范围过滤 -->
-        -- ${params.dataScope}
+        where e.bucket_id = #{bucketId} and e.del_flag = 0
     </select>
     <select id="selectBucketByBucketTenantId" parameterType="Bucket" resultMap="bucketResult">
         <include refid="selectVo"/>
@@ -119,23 +117,34 @@
 
     <delete id="deleteBucketByBucketId" parameterType="Bucket">
         update xy_tenant_bucket
-        set del_flag = 1 ,status ='1'
-        where bucket_id = #{bucketId}
-        <!-- 数据范围过滤 -->
-        -- ${params.updateScope}
+        set del_flag = 1,
+            status = '1',
+            bucket_name = CONCAT('_del_', bucket_id),
+            bucket_tenant_name = CONCAT('_del_', bucket_tenant_id)
+        where bucket_id = #{bucketId} and del_flag = 0
     </delete>
 
     <delete id="deleteBucketByBucketIds" parameterType="Bucket">
         update xy_tenant_bucket
-        <set>
-
-        </set>
-        set del_flag = 1,status ='1'
-        where bucket_id in
+        set del_flag = 1,
+            status = '1',
+            bucket_name = CONCAT('_del_', bucket_id),
+            bucket_tenant_name = CONCAT('_del_', bucket_tenant_id)
+        where del_flag = 0 and bucket_id in
         <foreach item="bucketId" collection="params.Ids" open="(" separator="," close=")">
             #{bucketId}
         </foreach>
-        <!-- 数据范围过滤 -->
-        -- ${params.updateScope}
+    </delete>
+
+    <delete id="deleteBucketByTenantIds" parameterType="com.westChina.tenant.domain.Tenant">
+        update xy_tenant_bucket
+        set del_flag = 1,
+            status = '1',
+            bucket_name = CONCAT('_del_', bucket_id),
+            bucket_tenant_name = CONCAT('_del_', bucket_tenant_id)
+        where del_flag = 0 and bucket_tenant_id in
+        <foreach item="Id" collection="params.Ids" open="(" separator="," close=")">
+            #{Id}
+        </foreach>
     </delete>
 </mapper>

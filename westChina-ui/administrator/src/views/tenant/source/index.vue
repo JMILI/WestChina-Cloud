@@ -361,10 +361,10 @@ export default {
         databaseType: DATABASE_TYPE.SLAVE_SOURCE,
         driverClassName: 'com.mysql.cj.jdbc.Driver',
         url: null,
-        urlPrepend: 'jdbc:mysql://westChinaBackend:3306/',
+        urlPrepend: 'jdbc:mysql://127.0.0.1:3306/xy-cloud',
         urlAppend: '?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8',
-        username: null,
-        password: null,
+        username: 'root',
+        password: '123456',
         type: SOURCE_TYPE.SOURCE_READ_WRITE,
         sort: 0,
         status: STATUS.NORMAL
@@ -470,7 +470,7 @@ export default {
       this.$refs['form'].validate(valid => {
           if (valid) {
             connectionSource(this.form).then(response => {
-              this.$modal.msgSuccess('数据源连接成功')
+              this.$modal.msgSuccess('数据源连接成功，已自动创建数据库并初始化表结构')
             }).catch()
               .finally(() => this.submitLoading = false)
           } else {

@@ -94,8 +94,7 @@ export default {
     async logout() {
       this.$modal.confirm('确定注销并退出系统吗？').then(() => {
         this.$store.dispatch('LogOut').then(() => {
-          location.href = '/index';
-          // location.href = this.$router.options.base + '/index';
+          location.href = this.$router.options.base + 'login'
         })
       }).catch(() => {});
     }

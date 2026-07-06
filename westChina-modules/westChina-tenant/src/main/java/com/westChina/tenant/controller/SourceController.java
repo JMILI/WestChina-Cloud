@@ -54,8 +54,8 @@ public class SourceController extends BaseController {
      */
     @PostMapping("/connection")
     public AjaxResult connection(@Validated @RequestBody Source source) {
-        DSUtils.testSlaveDs(source);
-        return success();
+        DSUtils.testSlaveConnection(source);
+        return success("数据库连接成功，已自动创建数据库并初始化子库表结构");
     }
 
     /**
@@ -65,7 +65,7 @@ public class SourceController extends BaseController {
     @Log(title = "数据源", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Source source) {
-        DSUtils.testSlaveDs(source);
+        DSUtils.initSlaveDatabase(source);
         return toAjax(sourceService.mainInsertSource(source));
     }
 
@@ -141,6 +141,11 @@ public class SourceController extends BaseController {
             return AjaxResult.error("请先停用数据源后再删除！");
         } else if (StringUtils.equals(BaseConstants.Default.YES.getCode(), check.getIsChange())) {
             return AjaxResult.error("系统默认数据源无法被删除！");
+        } else if (sourceService.mainCheckStrategySourceBySourceId(check)) {
+            return AjaxResult.error("该数据源仍被策略引用，请先从策略中取消关联后再删除！");
+        } else if (sourceService.mainCheckSeparationSourceByWriteId(check)
+                || sourceService.mainCheckSeparationSourceByReadId(check)) {
+            return AjaxResult.error("该数据源仍被读写配置引用，请先解除读写关联后再删除！");
         }
         return toAjax(sourceService.mainDeleteSourceById(check));
     }

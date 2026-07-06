@@ -11,6 +11,8 @@
    - 数据源物理隔离
    - 基于微服务
 # 项目部署或开发
+> **本机/服务器启停与访问地址，见 [docs/DEPLOY.md](./docs/DEPLOY.md)**  
+> **AI 推理服务详见 [ai-service/README.md](./ai-service/README.md)**
 开发或部署步骤参考[思维导图](https://www.processon.com/view/link/6523b3a0ec6dd11d4673142f)
 也可以参考xueyi-cloud的部署流程，大致相当，理解xueyi-cloud的部署过程，就理解了本项目的部署过程
 ## 部署或二次开发所需服务：

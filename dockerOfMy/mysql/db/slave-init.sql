@@ -1,40 +1,20 @@
 /*
- Navicat Premium Data Transfer
+  租户子库初始化脚本（唯一权威来源）
 
- Source Server         : huaxi
- Source Server Type    : MySQL
- Source Server Version : 50735
- Source Host           : localhost:3306
- Source Schema         : xy-cloud1
+  用途：
+  1. 后台新增/测试子数据源时，由 DSUtils 自动建表
+  2. 演示子库 xy-cloud1、xy-cloud2 通过 scripts/init-tenant-db.sh 初始化
 
- Target Server Type    : MySQL
- Target Server Version : 50735
- File Encoding         : 65001
-
- Date: 06/03/2022 21:45:17
+  共 17 张表：
+  - CT 业务（4）：ct_patients, ct_dicom, dicom_maker, dicom_ai_lesion
+  - 系统（11）：sys_dept, sys_user, sys_role, sys_post, sys_logininfor, sys_oper_log,
+                sys_notice, sys_notice_log, sys_organize_role, sys_role_dept_post, sys_role_system_menu
+  - 素材（2）：xy_material, xy_material_folder
 */
 
-DROP
-    DATABASE IF EXISTS `xy-cloud1`;
-
-CREATE
-    DATABASE `xy-cloud1` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
 SET NAMES utf8mb4;
-SET
-    FOREIGN_KEY_CHECKS = 0;
+SET FOREIGN_KEY_CHECKS = 0;
 
-USE
-    `xy-cloud1`;
-
-
-
-
-
-
--- ----------------------------
--- Table structure for dicom_maker
--- ----------------------------
 DROP TABLE IF EXISTS `dicom_maker`;
 CREATE TABLE `dicom_maker`  (
                                 `dicom_maker_id` bigint NOT NULL COMMENT 'id',
@@ -70,6 +50,49 @@ CREATE TABLE `dicom_maker`  (
                                 `tenant_id` bigint NOT NULL COMMENT '租户Id',
                                 PRIMARY KEY (`dicom_maker_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '病人标记过的dicom图像表' ROW_FORMAT = DYNAMIC;
+-- ----------------------------
+-- Table structure for dicom_ai_lesion
+-- ----------------------------
+DROP TABLE IF EXISTS `dicom_ai_lesion`;
+CREATE TABLE `dicom_ai_lesion`
+(
+    `dicom_ai_lesion_id`     bigint                                                         NOT NULL COMMENT 'id',
+    `source_dicom_id`        bigint                                                         NULL     DEFAULT NULL COMMENT '原始序列dicom_id',
+    `study_uid`              varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '研究id',
+    `series_uid`             varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '序列UId',
+    `study_date`             varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT 'ct拍摄时间',
+    `pat_card_id`            varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '身份证号',
+    `patient_name`           varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '病人姓名',
+    `body_part`              varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '检查部位',
+    `detect_doctor`          varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '识别医生',
+    `detect_enterprise_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '医院名',
+    `detect_time`            varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci   NULL     DEFAULT NULL COMMENT '识别时间',
+    `ai_series_path`         varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT 'AI序列最后一张dcm路径',
+    `image_count`            int                                                            NULL     DEFAULT NULL COMMENT '序列切片数量',
+    `lesion_count`           int                                                            NULL     DEFAULT 0 COMMENT '检出病灶数量',
+    `lesions_json`           mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci      NULL COMMENT '病灶识别结果JSON',
+    `engine`                 varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT NULL COMMENT '推理引擎',
+    `disclaimer`             varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '免责声明',
+    `description`            varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `detect_mode`            varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NULL     DEFAULT 'series' COMMENT '识别模式 series|single',
+    `instance_uid`           varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '标记层 SOP Instance UID',
+    `source_slice_index`     int                                                            NULL     DEFAULT NULL COMMENT '原始序列层索引0-based',
+    `sort`                   int UNSIGNED                                                   NOT NULL DEFAULT 0 COMMENT '显示顺序',
+    `create_by`              bigint                                                         NULL     DEFAULT NULL COMMENT '创建者',
+    `create_time`            datetime                                                       NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by`              bigint                                                         NULL     DEFAULT NULL COMMENT '更新者',
+    `update_time`            datetime                                                       NULL     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark`                 varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL     DEFAULT NULL COMMENT '备注',
+    `del_flag`               tinyint                                                        NOT NULL DEFAULT 0 COMMENT '删除标志（0正常 1删除）',
+    `tenant_id`              bigint                                                         NOT NULL COMMENT '租户Id',
+    PRIMARY KEY (`dicom_ai_lesion_id`) USING BTREE,
+    KEY `idx_ai_lesion_pat_card` (`pat_card_id`) USING BTREE,
+    KEY `idx_ai_lesion_source_dicom` (`source_dicom_id`) USING BTREE
+) ENGINE = InnoDB
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = 'AI识别病灶结果序列表'
+  ROW_FORMAT = DYNAMIC;
+
 
 
 
@@ -463,5 +486,4 @@ CREATE TABLE `xy_material_folder`
   COLLATE = utf8mb4_general_ci COMMENT = '素材分类表'
   ROW_FORMAT = Dynamic;
 
-SET
-    FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS = 1;

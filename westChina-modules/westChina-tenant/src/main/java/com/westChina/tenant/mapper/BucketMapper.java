@@ -82,6 +82,11 @@ public interface BucketMapper {
      */
     @DataScope( ueAlias = "empty" )
     public int deleteBucketByBucketIds(Bucket bucket);
+
+    /**
+     * 按租户Id批量软删除桶
+     */
+    public int deleteBucketByTenantIds(com.westChina.tenant.domain.Tenant tenant);
     /**
      * 查询对象存储，存储租户的桶信息
      * 访问控制 e 租户查询

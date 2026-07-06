@@ -8,6 +8,7 @@ import com.westChina.common.redis.utils.DataSourceUtils;
 import com.westChina.tenant.domain.Tenant;
 import com.westChina.tenant.mapper.TenantMapper;
 import com.westChina.tenant.service.ICreationService;
+import com.westChina.tenant.service.IBucketService;
 import com.westChina.tenant.service.ITenantService;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class TenantServiceImpl implements ITenantService {
 
     @Autowired
     private ICreationService creationService;
+
+    @Autowired
+    private IBucketService bucketService;
 
     /**
      * 查询租户信息列表
@@ -126,6 +130,7 @@ public class TenantServiceImpl implements ITenantService {
      */
     @Override
     public int mainDeleteTenantByIds(Tenant tenant) {
+        bucketService.deleteBucketByTenantIds(tenant);
         return tenantMapper.mainDeleteTenantByIds(tenant);
     }
 
@@ -166,5 +171,10 @@ public class TenantServiceImpl implements ITenantService {
     @Override
     public Tenant mainCheckTenantByTenantId(Tenant tenant) {
         return tenantMapper.mainCheckTenantByTenantId(tenant);
+    }
+
+    @Override
+    public int mainCountActiveTenantByStrategyIds(Tenant tenant) {
+        return tenantMapper.mainCountActiveTenantByStrategyIds(tenant);
     }
 }

@@ -71,6 +71,14 @@ export const constantRoutes = [
       keepAlive: true,
     }
   },
+  {
+    path: 'aiLesion',
+    name: 'aiLesion',
+    component: (resolve) => require(['@/views/aiLesion/index'], resolve),
+    meta: {
+      keepAlive: true,
+    }
+  },
 
   {
     path: '/Layout',
@@ -110,7 +118,7 @@ export const constantRoutes = [
 ]
 
 export default new Router({
-  // base: "/ct/",
+  base: "/ct/",
   //踩坑：注意vue.config.js中的proxy路径代理，
   // 会匹配这里写的路由，就是不要在这里路由和代理中的匹配关系相同。否则会找不到路由。
   mode: 'history', // 去掉url中的#

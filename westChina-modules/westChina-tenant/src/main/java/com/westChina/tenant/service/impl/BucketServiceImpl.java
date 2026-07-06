@@ -107,6 +107,11 @@ public class BucketServiceImpl implements IBucketService {
     }
 
     @Override
+    public int deleteBucketByTenantIds(com.westChina.tenant.domain.Tenant tenant) {
+        return bucketMapper.deleteBucketByTenantIds(tenant);
+    }
+
+    @Override
     public Bucket selectBucketByBucketTenantId(Bucket bucket) {
         return bucketMapper.selectBucketByBucketTenantId(bucket);
     }

@@ -91,4 +91,12 @@ public interface TenantMapper {
      * @return 租户信息
      */
     public Tenant mainCheckTenantByTenantId(Tenant tenant);
+
+    /**
+     * 统计策略下未删除的租户数量
+     *
+     * @param tenant 租户信息 | params.Ids 策略Ids组
+     * @return 租户数量
+     */
+    public int mainCountActiveTenantByStrategyIds(Tenant tenant);
 }

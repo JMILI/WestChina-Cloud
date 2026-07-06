@@ -44,6 +44,7 @@
 
 <script>
 import {mapGetters} from 'vuex'
+import { baseSystemUrl } from '@/settings'
 import Breadcrumb from '@basicsComponents/Breadcrumb'
 import TopNav from '@basicsComponents/TopNav'
 import Hamburger from '@basicsComponents/Hamburger'
@@ -94,8 +95,11 @@ export default {
     async logout() {
       this.$modal.confirm('确定注销并退出系统吗？', '提示').then(() => {
         this.$store.dispatch('LogOut').then(() => {
-          location.href = '/index'
-          // location.href = this.$router.options.base + '/index';
+          if (baseSystemUrl) {
+            location.href = baseSystemUrl.endsWith('/') ? baseSystemUrl : baseSystemUrl + '/'
+          } else {
+            location.href = this.$router.options.base + 'login'
+          }
         })
       }).catch(() => {
       })

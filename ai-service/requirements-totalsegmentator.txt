@@ -1,0 +1,3 @@
+# 可选：TotalSegmentator 肺分割（首次运行会下载模型，体积较大）
+totalsegmentator>=2.0.0
+nibabel>=5.0.0

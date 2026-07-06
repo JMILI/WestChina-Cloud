@@ -144,6 +144,13 @@
             <el-button
               size="mini"
               type="text"
+              icon="el-icon-cpu"
+              @click="manageAiLesion(scope.row)"
+            >AI识别病灶管理
+            </el-button>
+            <el-button
+              size="mini"
+              type="text"
               icon="el-icon-check"
               @click="manage(scope.row)"
             >CT图像管理
@@ -475,6 +482,7 @@ export default {
       //  endregion
       //  region 文件信息统计
       studyUidList: {},
+      seriesMetaRecorded: {},
       isFinishAnalysis: false,
       //  endregion
       //  region 上传提示
@@ -599,44 +607,45 @@ export default {
           let reader = new FileReader()
           let temp = file.file
           reader.readAsArrayBuffer(temp)
-          reader.onloadend = function (temp) {
-            let arrayBuffer = reader.result;
-            let byteArray = new Uint8Array(arrayBuffer)
-            let dataSet = dicomParser.parseDicom(byteArray)
-            let seriesDate = dataSet.string('x00080021')
-            let studyUID = dataSet.string('x0020000d')
-            let seriesUID = dataSet.string('x0020000e')
-            let imageNumber = dataSet.string('x00200013')
-            let bodyPart = dataSet.string('x00180015')
-            //前缀得从后端获取
-            let path = studyUID + '/' + seriesUID + '/' + imageNumber + '.dcm'
-            file.name = path
-            //统计信息，study,series信息
-            if (that.studyUidList.hasOwnProperty(studyUID)) {
-              if (that.studyUidList[studyUID].hasOwnProperty(seriesUID)) {
-                that.isFinishAnalysis = false
-                ++that.studyUidList[studyUID][seriesUID]
-              } else {
-                that.studyUidList[studyUID][seriesUID] = 1
+          reader.onloadend = function () {
+            try {
+              let arrayBuffer = reader.result;
+              let byteArray = new Uint8Array(arrayBuffer)
+              let dataSet = dicomParser.parseDicom(byteArray)
+              let seriesDate = dataSet.string('x00080021')
+              let studyUID = dataSet.string('x0020000d')
+              let seriesUID = dataSet.string('x0020000e')
+              let bodyPart = dataSet.string('x00180015') || ''
+              if (!studyUID || !seriesUID) {
+                throw new Error('DICOM 缺少 studyUID 或 seriesUID')
               }
-              //没出现过得study序列
-            } else {
-              that.studyUidList[studyUID] = {}
-              that.studyUidList[studyUID][seriesUID] = 1
-            }
-            //将第一张图像记录存入数据库
-            if (imageNumber === '1') {
-              let ctDicomTemp = {}
-              ctDicomTemp.dicomCtTime = seriesDate
-              ctDicomTemp.dicomCtStudyUid = studyUID
-              ctDicomTemp.dicomCtSeriesUid = seriesUID
-              ctDicomTemp.dicomCtBody = bodyPart
-              ctDicomTemp.dicomCtPath = path
-              //后面要填写
-              ctDicomTemp.patCardId = ''
-              ctDicomTemp.dicomCtCount = 0
-              ctDicomTemp.dicomCtDescription = ''
-              that.ctDicomList.push(ctDicomTemp)
+              if (!that.studyUidList[studyUID]) {
+                that.studyUidList[studyUID] = {}
+              }
+              if (!that.studyUidList[studyUID][seriesUID]) {
+                that.studyUidList[studyUID][seriesUID] = 0
+              }
+              ++that.studyUidList[studyUID][seriesUID]
+              const seq = that.studyUidList[studyUID][seriesUID]
+              // 阅片按 1.dcm、2.dcm… 顺序加载，上传时统一重命名为序号
+              let path = studyUID + '/' + seriesUID + '/' + seq + '.dcm'
+              file.name = path
+              const seriesKey = studyUID + '::' + seriesUID
+              if (!that.seriesMetaRecorded[seriesKey]) {
+                that.seriesMetaRecorded[seriesKey] = true
+                let ctDicomTemp = {}
+                ctDicomTemp.dicomCtTime = seriesDate
+                ctDicomTemp.dicomCtStudyUid = studyUID
+                ctDicomTemp.dicomCtSeriesUid = seriesUID
+                ctDicomTemp.dicomCtBody = bodyPart
+                ctDicomTemp.dicomCtPath = path
+                ctDicomTemp.patCardId = ''
+                ctDicomTemp.dicomCtCount = 0
+                ctDicomTemp.dicomCtDescription = ''
+                that.ctDicomList.push(ctDicomTemp)
+              }
+            } catch (e) {
+              that.$modal.msgWarning('文件解析失败，已跳过：' + file.name)
             }
             //region 数组的
             //假设没找到
@@ -755,40 +764,22 @@ export default {
             reject("没有上传文件")
           }
         })
-        //数据库写入记录
+        //数据库写入记录后再开始传 MinIO
         isFinishUpload.then(ctDicomList => {
-          return new Promise((resolve, reject) => {
-            ctDicomList.forEach(item => {
-              debugger
-              addDicom(item).then(response => {
-                //  成功
-              }).catch(error => {
-                reject("数据库增加记录失败")
-              })
+          return Promise.all(ctDicomList.map(item => addDicom(item)))
+        }).then(() => {
+          that.$nextTick(() => {
+            that.$refs.uploader.files.forEach(item => {
+              item.resume()
             })
-            resolve(true)
           })
-        }).then(isRecord => {
-          return new Promise((resolve, reject) => {
-            if (isRecord === true) {
-              that.$nextTick(() => {
-                that.$refs.uploader.files.forEach(item => {
-                  item.resume()
-                })
-              });
-              resolve(true)
-            }
-          })
-        }).then(isRecordAndResume => {
-          if (isRecordAndResume === true) {
-            that.uploadToPatient.patCardId = ''
-            //清理上传文件的记录信息
-            that.ctDicomList = []
-            //清除上传文件的统计信息
-            that.studyUidList = {}
-          }
+          that.uploadToPatient.patCardId = ''
+          that.ctDicomList = []
+          that.studyUidList = {}
+          that.seriesMetaRecorded = {}
+          that.$modal.msgSuccess('影像记录已保存，开始上传文件')
         }).catch(err => {
-          this.model.msgError(err)
+          this.$modal.msgError(err || '数据库增加记录失败')
         })
 
       } else {
@@ -814,6 +805,9 @@ export default {
       this.file_total = 0;
       this.errorFileList = []
       this.controllerErrorFileDialog = false
+      this.ctDicomList = []
+      this.studyUidList = {}
+      this.seriesMetaRecorded = {}
       this.$refs.uploader.uploader.cancel()
     }
     ,
@@ -1041,7 +1035,23 @@ export default {
     },
     //  endregion
     //region 跳转到阅片界面
-    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries', 'dicomOfPatCardId', 'makerOfPatCardId', 'setBucketName']),
+    ...mapActions(['changePatientInfo', 'updatePatientsStudySeries', 'dicomOfPatCardId', 'makerOfPatCardId', 'aiLesionOfPatCardId', 'setBucketName']),
+    manageAiLesion(row) {
+      new Promise(resolve => {
+        let patient = {
+          patCardId: row.patCardId,
+          patName: row.patName,
+          patPhone: row.patPhone,
+        }
+        this.changePatientInfo(patient)
+        this.dicomOfPatCardId(row.patCardId)
+        this.makerOfPatCardId(row.patCardId)
+        this.aiLesionOfPatCardId(row.patCardId)
+        resolve()
+      }).then(() => {
+        this.$router.push({ name: 'aiLesion' })
+      }).catch(() => {})
+    },
     manageMaker(row) {
       //将需要查看的病人patCardId，存储起来
       new Promise(resolve => {
@@ -1143,9 +1153,9 @@ export default {
     //region 获取该账号所对应的bucketNameOfMe
     getBucketName() {
       let that = this
-      that.enterpriseName = Cookies.get("enterpriseName")
-      // console.log("enterpriseName", this.enterpriseName)
-      getBucketName({enterpriseName: this.enterpriseName}).then(result => {
+      that.enterpriseName = Cookies.get("enterpriseName") || ''
+      // 不依赖前端 cookie 选择桶，默认以后端 token 对应企业为准
+      getBucketName().then(result => {
         // console.log(result)
         if (result.data === '') {
           //没有桶，不能上传文件

@@ -167,6 +167,14 @@ public class TenantController extends BaseController {
     @DeleteMapping
     public AjaxResult remove(@RequestBody Tenant tenant) {
         Set<Tenant> before = tenantService.mainCheckTenantListByIds(tenant);
+        for (Tenant item : before) {
+            if (StringUtils.equals(BaseConstants.Default.YES.getCode(), item.getIsChange())) {
+                return AjaxResult.error("系统租户无法被删除！");
+            }
+            if (StringUtils.equals(BaseConstants.Status.NORMAL.getCode(), item.getStatus())) {
+                return AjaxResult.error("请先停用租户「" + item.getTenantName() + "」后再删除！");
+            }
+        }
         int rows = tenantService.mainDeleteTenantByIds(tenant);
         if (rows > 0) {
             Set<Tenant> after = tenantService.mainCheckTenantListByIds(tenant);

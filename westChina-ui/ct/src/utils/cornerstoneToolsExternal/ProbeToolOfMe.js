@@ -25,12 +25,31 @@ const calculateSUV = cornerstoneTools.import('util/calculateSUV')
 
 const probeCursor = cornerstoneTools.import('tools/cursors')
 
-// const logger = getLogger('tools:annotation:ProbeTool');
-
 //引入vuex 自己的,二次开发
 import myStore from './../../store'
 //二次开发，需要的变量
 const makerNeed = myStore.getters.makerNeed
+
+function _formatModalityPixelText(image, sp, mo) {
+  const seriesModule = external.cornerstone.metaData.get(
+    'generalSeriesModule',
+    image.imageId
+  )
+  const modality = seriesModule && seriesModule.modality
+  const value = parseFloat(mo.toFixed(1))
+
+  if (modality === 'CT') {
+    return `HU: ${value}`
+  }
+  if (modality === 'PT') {
+    const suv = calculateSUV(image, sp)
+    if (suv) {
+      return `${value} SUV: ${parseFloat(suv.toFixed(2))}`
+    }
+    return `${value}`
+  }
+  return `MO: ${value}`
+}
 
 /**
  * @public
@@ -192,7 +211,7 @@ export default class ProbeToolOfMe extends BaseAnnotationTool {
 
         let text, str;
 
-        const {x, y, storedPixels, sp, mo, suv} = data.cachedStats;
+        const {x, y, storedPixels, sp, mo} = data.cachedStats;
 
         if (x >= 0 && y >= 0 && x < image.columns && y < image.rows) {
           text = `${x}, ${y}`;
@@ -202,11 +221,7 @@ export default class ProbeToolOfMe extends BaseAnnotationTool {
               storedPixels[2]
             }`;
           } else {
-            // Draw text
-            str = `SP: ${sp} MO: ${parseFloat(mo.toFixed(3))}`;
-            if (suv) {
-              str += ` SUV: ${parseFloat(suv.toFixed(3))}`;
-            }
+            str = _formatModalityPixelText(image, sp, mo);
           }
 
           // Coords for text

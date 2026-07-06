@@ -123,12 +123,22 @@
 
     <delete id="mainDeleteTenantByIds" parameterType="Tenant">
         update xy_tenant
-        set del_flag = 1
+        set del_flag = 1,
+            tenant_name = CONCAT('_del_', tenant_id),
+            status = '1'
         where is_change = 'N' and del_flag = 0 and tenant_id in
         <foreach collection="params.Ids" item="Id" separator="," open="(" close=")">
             #{Id}
         </foreach>
     </delete>
+
+    <select id="mainCountActiveTenantByStrategyIds" parameterType="Tenant" resultType="int">
+        select count(*) from xy_tenant
+        where del_flag = 0 and is_change = 'N' and strategy_id in
+        <foreach collection="params.Ids" item="Id" separator="," open="(" close=")">
+            #{Id}
+        </foreach>
+    </select>
 
     <select id="mainCheckTenantListByIds" parameterType="Tenant" resultMap="TenantResult">
         <include refid="checkVo"/>

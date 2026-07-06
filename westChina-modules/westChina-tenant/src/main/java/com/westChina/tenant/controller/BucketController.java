@@ -1,6 +1,7 @@
 package com.westChina.tenant.controller;
 
 import com.westChina.common.core.domain.R;
+import com.westChina.common.core.constant.BaseConstants;
 import com.westChina.common.core.utils.StringUtils;
 import com.westChina.common.core.utils.poi.ExcelUtil;
 import com.westChina.common.core.web.controller.BaseController;
@@ -159,6 +160,14 @@ public class BucketController extends BaseController {
     @Log(title = "对象存储，存储租户的桶信息", businessType = BusinessType.DELETE)
     @DeleteMapping
     public AjaxResult remove(@RequestBody Bucket bucket) {
+        Bucket check = bucketService.selectBucketByBucketId(bucket);
+        if (check == null) {
+            return AjaxResult.error("桶不存在或已删除！");
+        }
+        if (check.getBucketTenantId() != null && check.getBucketTenantId() > 0
+                && StringUtils.equals(BaseConstants.Status.NORMAL.getCode(), check.getStatus())) {
+            return AjaxResult.error("请先停用桶后再删除！");
+        }
         return toAjax(bucketService.deleteBucketByBucketIds(bucket));
     }
 }

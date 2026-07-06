@@ -1,8 +1,8 @@
-<template xmlns="">
-  <div :class="{'has-logo':showLogo}">
-    :style="{ backgroundColor: settings.sideTheme === 'theme-dark' ? variables.menuBackground :
-    variables.menuLightBackground }">
-    <!--    logo-->
+<template>
+  <div
+    :class="{'has-logo': showLogo}"
+    :style="{ backgroundColor: settings.sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground }"
+  >    <!--    logo-->
     <logo v-if="showLogo" :collapse="isCollapse"/>
     <!--    标题-->
     <el-scrollbar :class="settings.sideTheme" wrap-class="scrollbar-wrapper">
@@ -51,10 +51,11 @@
           </el-menu-item>
         </el-submenu>
         <el-menu-item
-          v-for="item of tools" :key="item.index"
+          v-for="item of tools"
+          :key="item.toolName"
           @click="resetTools2(item.toolName)"
         >
-          <i class="el-icon-menu"></i>
+          <i :class="item.icon"></i>
           <span slot="title">{{ item.name }}</span>
         </el-menu-item>
 
@@ -197,6 +198,7 @@ export default {
         {
           toolName: 'Eraser',
           name: '橡皮擦',
+          icon: 'el-icon-delete',
         },
         // {
         //   toolName: 'FreehandRoiSculptor',
@@ -205,10 +207,12 @@ export default {
         {
           toolName: 'Magnify',
           name: '放大镜',
+          icon: 'el-icon-zoom-in',
         },
         {
           toolName: 'OrientationMarkers',
           name: '方向标记',
+          icon: 'el-icon-location-outline',
         },
         // {
         //   toolName: 'Overlay',
@@ -253,10 +257,12 @@ export default {
         {
           toolName: 'Zoom',
           name: '局部放大Zoom',
+          icon: 'el-icon-full-screen',
         },
         {
           toolName: 'Wwwc',
           name: '窗位窗宽Wwwc',
+          icon: 'el-icon-picture-outline',
         },
 
       ]
@@ -375,8 +381,8 @@ export default {
 
         cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
-        cornerstoneTools.setToolActive('ZoomTool', 1);
         cornerstoneTools.setToolActive('StackScrollMouseWheel', {});
+        this.isInit = true
       }
       //不必设置取消键,若设置取消则之前的那一层可能会被取消掉
       console.log("tools:", tool)

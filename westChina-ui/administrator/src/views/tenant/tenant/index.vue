@@ -706,6 +706,11 @@ export default {
               })
             }
           } else {
+            if (!this.userForm.password || this.userForm.password.length < 5 || this.userForm.password.length > 20) {
+              this.$modal.msgWarning('管理员密码长度必须在5到20个字符之间')
+              this.submitLoading = false
+              return
+            }
             let params = {
               dept: this.deptForm,
               post: this.postForm,

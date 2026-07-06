@@ -48,6 +48,15 @@ public class ctUploadController extends BaseController {
      */
     @GetMapping(value = "/getBucketName")
     public AjaxResult getBucketName(String enterpriseName) {
+        if (StringUtils.isEmpty(enterpriseName)) {
+            LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+            if (StringUtils.isNotNull(loginUser) && StringUtils.isNotEmpty(loginUser.getEnterpriseName())) {
+                enterpriseName = loginUser.getEnterpriseName();
+            }
+        }
+        if (StringUtils.isEmpty(enterpriseName)) {
+            return AjaxResult.error("未识别到企业账号，无法获取存储桶", "");
+        }
         // feign本地调用 tenant的服务，请求minio桶名称
         R<String> data = new R<String>();
         data.setData("");
