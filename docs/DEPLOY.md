@@ -126,11 +126,10 @@ bash scripts/status.sh
 
 | 数据库 | 用途 | 说明 |
 |--------|------|------|
-| `xy-cloud` | 主业务库 | 租户、策略、菜单、CT 元数据等 |
-| `xy-cloud1` | 演示租户子库 1 | 17 张表，由 `slave-init.sql` 初始化 |
-| `xy-cloud2` | 演示租户子库 2 | 同上 |
+| `xy-cloud` | 主业务库 | 租户、策略、菜单、数据源配置等 |
 | `xy-config` | Nacos 配置库 | - |
 | `xy-seata` | 分布式事务 | 可选 |
+| *租户子库* | 每租户独立库 | 如 `xy-xiehe`，**界面新增数据源时动态创建** |
 
 ### 5.2 SQL 文件（`westsql/`）
 
@@ -141,16 +140,15 @@ bash scripts/status.sh
 | `xy-config.sql` | Nacos 配置 |
 | `xy_seata.sql` | Seata |
 
-新增租户数据源时，后台自动执行 `slave-init.sql`（见 `DSUtils.initSlaveDatabase`）。
+新增租户数据源时，后台 `DSUtils.initSlaveDatabase()` 自动建库并执行 `slave-init.sql`。
 
-### 5.3 手动初始化
+### 5.3 手动初始化（运维）
 
 ```bash
 # 主库
 docker exec -i westChina-mysql mysql -uroot -p123456 xy-cloud < westsql/xy-cloud.sql
 
-# 租户子库（任意库名）
-bash scripts/init-tenant-db.sh xy-cloud1 docker
+# 租户子库补建（库名与界面数据源一致，正常应走界面自动创建）
 bash scripts/init-tenant-db.sh xy-xiehe docker
 ```
 
@@ -211,7 +209,7 @@ docker compose down
 | Redis | `dockerOfMy/redis/conf/redis.conf` |
 | Nacos / MinIO | `docker-compose.yml` 环境变量 |
 
-Docker 首次启动时，`zz-init-tenant-dbs.sh` 会自动创建 `xy-cloud1` / `xy-cloud2` 并导入 `slave-init.sql`。
+Docker 首次启动只导入 `xy-cloud` / `xy-config` / `xy_seata`。租户子库请在管理界面「新增数据源」时动态创建。
 
 ---
 

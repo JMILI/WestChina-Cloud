@@ -42,7 +42,7 @@ bash scripts/setup_env.sh base
 | 安装 Node.js 18 | 通过 NodeSource 仓库安装 | ~1 分钟 |
 | 安装 Python 3 | `apt install python3 python3-pip python3-venv` | ~30 秒 |
 | 启动 Docker 中间件 | docker compose 拉起 MySQL/Redis/RabbitMQ/MinIO/Nacos | ~3 分钟 |
-| 初始化数据库 | 主库 SQL + 子库 `slave-init.sql`（`xy-cloud1`/`xy-cloud2`） | ~2 分钟 |
+| 初始化数据库 | 主库 `xy-cloud` / `xy-config` / `xy_seata`（租户子库由界面新增数据源时创建） | ~2 分钟 |
 | 本机配置适配 | 将配置中的主机名替换为 127.0.0.1 | ~1 分钟 |
 
 **安装完成后验证：**
@@ -57,14 +57,13 @@ java -version   # 应显示 1.8.x
 # Node
 node -v         # 应显示 v18.x 或更高
 
-# 数据库（应看到 xy-cloud、xy-cloud1、xy-config 等）
+# 数据库（应有 xy-cloud、xy-config 等；租户子库在界面添加数据源后出现）
 docker exec westChina-mysql mysql -uroot -p123456 -e "SHOW DATABASES;"
-
-# 子库 CT/AI 表（可选，确认 slave-init 已执行）
-docker exec westChina-mysql mysql -uroot -p123456 -e "SHOW TABLES FROM \`xy-cloud1\` LIKE 'dicom_ai_lesion';"
 ```
 
 **⚠️ 如果执行了 `sudo usermod -aG docker $USER`，需要重新登录或执行 `newgrp docker` 使 docker 组生效。**
+
+租户子库（如 `xy-xiehe`）需在 **租户管理 → 新增数据源** 后才会出现；连接测试或保存时会自动执行 `slave-init.sql` 建 17 张表。
 
 ---
 

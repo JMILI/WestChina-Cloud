@@ -108,10 +108,7 @@ init_docker_services() {
     docker exec -i westChina-mysql mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS \`$target_db\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;" 2>/dev/null
     docker exec -i westChina-mysql mysql -uroot -p123456 "$target_db" < "$ROOT/dockerOfMy/mysql/db/$sql" 2>/dev/null
   done
-  for tenant_db in xy-cloud1 xy-cloud2; do
-    bash "$ROOT/scripts/init-tenant-db.sh" "$tenant_db" docker
-  done
-  log_info "数据库初始化完成"
+  log_info "数据库初始化完成（租户子库请在管理界面「新增数据源」时自动创建）"
 
   # 本机适配：替换 host 为 127.0.0.1
   bash "$ROOT/scripts/init-local-db.sh" 2>/dev/null || log_warn "init-local-db 部分失败（可手动执行）"

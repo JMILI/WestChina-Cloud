@@ -5,7 +5,7 @@ westsql 目录说明
 
 文件清单
 --------
-slave-init.sql    租户子库表结构（17 张表，新增数据源时自动执行）
+slave-init.sql    租户子库表结构（17 张表）
 xy-cloud.sql      主库 xy-cloud（租户/策略/系统/CT 业务 + 初始数据）
 xy-config.sql     Nacos 配置库 xy-config
 xy_seata.sql      Seata 事务库（如启用分布式事务）
@@ -22,21 +22,24 @@ CT 业务（4）：
 素材（2）：
   xy_material, xy_material_folder
 
-演示子库 xy-cloud1 / xy-cloud2
-------------------------------
-不再维护单独的 xy-cloud1.sql / xy-cloud2.sql，统一用 slave-init.sql 初始化：
+租户子库如何创建
+----------------
+**不再预置 xy-cloud1 / xy-cloud2 等演示库。**
 
-  bash scripts/init-tenant-db.sh xy-cloud1 docker
-  bash scripts/init-tenant-db.sh xy-cloud2 docker
+在租户管理界面「新增数据源」时：
+1. 填写 JDBC 连接（含数据库名，如 xy-xiehe）
+2. 后端 `DSUtils.initSlaveDatabase()` 自动 CREATE DATABASE + 执行 slave-init.sql
 
-Docker 首次启动由 dockerOfMy/mysql/db/zz-init-tenant-dbs.sh 自动执行。
+连接测试（`testSlaveConnection`）同样会建库并初始化表结构。
+
+运维手动补库（可选）：
+
+  bash scripts/init-tenant-db.sh <数据库名> docker
 
 同步与部署
 ----------
 1. 修改子库表结构：只编辑 westsql/slave-init.sql
 2. 执行同步：bash scripts/sync-sql.sh
-3. 完整构建：bash scripts/build.sh（含 SQL 同步）
+3. 完整构建：bash scripts/build.sh 或 build_all.sh
 
-新增租户数据源
---------------
-后台「新增数据源」→ DSUtils.initSlaveDatabase() → 执行 slave-init.sql
+Docker MySQL 首次启动仅导入 xy-cloud / xy-config / xy_seata，不创建租户子库。

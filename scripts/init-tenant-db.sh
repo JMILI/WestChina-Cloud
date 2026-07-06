@@ -1,5 +1,6 @@
 #!/bin/bash
-# 用 westsql/slave-init.sql 初始化单个租户子库
+# 运维用手动初始化租户子库（与界面「新增数据源」效果相同：建库 + slave-init.sql）
+# 正常流程请在管理界面添加数据源，由 DSUtils.initSlaveDatabase() 自动执行
 # 用法: bash scripts/init-tenant-db.sh <数据库名> [docker]
 set -e
 source "$(dirname "$0")/env.sh"

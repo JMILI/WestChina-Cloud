@@ -2,8 +2,8 @@
   租户子库初始化脚本（唯一权威来源）
 
   用途：
-  1. 后台新增/测试子数据源时，由 DSUtils 自动建表
-  2. 演示子库 xy-cloud1、xy-cloud2 通过 scripts/init-tenant-db.sh 初始化
+  1. 后台「新增/测试子数据源」时，由 DSUtils.initSlaveDatabase() 自动建表
+  2. 运维补库时可手动执行：bash scripts/init-tenant-db.sh <库名> docker
 
   共 17 张表：
   - CT 业务（4）：ct_patients, ct_dicom, dicom_maker, dicom_ai_lesion

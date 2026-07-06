@@ -6,12 +6,7 @@ MAINTAINER westChina
 # 设置docker默认编码db初始化数据乱码
 ENV LANG C.UTF-8
 
-# 执行 sql 脚本（子库由 zz-init-tenant-dbs.sh + slave-init.sql 初始化）
+# 首次启动仅初始化主库与配置库；租户子库在管理界面「新增数据源」时动态创建
 ADD ./db/xy-cloud.sql /docker-entrypoint-initdb.d/
 ADD ./db/xy-config.sql /docker-entrypoint-initdb.d/
 ADD ./db/xy_seata.sql /docker-entrypoint-initdb.d/
-ADD ./db/slave-init.sql /opt/westsql/slave-init.sql
-ADD ./db/zz-init-tenant-dbs.sh /docker-entrypoint-initdb.d/
-
-# 增加执行权限，解决启动mysql容器后，不自动执行脚本的问题
-RUN chmod +x /docker-entrypoint-initdb.d/zz-init-tenant-dbs.sh
