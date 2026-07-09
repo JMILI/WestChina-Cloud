@@ -25,7 +25,7 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
+from .log_paths import ai_temp_directory
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -167,7 +167,7 @@ def _run_nndet_subprocess(
     models_root = weight_dir.parent.parent.parent  # 含 Task016_Luna 的目录
 
     # 写 NIfTI 到临时目录
-    with tempfile.TemporaryDirectory(prefix="nndet_data_") as data_tmp:
+    with ai_temp_directory("nndet_data_") as data_tmp:
         data_dir = Path(data_tmp) / task_name
         images_dir = data_dir / "imagesTs"
         images_dir.mkdir(parents=True, exist_ok=True)
@@ -254,7 +254,7 @@ def _parse_nndet_output(
     box_files = list(pred_dir.glob("*_boxes.pkl"))
     if not box_files:
         logger.warning("[nnDetection] 未找到预测输出文件")
-        return {"lesions": [], "stats": {"reason": "NO_PREDICTION_FILE"}}
+        return {"lesions": [], "lowConfLesions": [], "stats": {"reason": "NO_PREDICTION_FILE"}}
 
     try:
         from nndet.io.load import load_pickle
@@ -266,7 +266,12 @@ def _parse_nndet_output(
                 return _pickle.load(f)
 
     all_lesions: List[Dict[str, Any]] = []
+    low_conf_lesions: List[Dict[str, Any]] = []
     spacing_z, spacing_y, spacing_x = spacing
+    low_min = settings.scheme_b_low_conf_min
+    low_max = settings.scheme_b_low_conf_max
+    high_min = 0.05
+    nndet_label_map = {1: "solid", 2: "ggo", 3: "calcified", 0: "solid"}
 
     for bf in box_files:
         pred = load_pickle(bf)
@@ -284,7 +289,10 @@ def _parse_nndet_output(
                 break
 
             score = float(scores[i])
-            if score < 0.05:  # 至少 5% 置信度
+            is_low = low_min <= score < low_max
+            if score < low_min:
+                continue
+            if score < high_min and not is_low:
                 continue
 
             box = boxes[i]  # (z1, y1, x1, z2, y2, x2)
@@ -334,11 +342,12 @@ def _parse_nndet_output(
             area_mm2 = float((max_x - min_x) * (max_y - min_y)) * spacing_y * spacing_x
             solidity = 0.85  # nnDetection 不提供 solidity，给默认值
 
-            all_lesions.append({
+            entry = {
                 "id": f"N{i + 1}",
                 "label": label_cn,
                 "type": lesion_type,
                 "confidence": round(min(max(score, 0.05), 0.99), 3),
+                "detectionConfidence": round(min(max(score, 0.05), 0.99), 3),
                 "sliceIndex": int(slice_index),
                 "bbox": bbox,
                 "contour": contour,
@@ -348,14 +357,26 @@ def _parse_nndet_output(
                 "areaMm2": round(area_mm2, 1),
                 "volumeMm3": round(area_mm2 * spacing_z, 1),
                 "hu": round(mean_hu, 1),
-            })
+                "source": "dl_low" if is_low else "dl_high",
+            }
+            if labels is not None and i < len(labels):
+                dl_class = nndet_label_map.get(int(labels[i]))
+                if dl_class:
+                    entry["dlModelClass"] = dl_class
+            if is_low:
+                low_conf_lesions.append(entry)
+            else:
+                all_lesions.append(entry)
 
     all_lesions.sort(key=lambda x: x["confidence"], reverse=True)
+    low_conf_lesions.sort(key=lambda x: x["confidence"], reverse=True)
     return {
         "lesions": all_lesions[: settings.max_lesions],
+        "lowConfLesions": low_conf_lesions[: settings.max_lesions],
         "stats": {
-            "candidates": len(all_lesions),
+            "candidates": len(all_lesions) + len(low_conf_lesions),
             "lesionCount": len(all_lesions[: settings.max_lesions]),
+            "lowConfCount": len(low_conf_lesions[: settings.max_lesions]),
             "detector": "nndetection",
         },
     }

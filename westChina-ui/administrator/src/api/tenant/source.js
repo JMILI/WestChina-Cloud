@@ -24,7 +24,8 @@ export function connectionSource(data) {
   return request({
     url: '/tenant/source/connection',
     method: 'post',
-    data: data
+    data: data,
+    timeout: 120000
   })
 }
 
@@ -33,7 +34,8 @@ export function addSource(data) {
   return request({
     url: '/tenant/source',
     method: 'post',
-    data: data
+    data: data,
+    timeout: 120000
   })
 }
 

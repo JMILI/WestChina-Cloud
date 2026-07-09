@@ -32,21 +32,15 @@
     <!--    <hamburger id="hamburger-container"  class="hamburger-container"-->
     <!--               />-->
     <div class="right-menu">
-      <template v-if="device!=='mobile'">
-        <!--        这里放顶部的菜单工具 start jm-->
-        <!--        <el-dropdown class="right-menu-item hover-effect">-->
-        <!--&lt;!&ndash;          <span class="el-dropdown-link">&ndash;&gt;-->
-        <!--&lt;!&ndash;            上传文件<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>&ndash;&gt;-->
-        <!--&lt;!&ndash;          </span>&ndash;&gt;-->
-        <!--          <el-dropdown-menu slot="dropdown">-->
-        <!--            &lt;!&ndash;        <el-dropdown-item disabled>双皮奶</el-dropdown-item>&ndash;&gt;-->
-        <!--            <el-dropdown-item>单文件dicom</el-dropdown-item>-->
-        <!--            <el-dropdown-item divided>文件夹</el-dropdown-item>-->
-        <!--          </el-dropdown-menu>-->
-        <!--        </el-dropdown>-->
+        <!-- CT 阅片页工具栏：不因 mobile 判定整栏隐藏，避免窗口较窄时顶部功能消失 -->
         <div v-if="isCtViewerRoute" class="right-menu-item ai-engine-menu">
-          <lesion-engine-select compact :show-label="true" />
+          <lesion-engine-select
+            compact
+            :show-label="false"
+            sub-engine-display="select"
+          />
         </div>
+        <div v-if="isCtViewerRoute" class="ct-ai-actions">
         <el-tooltip
           v-if="isCtViewerRoute"
           :content="singleSliceTooltip"
@@ -70,13 +64,13 @@
         >
           <div
             class="right-menu-item hover-effect ai-lesion-btn"
-            :class="{ 'is-loading': lesionDetectLoading, 'is-disabled': !canDetectSeries }"
             @click.stop="triggerLesionDetect"
           >
-            <i :class="lesionDetectLoading ? 'el-icon-loading' : 'el-icon-aim'"></i>
+            <i class="el-icon-aim"></i>
             识别病灶
           </div>
         </el-tooltip>
+        </div>
         <div
           class="right-menu-item hover-effect dicom-guide-btn"
           @click="showDicomDialog = true"
@@ -145,7 +139,6 @@
         <!--        <el-tooltip content="布局大小" effect="dark" placement="bottom">-->
         <!--          <size-select id="size-select" class="right-menu-item hover-effect"/>-->
         <!--        </el-tooltip>-->
-      </template>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect">
         <div class="avatar-wrapper">
@@ -170,7 +163,11 @@
       :visible.sync="lesionSeriesDialogVisible"
       :study-series-list="studySeriesList"
       :lesion-results-by-dicom-id="lesionResultsByDicomId"
+      :active-series-dicom-id="activeViewerSeriesDicomId"
       @detect="onLesionDetectSeries"
+      @show-logs="onShowLesionLogs"
+      @cancel="onCancelLesionTask"
+      @view-series="onViewSeries"
     />
   </div>
 </template>
@@ -188,7 +185,8 @@ import Notice from '@customComponents/Notice'
 import DicomStructureDialog from './DicomStructureDialog'
 import LesionSeriesDialog from '@/views/ct2/components/LesionSeriesDialog'
 import LesionEngineSelect from '@/views/ct2/components/LesionEngineSelect'
-import { engineSupportsMode } from '@/utils/lesionEngines'
+import { engineSupportsMode, DEFAULT_ACTIVE_LESION_ENGINE } from '@/utils/lesionEngines'
+import { resolveSystemUrl } from 'common/src/utils/systemUrl'
 import { DICOM_INFO_SECTIONS } from '@/constants/dicomStructure'
 
 export default {
@@ -224,7 +222,8 @@ export default {
       'studySeriesList',
       'lesionResultsByDicomId',
       'lesionDetectEngine',
-      'lesionEngineCatalog'
+      'lesionEngineCatalog',
+      'activeViewerSeriesDicomId'
     ]),
     isStudyPanelOpen() {
       return this.openStudy
@@ -239,11 +238,11 @@ export default {
       return this.$store.getters.lesionDetectLoading
     },
     canDetectCurrentSlice() {
-      const engine = this.lesionDetectEngine || 'scheme-a'
+      const engine = this.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE
       return engineSupportsMode(engine, 'single', this.lesionEngineCatalog)
     },
     canDetectSeries() {
-      const engine = this.lesionDetectEngine || 'scheme-a'
+      const engine = this.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE
       return engineSupportsMode(engine, 'series', this.lesionEngineCatalog)
     },
     singleSliceTooltip() {
@@ -311,12 +310,11 @@ export default {
     jumpBaseSystem(type) {
       let url
       if (type === '1') {//跳转个人中心
-        url = this.$store.state.settings.baseSystemUrl + '/user/profile'
+        url = resolveSystemUrl(this.$store.state.settings.baseSystemUrl + '/user/profile')
       } else if (type === '2') {//跳转主系统企业中心
-        url = this.$store.state.settings.baseSystemUrl
+        url = resolveSystemUrl(this.$store.state.settings.baseSystemUrl)
       }
-      // window.open(url, '_blank') // 在新窗口打开外链接
-      window.location.href = url  //在本页面打开外部链接
+      window.location.href = url
     },
     //病人信息展示状态改变
     ...mapActions({
@@ -333,12 +331,6 @@ export default {
         this.$router.push({name: 'patients'})
     },
     triggerLesionDetect() {
-      if (this.lesionDetectLoading || !this.canDetectSeries) {
-        if (!this.canDetectSeries) {
-          this.$message.warning(this.seriesDetectTooltip)
-        }
-        return
-      }
       this.$store.dispatch('requestLesionDetect')
     },
     triggerLesionDetectCurrentSlice() {
@@ -352,6 +344,15 @@ export default {
     },
     onLesionDetectSeries(row) {
       this.$store.dispatch('startLesionDetectForSeries', row)
+    },
+    onShowLesionLogs(payload) {
+      this.$store.dispatch('openLesionDetectLogs', payload)
+    },
+    onCancelLesionTask(payload) {
+      this.$store.dispatch('cancelLesionDetectTask', payload)
+    },
+    onViewSeries(row) {
+      this.$store.dispatch('viewSeriesInViewer', row)
     }
   }
 }
@@ -359,14 +360,19 @@ export default {
 
 <style lang="scss" scoped>
 .navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   height: 50px;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
+  z-index: 1003;
+  isolation: isolate;
   background: #282c34;
   box-shadow: 0 1px 4px rgba(0, 233, 233, .08);
 
   .toolbar-left {
-    float: left;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     height: 100%;
@@ -430,21 +436,51 @@ export default {
   }
 
   .right-menu {
-    float: right;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    min-width: 0;
     height: 100%;
-    line-height: 50px;
+    padding-right: 8px;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 2px;
+    }
 
     &:focus {
       outline: none;
     }
 
+    .ct-ai-actions {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      gap: 2px;
+      padding-right: 4px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      margin-right: 4px;
+    }
+
     .right-menu-item {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
       padding: 0 8px;
       height: 100%;
       font-size: 14px;
       color: #ddd;
-      vertical-align: text-bottom;
+      white-space: nowrap;
 
       &.info-menu-item {
         font-size: 13px;
@@ -466,9 +502,10 @@ export default {
       &.ai-lesion-btn {
         font-size: 13px;
         color: #f0a96e;
+        padding: 0 10px;
 
         i {
-          margin-right: 3px;
+          margin-right: 4px;
         }
 
         &:hover {
@@ -492,11 +529,16 @@ export default {
       }
 
       &.ai-engine-menu {
-        padding: 0 10px;
+        padding: 0 8px 0 4px;
+        max-width: 360px;
         cursor: default;
 
         &:hover {
           background: transparent !important;
+        }
+
+        ::v-deep .lesion-engine-select {
+          min-width: 0;
         }
 
         ::v-deep .lesion-engine-select__label {
@@ -504,11 +546,12 @@ export default {
         }
 
         ::v-deep .el-input__inner {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.16);
           color: #e8eaed;
           height: 28px;
           line-height: 28px;
+          font-size: 12px;
         }
 
         ::v-deep .el-input__suffix {

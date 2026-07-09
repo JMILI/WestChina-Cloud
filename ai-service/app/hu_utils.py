@@ -58,6 +58,33 @@ def refine_lung_mask(lung_mask: np.ndarray, volume: np.ndarray, dilate_iters: in
     return mask & parenchyma
 
 
+def _hu_channel_windows(spacing_z: float) -> Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]:
+    if spacing_z >= 5.0:
+        return (-780.0, -300.0), (15.0, 85.0), (85.0, 280.0)
+    if spacing_z >= 3.0:
+        return (-820.0, -280.0), (12.0, 90.0), (90.0, 300.0)
+    return (-850.0, -320.0), (15.0, 80.0), (80.0, 280.0)
+
+
+def ggo_hu_window(spacing_z: float) -> Tuple[float, float]:
+    if spacing_z >= 5.0:
+        return -780.0, -300.0
+    if spacing_z >= 3.0:
+        return -820.0, -280.0
+    return -850.0, -320.0
+
+
+def ggo_candidate_mask(
+    lung_mask: np.ndarray,
+    hu: np.ndarray,
+    spacing_z: float,
+) -> np.ndarray:
+    """仅 GGO 密度窗（层厚自适应）。"""
+    lung = lung_mask.astype(bool)
+    ggo, _, _ = _hu_channel_windows(spacing_z)
+    return lung & (hu >= ggo[0]) & (hu <= ggo[1])
+
+
 def nodule_candidate_mask(
     lung_mask: np.ndarray,
     hu: np.ndarray,
@@ -65,22 +92,9 @@ def nodule_candidate_mask(
 ) -> np.ndarray:
     """双通道 + 高密度：磨玻璃 / 实性结节 / 钙化灶（参考临床 HU 表）。"""
     lung = lung_mask.astype(bool)
-    body = hu > -900
-    if spacing_z >= 5.0:
-        ggo = (-780.0, -300.0)
-        solid = (15.0, 85.0)
-        calc = (85.0, 280.0)
-    elif spacing_z >= 3.0:
-        ggo = (-820.0, -280.0)
-        solid = (12.0, 90.0)
-        calc = (90.0, 300.0)
-    else:
-        ggo = (-850.0, -320.0)
-        solid = (15.0, 80.0)
-        calc = (80.0, 280.0)
+    ggo, solid, calc = _hu_channel_windows(spacing_z)
     ggo_m = lung & (hu >= ggo[0]) & (hu <= ggo[1])
     solid_m = lung & (hu >= solid[0]) & (hu <= solid[1])
-    # 高密度（钙化/对比增强实性），限制在肺野内
     calc_m = lung & (hu >= calc[0]) & (hu <= calc[1])
     return ggo_m | solid_m | calc_m
 
@@ -138,7 +152,10 @@ def extract_contour_normalized(
     cols: int,
     max_points: int = 64,
 ) -> List[dict]:
-    if not sl_mask.any():
+    if sl_mask is None or not sl_mask.any():
+        return []
+    h, w = sl_mask.shape[:2]
+    if h < 2 or w < 2:
         return []
     contours = find_contours(sl_mask.astype(float), 0.5)
     if not contours:

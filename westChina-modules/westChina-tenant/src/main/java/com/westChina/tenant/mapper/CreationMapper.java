@@ -54,4 +54,29 @@ public interface CreationMapper {
      * @return 结果
      */
     public int createOrganizeRoleByTenantId(Tenant tenant);
+
+    /**
+     * 统计新租户初始化后的部门数量
+     */
+    public int countDeptByTenantId(Tenant tenant);
+
+    /**
+     * 统计新租户初始化后的岗位数量
+     */
+    public int countPostByTenantId(Tenant tenant);
+
+    /**
+     * 统计新租户初始化后的用户数量
+     */
+    public int countUserByTenantId(Tenant tenant);
+
+    /**
+     * 统计新租户初始化后的角色数量
+     */
+    public int countRoleByTenantId(Tenant tenant);
+
+    /**
+     * 统计新租户初始化后的组织角色关联数量
+     */
+    public int countOrganizeRoleByTenantId(Tenant tenant);
 }

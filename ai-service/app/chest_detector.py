@@ -72,7 +72,10 @@ def _extract_contour(
     max_points: int = 48,
 ) -> List[Dict[str, float]]:
     """从分割 mask 提取不规则轮廓，坐标归一化到 [0,1]。"""
-    if not sl_mask.any():
+    if sl_mask is None or not sl_mask.any():
+        return []
+    h, w = sl_mask.shape[:2]
+    if h < 2 or w < 2:
         return []
 
     contours = find_contours(sl_mask.astype(float), 0.5)

@@ -1,6 +1,8 @@
 """识别引擎注册与可用性探测。"""
 from __future__ import annotations
 
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -65,6 +67,10 @@ def _gpu_available() -> bool:
 
 
 _ENGINES: List[EngineMeta] = []
+_CATALOG_CACHE: List[Dict[str, Any]] | None = None
+_CATALOG_TS = 0.0
+_CATALOG_TTL_SEC = 60.0
+_CATALOG_LOCK = threading.Lock()
 
 
 def _build_scheme_b_sub_engines() -> List[Dict[str, Any]]:
@@ -140,9 +146,20 @@ def _build_catalog() -> List[EngineMeta]:
     ]
 
 
+def refresh_engine_catalog(force: bool = False) -> List[Dict[str, Any]]:
+    """构建并缓存引擎目录，避免 /engines 每次触发重型依赖探测。"""
+    global _CATALOG_CACHE, _CATALOG_TS
+    with _CATALOG_LOCK:
+        now = time.time()
+        if not force and _CATALOG_CACHE is not None and (now - _CATALOG_TS) < _CATALOG_TTL_SEC:
+            return list(_CATALOG_CACHE)
+        _CATALOG_CACHE = [e.to_dict() for e in _build_catalog()]
+        _CATALOG_TS = now
+        return list(_CATALOG_CACHE)
+
+
 def get_engine_catalog() -> List[Dict[str, Any]]:
-    engines = _build_catalog()
-    return [e.to_dict() for e in engines]
+    return refresh_engine_catalog()
 
 
 def normalize_engine(engine_id: str | None) -> str:

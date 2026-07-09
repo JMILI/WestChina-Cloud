@@ -300,7 +300,7 @@ import {addDicom, getDicomByPatCardId, getStudyListByPatCardId} from "../../api/
 import {mapActions} from "vuex"
 import {getDicomMakerByPatCardId} from "../../api/ct/maker";
 import {export_json_to_excel} from "../../utils/generator/Export2Excel";
-import {minioUrl} from "../../settings";
+import {getMinioUrl} from "@/utils/minioBase";
 //endregion
 
 export default {
@@ -604,85 +604,66 @@ export default {
         let file_type = file.name.substring(file.name.lastIndexOf("."));
         console.log("文件类型：", file_type)
         if (file_type === '.dcm') {
+          file.pause()
           let reader = new FileReader()
           let temp = file.file
-          reader.readAsArrayBuffer(temp)
-          reader.onloadend = function () {
-            try {
-              let arrayBuffer = reader.result;
-              let byteArray = new Uint8Array(arrayBuffer)
-              let dataSet = dicomParser.parseDicom(byteArray)
-              let seriesDate = dataSet.string('x00080021')
-              let studyUID = dataSet.string('x0020000d')
-              let seriesUID = dataSet.string('x0020000e')
-              let bodyPart = dataSet.string('x00180015') || ''
-              if (!studyUID || !seriesUID) {
-                throw new Error('DICOM 缺少 studyUID 或 seriesUID')
+          file._parsePromise = new Promise((resolve, reject) => {
+            reader.readAsArrayBuffer(temp)
+            reader.onloadend = function () {
+              try {
+                let arrayBuffer = reader.result;
+                let byteArray = new Uint8Array(arrayBuffer)
+                let dataSet = dicomParser.parseDicom(byteArray)
+                let seriesDate = dataSet.string('x00080021')
+                let studyUID = dataSet.string('x0020000d')
+                let seriesUID = dataSet.string('x0020000e')
+                let imageNumber = dataSet.string('x00200013')
+                let bodyPart = dataSet.string('x00180015') || ''
+                if (!studyUID || !seriesUID) {
+                  throw new Error('DICOM 缺少 studyUID 或 seriesUID')
+                }
+                const instanceNum = parseInt(String(imageNumber || '').trim(), 10)
+                if (Number.isNaN(instanceNum)) {
+                  throw new Error('DICOM 缺少有效 Instance Number')
+                }
+                if (!that.studyUidList[studyUID]) {
+                  that.studyUidList[studyUID] = {}
+                }
+                if (!that.studyUidList[studyUID][seriesUID]) {
+                  that.studyUidList[studyUID][seriesUID] = 0
+                }
+                ++that.studyUidList[studyUID][seriesUID]
+                // 2024 逻辑：Instance Number 作为 MinIO 对象名；须同步 relativePath
+                let path = studyUID + '/' + seriesUID + '/' + instanceNum + '.dcm'
+                file.name = path
+                file.relativePath = path
+                file._uploadPathReady = true
+                const seriesKey = studyUID + '::' + seriesUID
+                if (!that.seriesMetaRecorded[seriesKey]) {
+                  that.seriesMetaRecorded[seriesKey] = true
+                  let ctDicomTemp = {}
+                  ctDicomTemp.dicomCtTime = seriesDate
+                  ctDicomTemp.dicomCtStudyUid = studyUID
+                  ctDicomTemp.dicomCtSeriesUid = seriesUID
+                  ctDicomTemp.dicomCtBody = bodyPart
+                  ctDicomTemp.dicomCtPath = studyUID + '/' + seriesUID + '/1.dcm'
+                  ctDicomTemp.patCardId = ''
+                  ctDicomTemp.dicomCtCount = 0
+                  ctDicomTemp.dicomCtDescription = ''
+                  that.ctDicomList.push(ctDicomTemp)
+                }
+                resolve()
+              } catch (e) {
+                that.$modal.msgWarning('文件解析失败，已跳过：' + file.name)
+                file.cancel()
+                reject(e)
               }
-              if (!that.studyUidList[studyUID]) {
-                that.studyUidList[studyUID] = {}
-              }
-              if (!that.studyUidList[studyUID][seriesUID]) {
-                that.studyUidList[studyUID][seriesUID] = 0
-              }
-              ++that.studyUidList[studyUID][seriesUID]
-              const seq = that.studyUidList[studyUID][seriesUID]
-              // 阅片按 1.dcm、2.dcm… 顺序加载，上传时统一重命名为序号
-              let path = studyUID + '/' + seriesUID + '/' + seq + '.dcm'
-              file.name = path
-              const seriesKey = studyUID + '::' + seriesUID
-              if (!that.seriesMetaRecorded[seriesKey]) {
-                that.seriesMetaRecorded[seriesKey] = true
-                let ctDicomTemp = {}
-                ctDicomTemp.dicomCtTime = seriesDate
-                ctDicomTemp.dicomCtStudyUid = studyUID
-                ctDicomTemp.dicomCtSeriesUid = seriesUID
-                ctDicomTemp.dicomCtBody = bodyPart
-                ctDicomTemp.dicomCtPath = path
-                ctDicomTemp.patCardId = ''
-                ctDicomTemp.dicomCtCount = 0
-                ctDicomTemp.dicomCtDescription = ''
-                that.ctDicomList.push(ctDicomTemp)
-              }
-            } catch (e) {
-              that.$modal.msgWarning('文件解析失败，已跳过：' + file.name)
             }
-            //region 数组的
-            //假设没找到
-            // studyUID = '研究ID：（' + studyUID + ')'
-            // seriesUID = '序列ID以及对应dicom文件数:(' + seriesUID + ')'
-            // let flagStudy = false
-            // that.openTreeData.forEach(study => {
-            //   if (study.label === studyUID) {
-            //     //找到了studyUID
-            //     flagStudy = true
-            //     let flagSeries = false
-            //     study.children.forEach(series => {
-            //       if (series.label === seriesUID) {
-            //         flagSeries = true
-            //         series.children[0]++
-            //       }
-            //     })
-            //     //没找到seriesUID
-            //     if (flagSeries === false) {
-            //       let seriesTemp = {}
-            //       seriesTemp.label = seriesUID
-            //       seriesTemp.children = []
-            //       seriesTemp.children.push(1)
-            //       study.children.push(seriesTemp)
-            //     }
-            //   }
-            // })
-            // //没找到
-            // if (flagStudy === false) {
-            //   let temp = {}
-            //   temp.label = studyUID
-            //   temp.children = []
-            //   //加进来
-            //   that.openTreeData.push(temp)
-            // }
-            //  endregion
-          }
+            reader.onerror = function () {
+              file.cancel()
+              reject(new Error('读取文件失败'))
+            }
+          })
         }
         // else {
         //   let reader = new FileReader()
@@ -743,11 +724,27 @@ export default {
         this.file_total = this.$refs['uploader'].files.length
       });
     },
+    waitForDicomParseComplete(files, timeoutMs = 120000) {
+      const pending = (files || []).filter(f => f._parsePromise)
+      if (!pending.length) return Promise.resolve()
+      const all = Promise.allSettled(pending.map(f => f._parsePromise))
+      const timeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('DICOM 解析超时，请稍后重试')), timeoutMs)
+      })
+      return Promise.race([all, timeout]).then(() => {
+        const notReady = pending.filter(f => !f._uploadPathReady)
+        if (notReady.length) {
+          throw new Error('仍有 ' + notReady.length + ' 个文件未完成 DICOM 解析')
+        }
+      })
+    },
     //点击开始上传按钮
     submitUpload() {
       let that = this
       // 上传禁止操作
       if (that.uploadToPatient.patCardId !== '') {
+        const uploadFiles = (that.$refs.uploader && that.$refs.uploader.files) || []
+        that.waitForDicomParseComplete(uploadFiles).then(() => {
         const isFinishUpload = new Promise((resolve, reject) => {
           //已经有了要上传的病人信息
           //生成数据库字段,
@@ -780,6 +777,9 @@ export default {
           that.$modal.msgSuccess('影像记录已保存，开始上传文件')
         }).catch(err => {
           this.$modal.msgError(err || '数据库增加记录失败')
+        })
+        }).catch(err => {
+          this.$modal.msgError(err.message || err || 'DICOM 解析未完成，请等待解析结束后再上传')
         })
 
       } else {
@@ -1130,7 +1130,7 @@ export default {
               for (let i = 1; i <= item.dicomCtCount; i++) {
                 let path = item.dicomCtPath.substring(0, item.dicomCtPath.lastIndexOf("/"));
                 let dicomPrefix = that.dicomPrefix
-                let newPath = dicomPrefix + minioUrl + that.bucketNameOfMe + '/' + path + '/' + i.toString() + '.dcm'
+                let newPath = dicomPrefix + getMinioUrl() + that.bucketNameOfMe + '/' + path + '/' + i.toString() + '.dcm'
                 item.imageIds.push(newPath)
               }
             })
@@ -1233,5 +1233,12 @@ export default {
 
 .uploader-btn:hover {
   background-color: rgba(0, 0, 0, .08);
+}
+
+/* 禁用文件行上的暂停/继续/重试，仅保留右侧删除；统一由顶部「开始上传」触发 */
+.uploader-example .uploader-file-pause,
+.uploader-example .uploader-file-resume,
+.uploader-example .uploader-file-retry {
+  display: none !important;
 }
 </style>

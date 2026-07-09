@@ -1,0 +1,22 @@
+{
+  "engine": "scheme-b-gpu",
+  "overlayType": "bbox",
+  "disclaimer": "AI 辅助结果仅供临床参考，不能替代医生诊断。",
+  "ggoRegions": [],
+  "lesions": [
+    {
+      "id": "N1",
+      "label": "肺结节",
+      "type": "肺结节",
+      "subType": "solid",
+      "colorKey": "solid",
+      "markerType": "circle",
+      "detectionConfidence": 0.81,
+      "longAxisMm": 8.2,
+      "huMean": 45,
+      "sliceIndex": 100,
+      "bbox": {"x": 0.4, "y": 0.35, "width": 0.08, "height": 0.07}
+    }
+  ],
+  "meta": {"stats": {"filter_vessel_rejected": 0}}
+}

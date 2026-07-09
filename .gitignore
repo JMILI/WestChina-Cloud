@@ -29,14 +29,11 @@ node_modules/
 dist/
 *.log
 
-# ── Runtime Logs ──
-/logs/
-/deploymentServer/logs/
-/deploymentServer/logs*/
-/dockerOfMy/mysql/logs/
-/dockerOfMy/redis/*.log
-/dockerOfMy/nacos/logs/
-/dockerOfMy/rabbitmq/log/
+# ── Runtime Logs & intermediate files ──
+/logs/**
+!/logs/README.md
+/deploymentServer/logs
+/ai-service/.cache/
 
 # ── Docker Data (large binary volumes) ──
 /dockerOfMy/mysql/data/
@@ -45,6 +42,7 @@ dist/
 /dockerOfMy/minio/data/
 /dockerOfMy/minio/config/
 /dockerOfMy/mysql/logs/
+/dockerOfMy/nacos/logs/
 
 # ── Python AI Environment ──
 /ai-service/.conda/
@@ -98,6 +96,9 @@ Thumbs.db
 
 # ── Frontend build output (run build_all.sh locally) ──
 /deploymentServer/ui-dist/
+
+/docs/architecture-web-frontend/dist/
+/docs/architecture-web-frontend/node_modules/
 
 # ── Vendored frontend sources (local patch source, not for repo) ──
 /westChina-ui/ct/.vendor-src/

@@ -44,6 +44,10 @@
         <br>
         patient Name: {{ patient.patientName }}
         <br>
+        层位(Instance): {{ patient.sliceIndex }} / {{ patient.sliceTotal }}
+        <br>
+        Z: {{ patient.slicePositionZ }} mm
+        <span v-if="patient.sliceThickness"><br>层厚: {{ patient.sliceThickness }} mm</span>
       </div>
       <!--      左下角-->
       <div id="bottomleft" v-show="isShowPatientInfo" class="overlay"
@@ -238,6 +242,7 @@
       :loading="lesionDetectLoading"
       :progress="lesionDetectProgress"
       :stage="lesionDetectStage"
+      :engine="lesionDetectEngine"
       :logs="lesionDetectLogs"
       :stats="lesionDetectStats"
       @close="closeLesionLogPanel"
@@ -255,6 +260,7 @@
       :slice-index="aiSliceIndex"
       @close="closeLesionPanel"
       @select="jumpToLesionSlice"
+      @toggle-marker="toggleLesionMarker"
     />
   </div>
 
@@ -284,6 +290,10 @@ import {
   hydrateStudySeriesList,
   studySeriesNeedsImageIds
 } from '@/utils/studyImageIds'
+import {
+  sortImageIdsForViewer,
+  fileIndexToStackIndex
+} from '@/utils/dicomSeriesOrder'
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -311,7 +321,12 @@ export default {
         patientBirthDate: null,
         patientSex: null,
         patientAge: null,
-        sopInstanceUid: null
+        sopInstanceUid: null,
+        sliceIndex: null,
+        sliceTotal: null,
+        instanceNumber: null,
+        slicePositionZ: null,
+        sliceThickness: null
       },
       studyInfo: {
         studyDescription: null,
@@ -731,6 +746,25 @@ export default {
         that.seriesInfo.seriesTime = dataSet.string('x00080031')
 
         that.instanceInfo.instance = dataSet.string('x00200013')
+        const instanceNum = parseInt(String(that.instanceInfo.instance || '').trim(), 10)
+        that.patient.instanceNumber = that.instanceInfo.instance
+        that.patient.sliceTotal = (that.canvasStack.imageIds || []).length
+        // 层位与 Instance 一致：stack 已按 Instance 1→N 排列
+        that.patient.sliceIndex = !Number.isNaN(instanceNum)
+          ? instanceNum
+          : ((that.canvasStack.currentImageIdIndex || 0) + 1)
+        const ippStr = dataSet.string('x00200032')
+        that.patient.slicePositionZ = null
+        if (ippStr) {
+          const ippParts = ippStr.split('\\')
+          if (ippParts.length >= 3) {
+            const z = parseFloat(ippParts[2])
+            if (!Number.isNaN(z)) {
+              that.patient.slicePositionZ = z.toFixed(1)
+            }
+          }
+        }
+        that.patient.sliceThickness = dataSet.string('x00180050') || null
         that.instanceInfo.acquisition = dataSet.string('x00200012')
         that.instanceInfo.acquisitionDate = dataSet.string('x00080022')
         that.instanceInfo.acquisitionTime = dataSet.string('x00080032')
@@ -829,7 +863,7 @@ export default {
     /*
     设置默认的ct图像提供操作。
      */
-    initCanvas() {
+    async initCanvas() {
       const that = this
       const seriesItems = []
       const studyList = this.studySeriesList || {}
@@ -842,8 +876,13 @@ export default {
         }
       }
       if (seriesItems.length > 0) {
-        that.canvasStack.imageIds = seriesItems[0].imageIds
-        that.activeSeriesDicomId = seriesItems[0].dicomId
+        const first = seriesItems[0]
+        first.imageIds = await that.ensureSeriesSorted(first)
+        that.canvasStack.imageIds = first.imageIds
+        that.canvasStack.stackIndexByFileIndex = first.stackIndexByFileIndex
+        that.canvasStack.fileIndexByStackIndex = first.fileIndexByStackIndex
+        that.activeSeriesDicomId = first.dicomId
+        that.$store.commit('SET_ACTIVE_VIEWER_SERIES', first.dicomId)
       }
       that.showDicom()
     },
@@ -852,11 +891,32 @@ export default {
      * 点击更换当前正在阅片的图像
      * @param row
      */
-    changeCurrentImagesIds(row, options) {
+    async ensureSeriesSorted(row) {
+      if (!row || !row.imageIds || row.imageIds.length <= 1) {
+        return row ? row.imageIds : []
+      }
+      if (row._sortedByInstance) {
+        return row.imageIds
+      }
+      const result = await sortImageIdsForViewer(row.imageIds)
+      row.imageIds = result.imageIds
+      row.stackIndexByFileIndex = result.stackIndexByFileIndex
+      row.fileIndexByStackIndex = result.fileIndexByStackIndex
+      row._sortedByInstance = true
+      row._instanceAligned = result.instanceAligned
+      return row.imageIds
+    },
+    async changeCurrentImagesIds(row, options) {
       console.log("-------", row)
       this.activeSeriesDicomId = row.dicomId
+      this.$store.commit('SET_ACTIVE_VIEWER_SERIES', row.dicomId)
       this.activeAiLesionId = row.isAiLesionSeries ? row.dicomAiLesionId : null
-      this.canvasStack.imageIds = row.imageIds
+      if (row.imageIds && row.imageIds.length > 1 && !row._sortedByInstance) {
+        this.$message({ message: '正在按 Instance 排序图像…', type: 'info', duration: 1500 })
+      }
+      this.canvasStack.imageIds = await this.ensureSeriesSorted(row)
+      this.canvasStack.stackIndexByFileIndex = row.stackIndexByFileIndex
+      this.canvasStack.fileIndexByStackIndex = row.fileIndexByStackIndex
       this.canvasStack.currentImageIdIndex = 0
       this.canvasStack.isUPOrDown = 0
       this.canvasStack.isInvertAboutUpAndDown = 0
@@ -925,9 +985,13 @@ export default {
       this.activeAiLesionId = item.dicomAiLesionId
       // 在原始序列上叠加标记，避免加载 AI 副本 DICOM 时的解析错误
       this.changeCurrentImagesIds(found.series, { fromLesion: true, fromAiLesion: true })
-      const jumpSlice = item.sourceSliceIndex != null
-        ? item.sourceSliceIndex
-        : (result.sliceIndex != null ? result.sliceIndex : null)
+      let jumpSlice = null
+      if (item.sourceSliceIndex != null) {
+        // sourceSliceIndex 存 Instance 号（1-based）
+        jumpSlice = item.sourceSliceIndex - 1
+      } else if (result.sliceIndex != null) {
+        jumpSlice = fileIndexToStackIndex(result.sliceIndex, found.series)
+      }
       if (jumpSlice != null && this.canvasStack) {
         this.canvasStack.currentImageIdIndex = Math.max(
           0,

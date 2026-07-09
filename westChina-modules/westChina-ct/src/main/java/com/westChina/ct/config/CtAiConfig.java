@@ -17,4 +17,12 @@ public class CtAiConfig {
         factory.setReadTimeout(properties.getReadTimeoutMs());
         return new RestTemplate(factory);
     }
+
+    @Bean(name = "ctAiQuickRestTemplate")
+    public RestTemplate ctAiQuickRestTemplate(CtAiProperties properties) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(properties.getConnectTimeoutMs());
+        factory.setReadTimeout(properties.getEnginesReadTimeoutMs());
+        return new RestTemplate(factory);
+    }
 }

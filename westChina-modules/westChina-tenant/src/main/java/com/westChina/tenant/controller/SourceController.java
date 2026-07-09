@@ -52,6 +52,7 @@ public class SourceController extends BaseController {
     /**
      * 数据源连接测试
      */
+    @RequiresPermissions("tenant:source:add")
     @PostMapping("/connection")
     public AjaxResult connection(@Validated @RequestBody Source source) {
         DSUtils.testSlaveConnection(source);

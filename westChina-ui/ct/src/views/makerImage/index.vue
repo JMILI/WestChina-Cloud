@@ -90,7 +90,7 @@ import * as cornerstoneMath from 'cornerstone-math'
 import * as cornerstoneTools from '@cornerstoneTools'
 import {ctFile} from "../../api/ct/ctFileUpload";
 import {addMaker, getDicomMakerByPatCardId} from "../../api/ct/maker";
-import {minioUrl} from '../../settings'
+import {getMinioUrl} from '@/utils/minioBase'
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
 cornerstoneTools.external.Hammer = Hammer
@@ -304,7 +304,7 @@ export default {
       const canvas = that.$refs.canvas
       let makerImage = that.$store.getters.makerImageInitInfo
       let bucketNameOfMe = that.$store.getters.bucketName
-      let newPath = minioUrl + bucketNameOfMe + '/' + makerImage.makerImageAddress
+      let newPath = getMinioUrl() + bucketNameOfMe + '/' + makerImage.makerImageAddress
       cornerstone.loadImage(newPath).then(function (image) {
         let viewport = {}
         viewport.invert = that.getInvert
@@ -384,7 +384,7 @@ export default {
         const el = that.getThumbnailEl(dicomMakerId)
         if (!el || el.clientWidth === 0) return
 
-        let address = minioUrl + bucketNameOfMe + '/' + item.makerImageAddress
+        let address = getMinioUrl() + bucketNameOfMe + '/' + item.makerImageAddress
         if (that.loadedThumbs[dicomMakerId] === address) return
 
         try {

@@ -122,20 +122,36 @@ def run_case(name: str, payload: dict) -> bool:
         print("  ✅ 通过" if ok else "  ❌ 方案C应有热力图且无病灶框")
         return ok
 
-    # 方案 B：MONAI 融合或门控 reason
+    # 方案 B：融合精准分析验收清单
     if payload.get("detectEngine") == "scheme-b":
         src = stats.get("candidate_source")
-        ggo_n = stats.get("ggo_regions", len((result or {}).get("ggoRegions") or []))
+        ggo_n = len(result.get("ggoRegions") or [])
+        overlay_ok = overlay == "bbox" or stats.get("legacyGgoMode")
+        ggo_ok = ggo_n == 0 or stats.get("legacyGgoMode")
+        fields_ok = True
+        if lesions:
+            sample = lesions[0]
+            for key in ("huMean", "detectionConfidence", "colorKey", "markerType"):
+                if key not in sample:
+                    fields_ok = False
+                    break
+        disclaimer_ok = "不能替代" in (result.get("disclaimer") or "")
+        print(f"  candidate_source={src} ggo_regions={ggo_n} ggoBackend={stats.get('ggoBackend')}")
+        print(f"  overlay={overlay} fields_ok={fields_ok} disclaimer_ok={disclaimer_ok}")
         if src:
-            print(f"  candidate_source={src} ggo_regions={ggo_n}")
-            ok = True
+            ok = overlay_ok and ggo_ok and fields_ok and disclaimer_ok
         elif stats.get("reason") in (
             "GPU_UNAVAILABLE", "DETECTOR_UNAVAILABLE", "NNDET_UNAVAILABLE"
         ):
             ok = True
         else:
-            ok = result is not None
-        print("  ✅ 通过" if ok else "  ❌ 方案B异常")
+            ok = result is not None and disclaimer_ok
+        print("  ✅ 通过" if ok else "  ❌ 方案B验收未通过")
+        save_path = os.getenv("E2E_SAVE_RESULT", "")
+        if save_path and result:
+            with open(save_path, "w", encoding="utf-8") as fh:
+                json.dump(result, fh, ensure_ascii=False, indent=2)
+            print(f"  结果已保存: {save_path}")
         return ok
 
     print("  ✅ 完成")
@@ -229,8 +245,11 @@ def main():
     if ok:
         passed += 1
 
+    from app.log_paths import ai_e2e_dir
+
     print(f"\n{'='*60}\nE2E: {passed}/{total} 通过")
-    meta_path = os.path.join(os.path.dirname(__file__), "..", ".e2e-last-meta.json")
+    meta_path = ai_e2e_dir() / "last-meta.json"
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
     with open(meta_path, "w", encoding="utf-8") as fh:
         json.dump({**meta, "sliceIndex": slice_index}, fh, indent=2)
     print(f"元数据已保存: {meta_path}")

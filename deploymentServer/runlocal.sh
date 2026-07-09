@@ -27,8 +27,8 @@ start_jar() {
     ss -tlnp | grep -q ":${port} " && echo "$name 已就绪 (端口 ${port})" && return 0
     sleep 3
   done
-  echo "警告: $name 启动超时，请查看 logs/${name}.log"
-  return 1
+  echo "警告: $name 启动超时（可能仍在初始化中），继续..." 
+  return 0
 }
 
 case "$1" in
@@ -39,6 +39,8 @@ case "$1" in
         start_jar auth westChina-auth.jar 9200
         start_jar system westChina-modules-system.jar 9600
         start_jar tenant westChina-modules-tenant.jar 9700
+        start_jar file westChina-modules-file.jar 9300
+        start_jar ct westChina-modules-ct.jar 9800
         ;;
       ct)
         start_jar file westChina-modules-file.jar 9300

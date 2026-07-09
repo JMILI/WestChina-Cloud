@@ -27,7 +27,7 @@ bash "$PROJECT_ROOT/scripts/start-ai.sh" || echo "警告: AI 服务启动失败�
 echo "=== 启动前端 (端口 5000) ==="
 pkill -f "local-ui-server.js" 2>/dev/null || true
 nohup node "$PROJECT_ROOT/deploymentServer/local-ui-server.js" \
-  > "$PROJECT_ROOT/deploymentServer/logs/ui-server.log" 2>&1 &
+  >> "$LOG_FILE_UI" 2>&1 &
 
 sleep 2
 echo ""

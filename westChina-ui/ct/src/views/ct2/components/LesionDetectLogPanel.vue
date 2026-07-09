@@ -7,12 +7,37 @@
       </header>
 
       <div class="lesion-log-panel__progress">
-        <el-progress
-          :percentage="progress"
-          :status="progressStatus"
-          :stroke-width="10"
-        />
-        <div v-if="stageText" class="stage-text">{{ stageText }}</div>
+        <div class="stage-track">
+          <div
+            v-for="(item, idx) in stagePipeline"
+            :key="item.id"
+            class="stage-track__item"
+            :class="stageItemClass(idx, item)"
+          >
+            <div class="stage-track__dot">
+              <i v-if="isStageDone(idx)" class="el-icon-check" />
+              <span v-else>{{ idx + 1 }}</span>
+            </div>
+            <div class="stage-track__label">{{ item.label }}</div>
+            <div v-if="idx < stagePipeline.length - 1" class="stage-track__line" />
+          </div>
+        </div>
+
+        <div class="stage-progress-row">
+          <el-progress
+            :percentage="displayProgress"
+            :status="progressStatus"
+            :stroke-width="6"
+            :show-text="false"
+            class="stage-progress"
+          />
+          <span class="stage-progress__pct">{{ displayProgress }}%</span>
+        </div>
+
+        <div v-if="stageDetail" class="stage-text">
+          <span class="stage-text__badge">{{ currentStageLabel }}</span>
+          {{ stageDetail }}
+        </div>
       </div>
 
       <div v-if="statsSummary" class="lesion-log-panel__stats">
@@ -36,6 +61,13 @@
 </template>
 
 <script>
+import {
+  computeStageProgress,
+  getStageDetailText,
+  getStagePipeline,
+  resolveStageIndex
+} from '@/utils/lesionDetectStages'
+
 export default {
   name: 'LesionDetectLogPanel',
   props: {
@@ -43,23 +75,45 @@ export default {
     loading: { type: Boolean, default: false },
     progress: { type: Number, default: 0 },
     stage: { type: String, default: '' },
+    engine: { type: String, default: '' },
     logs: { type: Array, default: () => [] },
     stats: { type: Object, default: null }
   },
+  data() {
+    return {
+      maxDisplayProgress: 0
+    }
+  },
   computed: {
+    stagePipeline() {
+      return getStagePipeline(this.engine)
+    },
+    activeStageIndex() {
+      const idx = resolveStageIndex(this.stagePipeline, this.stage)
+      if (idx >= 0) return idx
+      return this.loading ? 0 : -1
+    },
+    mappedProgress() {
+      return computeStageProgress(this.stagePipeline, this.stage, this.progress)
+    },
+    displayProgress() {
+      return Math.max(this.maxDisplayProgress, this.mappedProgress)
+    },
     progressStatus() {
+      if (this.stage === 'done' || this.displayProgress >= 100) return 'success'
+      if (this.stage === 'cancelled') return 'exception'
       if (this.loading) return undefined
-      if (this.progress >= 100) return 'success'
       return undefined
     },
-    stageText() {
-      if (this.stage === 'download') return '阶段：MinIO 下载 DICOM'
-      if (this.stage === 'volume') return '阶段：构建 3D 体数据'
-      if (this.stage === 'segment') return '阶段：肺野分割'
-      if (this.stage === 'detect') return '阶段：结节检测 / 融合分析'
-      if (this.stage === 'infer') return '阶段：模型推理 + 热力图生成'
-      if (this.stage === 'done') return '阶段：完成'
-      return this.loading ? '阶段：准备中…' : ''
+    currentStageLabel() {
+      const idx = this.activeStageIndex
+      if (idx >= 0 && this.stagePipeline[idx]) {
+        return this.stagePipeline[idx].label
+      }
+      return '准备'
+    },
+    stageDetail() {
+      return getStageDetailText(this.stage, this.engine)
     },
     statsSummary() {
       if (!this.stats) return ''
@@ -69,11 +123,36 @@ export default {
     }
   },
   watch: {
+    visible(val) {
+      if (val) this.maxDisplayProgress = 0
+    },
+    mappedProgress(val) {
+      if (val > this.maxDisplayProgress) this.maxDisplayProgress = val
+    },
     logs() {
       this.$nextTick(() => this.scrollToBottom())
     }
   },
   methods: {
+    isStageDone(idx) {
+      if (this.stage === 'done') return idx <= this.stagePipeline.length - 1
+      const active = this.activeStageIndex
+      return active >= 0 && idx < active
+    },
+    stageItemClass(idx, item) {
+      const active = this.activeStageIndex
+      if (this.stage === 'done' || item.id === 'done' && this.stage === 'done') {
+        return { 'is-done': true }
+      }
+      if (this.stage === 'cancelled') {
+        return { 'is-cancelled': idx === active }
+      }
+      return {
+        'is-done': this.isStageDone(idx),
+        'is-active': idx === active,
+        'is-pending': active >= 0 && idx > active
+      }
+    },
     scrollToBottom() {
       const el = this.$refs.logBody
       if (el) el.scrollTop = el.scrollHeight
@@ -87,6 +166,7 @@ export default {
   flex-shrink: 0;
   width: 340px;
   height: 100%;
+  z-index: 1;
   background: rgba(22, 26, 32, 0.97);
   border-left: 1px solid rgba(240, 169, 110, 0.35);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.35);
@@ -122,13 +202,158 @@ export default {
 }
 
 .lesion-log-panel__progress {
-  padding: 10px 12px 6px;
+  padding: 8px 12px 4px;
   flex-shrink: 0;
+  text-align: left;
+
+  .stage-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  .stage-progress {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 36px);
+
+    ::v-deep .el-progress-bar {
+      padding-right: 0;
+      margin-right: 0;
+    }
+
+    ::v-deep .el-progress-bar__outer {
+      border-radius: 3px;
+    }
+
+    ::v-deep .el-progress-bar__inner {
+      border-radius: 3px;
+    }
+  }
+
+  .stage-progress__pct {
+    flex-shrink: 0;
+    width: 32px;
+    font-size: 11px;
+    color: #9aa0a8;
+    text-align: right;
+    line-height: 1;
+  }
 
   .stage-text {
     margin-top: 6px;
-    font-size: 11px;
+    font-size: 10px;
     color: #9aa0a8;
+    line-height: 1.45;
+
+    &__badge {
+      display: inline-block;
+      margin-right: 4px;
+      padding: 0 5px;
+      border-radius: 2px;
+      background: rgba(240, 169, 110, 0.18);
+      color: #f0a96e;
+      font-weight: 600;
+      font-size: 10px;
+    }
+  }
+}
+
+.stage-track {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  overflow: hidden;
+  gap: 0;
+  width: 100%;
+
+  &__item {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  &__dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(154, 160, 168, 0.45);
+    color: #9aa0a8;
+    font-size: 9px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    z-index: 1;
+    flex-shrink: 0;
+
+    .el-icon-check {
+      font-size: 10px;
+    }
+  }
+
+  &__label {
+    margin-top: 3px;
+    font-size: 9px;
+    color: #9aa0a8;
+    white-space: nowrap;
+    line-height: 1.15;
+    transform: scale(0.92);
+    transform-origin: left top;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__line {
+    position: absolute;
+    top: 9px;
+    left: 18px;
+    width: calc(100% - 18px);
+    height: 1.5px;
+    background: rgba(154, 160, 168, 0.25);
+    z-index: 0;
+  }
+
+  &__item.is-done {
+    .stage-track__dot {
+      border-color: #67c23a;
+      background: rgba(103, 194, 58, 0.15);
+      color: #67c23a;
+    }
+    .stage-track__label {
+      color: #67c23a;
+    }
+    .stage-track__line {
+      background: rgba(103, 194, 58, 0.45);
+    }
+  }
+
+  &__item.is-active {
+    .stage-track__dot {
+      border-color: #f0a96e;
+      background: rgba(240, 169, 110, 0.2);
+      color: #f0a96e;
+      box-shadow: 0 0 0 2px rgba(240, 169, 110, 0.1);
+    }
+    .stage-track__label {
+      color: #f0a96e;
+      font-weight: 600;
+    }
+  }
+
+  &__item.is-cancelled {
+    .stage-track__dot {
+      border-color: #f56c6c;
+      color: #f56c6c;
+    }
   }
 }
 

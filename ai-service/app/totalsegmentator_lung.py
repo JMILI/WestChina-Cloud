@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import os
-import tempfile
-from typing import Tuple
+import time
+from typing import Dict, Tuple
 
 import numpy as np
+
+from .config import settings
 
 # 肺叶 ROI（方案 A/B 共用）
 LUNG_LOBE_ROIS = [
@@ -16,7 +18,6 @@ LUNG_LOBE_ROIS = [
     "lung_lower_lobe_right",
 ]
 
-# 血管 mask 使用独立 task=lung_vessels（非 total 任务内的 ROI）
 VESSEL_TASK = "lung_vessels"
 
 
@@ -36,13 +37,23 @@ def _cuda_available() -> bool:
         return False
 
 
-def segment_rois_dict(
-    volume: np.ndarray,
-    spacing: Tuple[float, float, float],
-    roi_subset: list,
-) -> dict[str, np.ndarray]:
+def _use_hu_lung_fallback() -> bool:
+    mode = os.getenv("SCHEME_B_LUNG_SEG", "").lower()
+    return mode in ("hu", "fallback", "2d", "stack2d", "stack", "monai")
+
+
+def _lung_seg_backend() -> str:
+    return os.getenv("SCHEME_B_LUNG_SEG", "totalsegmentator").lower()
+
+
+def _ts_parallel_enabled() -> bool:
+    return os.getenv("SCHEME_B_TS_PARALLEL", "true").lower() in ("1", "true", "yes")
+
+
+def segment_rois_dict(volume, spacing, roi_subset) -> dict[str, np.ndarray]:
     """一次 TS 调用，返回各 ROI 的 bool mask 字典。"""
     import nibabel as nib
+    from .log_paths import ai_temp_directory
     from totalsegmentator.python_api import totalsegmentator
 
     os.environ.setdefault("OMP_NUM_THREADS", "1")
@@ -61,7 +72,7 @@ def segment_rois_dict(
     )
 
     masks: dict[str, np.ndarray] = {}
-    with tempfile.TemporaryDirectory(prefix="ts_lung_") as tmp:
+    with ai_temp_directory("ts_lung_") as tmp:
         inp = os.path.join(tmp, "input.nii.gz")
         out_dir = os.path.join(tmp, "seg")
         os.makedirs(out_dir, exist_ok=True)
@@ -95,22 +106,7 @@ def segment_rois_dict(
     return masks
 
 
-def segment_lungs_totalsegmentator(
-    volume: np.ndarray,
-    spacing: Tuple[float, float, float],
-    roi_subset: list | None = None,
-) -> np.ndarray:
-    """
-    返回与 volume 同形状的 bool 肺 mask。
-
-    Args:
-        volume: (Z, H, W) HU 值
-        spacing: (z, y, x) mm
-        roi_subset: 要分割的 ROI 列表，默认 LUNG_LOBE_ROIS
-
-    Returns:
-        bool mask，与 volume 同形状。
-    """
+def segment_lungs_totalsegmentator(volume, spacing, roi_subset=None) -> np.ndarray:
     if roi_subset is None:
         roi_subset = LUNG_LOBE_ROIS
 
@@ -124,12 +120,9 @@ def segment_lungs_totalsegmentator(
     return combined
 
 
-def segment_lung_vessels_mask(
-    volume: np.ndarray,
-    spacing: Tuple[float, float, float],
-) -> np.ndarray:
-    """方案 B：独立 lung_vessels 任务分割肺血管 mask。"""
+def segment_lung_vessels_mask(volume, spacing) -> np.ndarray:
     import nibabel as nib
+    from .log_paths import ai_temp_directory
     from totalsegmentator.python_api import totalsegmentator
 
     os.environ.setdefault("OMP_NUM_THREADS", "1")
@@ -147,7 +140,7 @@ def segment_lung_vessels_mask(
         dtype=np.float64,
     )
 
-    with tempfile.TemporaryDirectory(prefix="ts_vessel_") as tmp:
+    with ai_temp_directory("ts_vessel_") as tmp:
         inp = os.path.join(tmp, "input.nii.gz")
         out_dir = os.path.join(tmp, "seg")
         os.makedirs(out_dir, exist_ok=True)
@@ -156,7 +149,7 @@ def segment_lung_vessels_mask(
         totalsegmentator(
             inp,
             out_dir,
-            fast=False,
+            fast=os.getenv("TS_VESSEL_FAST", "true").lower() in ("1", "true", "yes"),
             ml=False,
             task=VESSEL_TASK,
             nr_thr_resamp=1,
@@ -177,28 +170,88 @@ def segment_lung_vessels_mask(
         return seg_zyx.astype(bool)
 
 
-def get_lung_mask_3d(
-    volume: np.ndarray,
-    spacing: Tuple[float, float, float],
-) -> np.ndarray:
-    """方案 A 用：仅肺叶 mask。"""
+def get_lung_mask_3d(volume, spacing) -> np.ndarray:
     return segment_lungs_totalsegmentator(volume, spacing, roi_subset=LUNG_LOBE_ROIS)
 
 
 def get_lung_vessel_mask_3d(
     volume: np.ndarray,
     spacing: Tuple[float, float, float],
-) -> Tuple[np.ndarray, np.ndarray]:
-    """方案 B 用：肺叶 mask + lung_vessels 任务血管 mask。"""
-    import os
-
-    lung_mask = segment_lungs_totalsegmentator(volume, spacing, roi_subset=LUNG_LOBE_ROIS)
+) -> Tuple[np.ndarray, np.ndarray, dict, Dict[str, np.ndarray]]:
+    """方案 B：肺叶 mask + 血管 mask + 元信息 + 各肺叶 mask 字典。"""
     from .hu_utils import refine_lung_mask
+    from .lobe_locator import summarize_lobe_masks
+
+    meta: dict = {
+        "vesselMaskMissing": False,
+        "lungSegSource": "totalsegmentator",
+    }
+    lobe_masks: Dict[str, np.ndarray] = {}
+    t0 = time.time()
+
+    use_hu = _lung_seg_backend() != "totalsegmentator" or not is_totalsegmentator_available()
+    backend = _lung_seg_backend()
+
+    if use_hu:
+        from .lung_segment_monai import segment_lungs_by_backend
+        lung_mask = segment_lungs_by_backend(volume, spacing, backend)
+        meta["lungSegSource"] = backend if backend != "totalsegmentator" else "hu_fallback"
+    elif _ts_parallel_enabled() and not settings.scheme_b_skip_vessel_seg:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            fut_lobes = pool.submit(segment_rois_dict, volume, spacing, LUNG_LOBE_ROIS)
+            fut_vessel = pool.submit(segment_lung_vessels_mask, volume, spacing)
+            lobe_masks = fut_lobes.result()
+            vessel_mask = fut_vessel.result()
+        lung_mask = np.zeros(volume.shape, dtype=bool)
+        for roi_mask in lobe_masks.values():
+            lung_mask |= roi_mask
+        if not lung_mask.any():
+            from .lung_segment_3d import segment_lungs_hu_3d
+            lung_mask = segment_lungs_hu_3d(volume)
+            lobe_masks = {}
+            meta["lungSegSource"] = "hu_fallback"
+        else:
+            meta["tsParallel"] = True
+            if not vessel_mask.any():
+                meta["vesselMaskMissing"] = True
+            lung_mask = refine_lung_mask(lung_mask, volume, dilate_iters=1)
+            meta["segmentationMs"] = int((time.time() - t0) * 1000)
+            meta["lobeVoxels"] = summarize_lobe_masks(lobe_masks)
+            return lung_mask, vessel_mask, meta, lobe_masks
+    else:
+        try:
+            lobe_masks = segment_rois_dict(volume, spacing, LUNG_LOBE_ROIS)
+            lung_mask = np.zeros(volume.shape, dtype=bool)
+            for roi_mask in lobe_masks.values():
+                lung_mask |= roi_mask
+            if not lung_mask.any():
+                raise RuntimeError("empty lung mask")
+        except Exception:
+            from .lung_segment_3d import segment_lungs_hu_3d
+            lung_mask = segment_lungs_hu_3d(volume)
+            lobe_masks = {}
+            meta["lungSegSource"] = "hu_fallback"
+
     lung_mask = refine_lung_mask(lung_mask, volume, dilate_iters=1)
-    if os.getenv("SCHEME_B_SKIP_VESSEL_SEG", "").lower() in ("1", "true", "yes"):
-        return lung_mask, np.zeros(volume.shape, dtype=bool)
+    meta["segmentationMs"] = int((time.time() - t0) * 1000)
+    meta["lobeVoxels"] = summarize_lobe_masks(lobe_masks)
+
+    if settings.scheme_b_skip_vessel_seg:
+        meta["vesselMaskMissing"] = True
+        return lung_mask, np.zeros(volume.shape, dtype=bool), meta, lobe_masks
+
     try:
-        vessel_mask = segment_lung_vessels_mask(volume, spacing)
+        if use_hu:
+            meta["vesselMaskMissing"] = True
+            vessel_mask = np.zeros(volume.shape, dtype=bool)
+        else:
+            vessel_mask = segment_lung_vessels_mask(volume, spacing)
+            if not vessel_mask.any():
+                meta["vesselMaskMissing"] = True
     except Exception:
         vessel_mask = np.zeros(volume.shape, dtype=bool)
-    return lung_mask, vessel_mask
+        meta["vesselMaskMissing"] = True
+
+    return lung_mask, vessel_mask, meta, lobe_masks

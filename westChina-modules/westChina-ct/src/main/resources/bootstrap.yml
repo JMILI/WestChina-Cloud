@@ -8,7 +8,9 @@ ct:
     base-url: http://127.0.0.1:9810
     enabled: true
     connect-timeout-ms: 5000
-    read-timeout-ms: 2400000
+    read-timeout-ms: 7200000
+    engines-read-timeout-ms: 30000
+    task-consumer-concurrency: 4
 
 # Spring
 spring:
@@ -24,10 +26,10 @@ spring:
     nacos:
       discovery:
         # 服务注册地址
-        server-addr: westChinaBackend:8848
+        server-addr: 127.0.0.1:8848
       config:
         # 配置中心地址
-        server-addr: westChinaBackend:8848
+        server-addr: 127.0.0.1:8848
         # 配置文件格式
         file-extension: yml
         # 共享配置

@@ -1,0 +1,8 @@
+{
+  "input_size": [512, 512],
+  "hu_min": -1024,
+  "hu_max": 400,
+  "threshold": 0.45,
+  "input_name": "input",
+  "output_name": "output"
+}

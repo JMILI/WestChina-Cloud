@@ -68,8 +68,13 @@ fi
 # ---------- 部署目录 ----------
 export DEPLOY_DIR="$PROJECT_ROOT/deploymentServer"
 export DOCKER_DIR="$PROJECT_ROOT/dockerOfMy"
-export LOG_DIR="$DEPLOY_DIR/logs"
-mkdir -p "$LOG_DIR"
+
+# ---------- 统一 logs 目录（日志 / 缓存 / 临时文件）----------
+# shellcheck source=log_paths.sh
+source "$(dirname "${BASH_SOURCE[0]}")/log_paths.sh"
+
+export AI_LOG_PATH="${AI_LOG_PATH:-$LOG_FILE_AI}"
+export SCHEME_B_CACHE_DIR="${SCHEME_B_CACHE_DIR:-$LOG_DIR_AI_CACHE}"
 
 # ---------- 端口定义 ----------
 # MySQL: 3306, Redis: 6379, RabbitMQ: 5672/15672, Nacos: 8848

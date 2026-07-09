@@ -15,7 +15,13 @@ public class CtAiProperties {
 
     private int connectTimeoutMs = 5000;
 
-    private int readTimeoutMs = 2400000;
+    private int readTimeoutMs = 7200000;
+
+    /** 引擎列表 / health 等元数据接口读超时（毫秒） */
+    private int enginesReadTimeoutMs = 30000;
+
+    /** MQ 消费者并发数（与 CPU 核数相关，见 bootstrap.yml） */
+    private int taskConsumerConcurrency = 4;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -47,5 +53,21 @@ public class CtAiProperties {
 
     public void setReadTimeoutMs(int readTimeoutMs) {
         this.readTimeoutMs = readTimeoutMs;
+    }
+
+    public int getEnginesReadTimeoutMs() {
+        return enginesReadTimeoutMs;
+    }
+
+    public void setEnginesReadTimeoutMs(int enginesReadTimeoutMs) {
+        this.enginesReadTimeoutMs = enginesReadTimeoutMs;
+    }
+
+    public int getTaskConsumerConcurrency() {
+        return taskConsumerConcurrency;
+    }
+
+    public void setTaskConsumerConcurrency(int taskConsumerConcurrency) {
+        this.taskConsumerConcurrency = taskConsumerConcurrency;
     }
 }

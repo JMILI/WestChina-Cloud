@@ -29,9 +29,10 @@
       </el-select>
     </el-tooltip>
     <!-- 方案 B 子引擎选择 -->
-    <template v-if="engine === 'scheme-b' && subEngineOptions.length > 0">
-      <span class="lesion-engine-select__sep">·</span>
+    <template v-if="engine === 'scheme-b' && subEngineOptions.length > 0 && subEngineDisplay !== 'none'">
+      <span v-if="subEngineDisplay === 'radio'" class="lesion-engine-select__sep">·</span>
       <el-radio-group
+        v-if="subEngineDisplay === 'radio'"
         v-model="subEngine"
         size="mini"
         class="lesion-engine-select__sub"
@@ -46,9 +47,26 @@
           {{ sopt.label }}
         </el-radio-button>
       </el-radio-group>
-      <span v-if="subEngineHint" class="lesion-engine-select__hint">{{ subEngineHint }}</span>
+      <el-select
+        v-else-if="subEngineDisplay === 'select'"
+        v-model="subEngine"
+        size="mini"
+        class="lesion-engine-select__sub-select"
+        popper-class="lesion-engine-dropdown"
+        @change="onSubChange"
+      >
+        <el-option
+          v-for="sopt in subEngineOptions"
+          :key="sopt.id"
+          :label="sopt.label"
+          :value="sopt.id"
+          :disabled="!sopt.available"
+        />
+      </el-select>
+      <span v-if="subEngineHint && subEngineDisplay === 'radio'" class="lesion-engine-select__hint">{{ subEngineHint }}</span>
     </template>
     <el-button
+      v-if="showHelp"
       type="text"
       :size="compact ? 'mini' : 'small'"
       class="lesion-engine-select__help"
@@ -64,11 +82,12 @@
 import { mapActions, mapGetters } from 'vuex'
 import {
   DEFAULT_LESION_ENGINES,
+  DEFAULT_ACTIVE_LESION_ENGINE,
   fetchLesionEngines,
+  filterVisibleEngines,
   getEngineDescription,
   getSubEngines,
-  readStoredEngine,
-  writeStoredEngine
+  normalizeActiveEngine
 } from '@/utils/lesionEngines'
 import AlgorithmExplainDialog from './AlgorithmExplainDialog'
 
@@ -78,11 +97,14 @@ export default {
   props: {
     compact: { type: Boolean, default: false },
     showLabel: { type: Boolean, default: true },
+    showHelp: { type: Boolean, default: true },
+    /** radio | select | none — 子引擎展示方式 */
+    subEngineDisplay: { type: String, default: 'radio' },
     placeholder: { type: String, default: '选择识别算法' }
   },
   data() {
     return {
-      engineOptions: [...DEFAULT_LESION_ENGINES],
+      engineOptions: filterVisibleEngines([...DEFAULT_LESION_ENGINES]),
       showExplain: false
     }
   },
@@ -90,7 +112,7 @@ export default {
     ...mapGetters(['lesionDetectEngine', 'lesionDetectSubEngine', 'lesionEngineCatalog']),
     engine: {
       get() {
-        return this.lesionDetectEngine || 'scheme-a'
+        return this.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE
       },
       set(val) {
         this.setLesionDetectEngine(val)
@@ -137,18 +159,16 @@ export default {
       })
     },
     ensureEngineAvailable() {
-      const opt = this.engineOptions.find((o) => o.id === this.engine)
-      if (opt && !opt.available) {
-        const fallback = this.engineOptions.find((o) => o.available)
-        this.engine = fallback ? fallback.id : 'scheme-a'
+      const next = normalizeActiveEngine(this.engine, this.engineOptions)
+      if (next !== this.engine) {
+        this.engine = next
       }
     },
     onChange(val) {
       const opt = this.engineOptions.find((o) => o.id === val)
       if (opt && !opt.available) {
         this.$message.warning(opt.unavailableReason || opt.installHint || '该识别算法暂不可用')
-        const fallback = this.engineOptions.find((o) => o.available)
-        this.engine = fallback ? fallback.id : 'scheme-a'
+        this.engine = normalizeActiveEngine(this.engine, this.engineOptions)
         return
       }
       this.$emit('change', val)
@@ -167,17 +187,26 @@ export default {
 .lesion-engine-select {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
 
   &.compact {
     gap: 6px;
+    flex-wrap: nowrap;
 
     .lesion-engine-select__label {
       font-size: 12px;
     }
 
     .lesion-engine-select__control {
-      width: 168px;
+      width: 132px;
+      min-width: 108px;
+    }
+
+    .lesion-engine-select__sub-select {
+      width: 148px;
+      min-width: 120px;
     }
   }
 
@@ -198,6 +227,8 @@ export default {
   }
 
   &__sub {
+    flex-shrink: 0;
+
     ::v-deep .el-radio-button__inner {
       padding: 4px 10px;
       font-size: 11px;
@@ -211,6 +242,11 @@ export default {
     ::v-deep .el-radio-button:last-child .el-radio-button__inner {
       border-radius: 0 3px 3px 0;
     }
+  }
+
+  &__sub-select {
+    width: 168px;
+    flex-shrink: 0;
   }
 
   &__hint {

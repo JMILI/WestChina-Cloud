@@ -418,11 +418,17 @@ def main():
 
     if collector4.result:
         ot = collector4.result.get("overlayType", "")
-        log_result("overlayType valid", ot in ("bbox", "ggo"),
-                   f"overlayType={ot} (bbox/ggo both acceptable)")
+        log_result("overlayType=bbox (default)", ot == "bbox",
+                   f"overlayType={ot} (legacy ggo via SCHEME_B_LEGACY_GGO=1)")
+        ggo = collector4.result.get("ggoRegions") or []
+        log_result("ggoRegions empty (merged)", len(ggo) == 0 or ot == "ggo",
+                   f"ggoRegions count={len(ggo)}")
         stats = collector4.result.get("meta", {}).get("stats", {})
         log_result("fusion stats present", len(stats) > 0,
                    f"stats keys: {list(stats.keys())}")
+        if stats:
+            log_result("ggoBackend in stats", "ggoBackend" in stats,
+                       f"ggoBackend={stats.get('ggoBackend')}")
 
     # =================================================================
     # 测试 5: 模式互斥校验

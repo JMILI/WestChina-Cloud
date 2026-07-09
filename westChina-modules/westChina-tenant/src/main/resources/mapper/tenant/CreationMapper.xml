@@ -93,4 +93,24 @@
                                       ( #{tenantId}, null, #{params.deriveRole.roleId}, #{tenantId} );
     </insert>
 
+    <select id="countDeptByTenantId" parameterType="Tenant" resultType="int">
+        select count(*) from sys_dept where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countPostByTenantId" parameterType="Tenant" resultType="int">
+        select count(*) from sys_post where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countUserByTenantId" parameterType="Tenant" resultType="int">
+        select count(*) from sys_user where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countRoleByTenantId" parameterType="Tenant" resultType="int">
+        select count(*) from sys_role where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countOrganizeRoleByTenantId" parameterType="Tenant" resultType="int">
+        select count(*) from sys_organize_role where tenant_id = #{tenantId}
+    </select>
+
 </mapper>

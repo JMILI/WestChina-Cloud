@@ -3,6 +3,7 @@ package com.westChina.ct.controller;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import com.westChina.common.core.web.controller.BaseController;
 import com.westChina.common.core.web.domain.AjaxResult;
 import com.westChina.ct.config.CtAiProperties;
 import com.westChina.ct.service.ICtAiService;
+import com.westChina.ct.service.ICtAiTaskService;
 
 /**
  * 胸部 CT AI 病灶识别
@@ -33,6 +35,9 @@ public class CtAiController extends BaseController {
 
     @Autowired
     private CtAiProperties ctAiProperties;
+
+    @Autowired
+    private ICtAiTaskService ctAiTaskService;
 
     @GetMapping("/engines")
     public AjaxResult listEngines() {
@@ -59,6 +64,47 @@ public class CtAiController extends BaseController {
         } catch (Exception ex) {
             log.error("[CT-AI] detect request unexpected error, body={}", body, ex);
             return AjaxResult.error("病灶识别失败：" + ex.getMessage());
+        }
+    }
+
+    @PostMapping("/detectLesionTask")
+    public AjaxResult detectLesionTask(@RequestBody Map<String, Object> body) {
+        try {
+            String taskId = ctAiTaskService.submitDetectTask(body);
+            return AjaxResult.success("任务已提交", taskId);
+        } catch (IllegalArgumentException ex) {
+            return AjaxResult.error(ex.getMessage());
+        } catch (IllegalStateException ex) {
+            return AjaxResult.error(ex.getMessage());
+        } catch (Exception ex) {
+            log.error("[CT-AI] submit task failed, body={}", body, ex);
+            return AjaxResult.error("提交识别任务失败：" + ex.getMessage());
+        }
+    }
+
+    @GetMapping("/detectLesionTask/{taskId}")
+    public AjaxResult detectLesionTaskStatus(@PathVariable("taskId") String taskId) {
+        try {
+            return AjaxResult.success(ctAiTaskService.getTaskStatus(taskId));
+        } catch (Exception ex) {
+            log.error("[CT-AI] query task status failed, taskId={}", taskId, ex);
+            return AjaxResult.error("查询任务状态失败：" + ex.getMessage());
+        }
+    }
+
+    @PostMapping("/detectLesionTask/{taskId}/cancel")
+    public AjaxResult cancelDetectLesionTask(@PathVariable("taskId") String taskId) {
+        try {
+            boolean cancelled = ctAiTaskService.cancelDetectTask(taskId);
+            if (cancelled) {
+                return AjaxResult.success("任务已取消");
+            }
+            return AjaxResult.error("任务已结束，无法取消");
+        } catch (IllegalArgumentException ex) {
+            return AjaxResult.error(ex.getMessage());
+        } catch (Exception ex) {
+            log.error("[CT-AI] cancel task failed, taskId={}", taskId, ex);
+            return AjaxResult.error("取消任务失败：" + ex.getMessage());
         }
     }
 

@@ -6,14 +6,16 @@ source "$(dirname "$0")/env.sh"
 echo "[1/2] 更新 Nacos 配置库..."
 docker exec westChina-mysql mysql -uroot -p123456 -e "
 UPDATE \`xy-config\`.config_info SET content = REPLACE(content, 'westChinaBackend', '127.0.0.1');
-UPDATE \`xy-config\`.config_info SET content = REPLACE(content, 'D:/westChina/uploadPath', '/tmp/westChina/uploadPath');
+UPDATE \`xy-config\`.config_info SET content = REPLACE(content, 'D:/westChina/uploadPath', '${LOG_DIR_UPLOAD}');
+UPDATE \`xy-config\`.config_info SET content = REPLACE(content, '/tmp/westChina/uploadPath', '${LOG_DIR_UPLOAD}');
 " 2>/dev/null
 
 echo "[2/4] 更新业务库租户数据源与监控菜单外链..."
 docker exec westChina-mysql mysql -uroot -p123456 -e "
 UPDATE \`xy-cloud\`.xy_tenant_source SET url_prepend = REPLACE(url_prepend, 'westChinaBackend', '127.0.0.1');
-UPDATE \`xy-cloud\`.xy_system SET route = 'http://127.0.0.1:5000/ct/' WHERE system_id = 1;
-UPDATE \`xy-cloud\`.xy_system SET route = 'http://127.0.0.1:5000/administrator/' WHERE system_id = 2;
+UPDATE \`xy-cloud\`.xy_system SET route = '/ct/' WHERE system_id = 1;
+UPDATE \`xy-cloud\`.xy_system SET route = '/administrator/' WHERE system_id = 2;
+UPDATE \`xy-cloud\`.xy_system SET route = REPLACE(route, 'http://127.0.0.1:5000', '') WHERE route LIKE 'http://127.0.0.1:5000%';
 UPDATE \`xy-cloud\`.sys_menu SET path = REPLACE(path, 'westChinaBackend', '127.0.0.1') WHERE path LIKE '%westChinaBackend%';
 UPDATE \`xy-cloud\`.sys_menu SET path = 'http://127.0.0.1:9100/login' WHERE menu_id = 20230;
 " 2>/dev/null
@@ -131,7 +133,7 @@ nohup java -Xms128m -Xmx384m \
   -jar westChina-modules-system.jar >> logs/system.log 2>&1 &
 for i in $(seq 1 24); do ss -tlnp | grep -q ':9600' && echo "system 已就绪" && break; sleep 5; done
 
-mkdir -p /tmp/westChina/uploadPath
+mkdir -p "$LOG_DIR_UPLOAD"
 
 echo "重启 Nacos 使配置生效..."
 cd "$PROJECT_ROOT/dockerOfMy"

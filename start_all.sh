@@ -8,6 +8,9 @@
 #   all   - 启动全部服务(含file/gen/job/monitor)
 #   ai-only   - 仅重启AI服务
 #   ui-only   - 仅重启前端
+#
+# 环境变量:
+#   SEALTUN_AUTO_START=0  跳过 Sealtun 隧道自动恢复（默认开启）
 # ==============================================================================
 set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -66,7 +69,8 @@ if [ "$MODE" != "ui-only" ]; then
 
     if [ -x "$AI_PYTHON" ]; then
       cd "$ROOT/ai-service"
-      nohup "$AI_PYTHON" run.py >> "$LOG_DIR/ai-service.log" 2>&1 < /dev/null &
+      export AI_LOG_PATH="${AI_LOG_PATH:-$LOG_FILE_AI}"
+      nohup "$AI_PYTHON" run.py >> "$LOG_FILE_AI" 2>&1 < /dev/null &
       wait_port 9810 20 "AI推理服务"
     else
       log_error "Python 环境未找到，请先运行 scripts/setup_env.sh"
@@ -85,13 +89,23 @@ if [ "$MODE" != "ai-only" ]; then
     pkill -f "local-ui-server.js" 2>/dev/null || true
     sleep 1
     cd "$DEPLOY_DIR"
-    node local-ui-server.js >> "$LOG_DIR/ui.log" 2>&1 < /dev/null &
+    node local-ui-server.js >> "$LOG_FILE_UI" 2>&1 < /dev/null &
     wait_port 5000 5 "前端UI"
   fi
 fi
 
 # ─────────────────────────────────────────────────────
-# 5. 验证
+# 5. Sealtun 隧道（重启后恢复，供同事远程访问）
+# ─────────────────────────────────────────────────────
+if [ "${SEALTUN_AUTO_START:-1}" != "0" ] && [ "$MODE" != "ai-only" ]; then
+  if [ -f "$ROOT/scripts/start-sealtun.sh" ]; then
+    log_info "恢复 Sealtun 远程隧道..."
+    bash "$ROOT/scripts/start-sealtun.sh" || log_warn "Sealtun 隧道未恢复（可稍后执行: bash scripts/start-sealtun.sh）"
+  fi
+fi
+
+# ─────────────────────────────────────────────────────
+# 6. 验证
 # ─────────────────────────────────────────────────────
 echo ""
 echo "============================================"

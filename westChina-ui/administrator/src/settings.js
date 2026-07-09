@@ -28,7 +28,7 @@ module.exports = {
   homePageIcon: 'xy_productCenter',
 
   /** 主登录页地址 | loginAddress='' 时则跳转至本地登录页 | 本参数目的为控制集中登录/分散登录 */
-  baseSystemUrl: 'http://127.0.0.1:5000/main/',
+  baseSystemUrl: '/main/',
 
   /**
    * @type {string | array} 'production' | ['production', 'development']

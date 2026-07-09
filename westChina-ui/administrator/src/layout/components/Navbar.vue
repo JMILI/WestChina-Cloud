@@ -45,6 +45,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import { baseSystemUrl } from '@/settings'
+import { resolveSystemUrl } from 'common/src/utils/systemUrl'
 import Breadcrumb from '@basicsComponents/Breadcrumb'
 import TopNav from '@basicsComponents/TopNav'
 import Hamburger from '@basicsComponents/Hamburger'
@@ -96,7 +97,7 @@ export default {
       this.$modal.confirm('确定注销并退出系统吗？', '提示').then(() => {
         this.$store.dispatch('LogOut').then(() => {
           if (baseSystemUrl) {
-            location.href = baseSystemUrl.endsWith('/') ? baseSystemUrl : baseSystemUrl + '/'
+            location.href = resolveSystemUrl(baseSystemUrl)
           } else {
             location.href = this.$router.options.base + 'login'
           }
@@ -107,12 +108,11 @@ export default {
     jumpBaseSystem(type) {
       let url
       if (type === '1') {//跳转个人中心
-        url = this.$store.state.settings.baseSystemUrl + '/user/profile'
+        url = resolveSystemUrl(this.$store.state.settings.baseSystemUrl + '/user/profile')
       } else if (type === '2') {//跳转主系统企业中心
-        url = this.$store.state.settings.baseSystemUrl
+        url = resolveSystemUrl(this.$store.state.settings.baseSystemUrl)
       }
-      // window.open(url, '_blank') // 在新窗口打开外链接
-      window.location.href = url  //在本页面打开外部链接
+      window.location.href = url
     }
   }
 }

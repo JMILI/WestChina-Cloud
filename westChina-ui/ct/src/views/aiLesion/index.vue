@@ -56,7 +56,7 @@
 <script>
 import { listAiLesion } from '@/api/ct/aiLesion'
 import { getStudyListByPatCardId } from '@/api/ct/dicom'
-import { minioUrl } from '@/settings'
+import { getMinioUrl } from '@/utils/minioBase'
 import { mapActions } from 'vuex'
 import { delAiLesionAndImages } from './aiLesion'
 
@@ -160,7 +160,7 @@ export default {
           item.imageIds = []
           const path = item.dicomCtPath.substring(0, item.dicomCtPath.lastIndexOf('/'))
           for (let i = 1; i <= item.dicomCtCount; i++) {
-            item.imageIds.push(`${dicomPrefix}${minioUrl}${bucketName}/${path}/${i}.dcm`)
+            item.imageIds.push(`${dicomPrefix}${getMinioUrl()}${bucketName}/${path}/${i}.dcm`)
           }
         })
         this.updatePatientsStudySeries(studySeriesList)

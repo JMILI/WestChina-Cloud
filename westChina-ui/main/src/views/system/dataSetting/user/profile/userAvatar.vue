@@ -56,6 +56,7 @@
 import store from "@/store";
 import { VueCropper } from "vue-cropper";
 import { uploadAvatar } from "@/api/system/user";
+import { resolveSystemUrl } from 'common/src/utils/systemUrl'
 
 export default {
   components: { VueCropper },
@@ -126,7 +127,7 @@ export default {
         formData.append("avatarfile", data);
         uploadAvatar(formData).then(response => {
           this.open = false;
-          this.options.img = response.imgUrl;
+          this.options.img = resolveSystemUrl(response.imgUrl);
           store.commit('SET_AVATAR', this.options.img);
           this.$modal.msgSuccess("修改成功");
           this.visible = false;

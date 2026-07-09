@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.westChina.common.core.constant.AuthorityConstants;
+import com.westChina.common.core.exception.ServiceException;
 import com.westChina.common.core.utils.StringUtils;
 import com.westChina.common.security.utils.SecurityUtils;
 import com.westChina.system.api.domain.authority.SysRole;
@@ -73,6 +74,7 @@ public class CreationServiceImpl implements ICreationService {
         d = creationMapper.createDeptByTenantId(tenant);
         p = creationMapper.createPostByTenantId(tenant);
         u = creationMapper.createUserByTenantId(tenant);
+        verifyOrganizeSeedData(tenant);
         return d + p + u;
     }
 
@@ -104,6 +106,24 @@ public class CreationServiceImpl implements ICreationService {
         params.put("deriveRole", deriveTenant);
         r = creationMapper.createRoleByTenantId(tenant);
         or = creationMapper.createOrganizeRoleByTenantId(tenant);
+        verifyRoleSeedData(tenant);
         return r + or;
+    }
+
+    private void verifyOrganizeSeedData(Tenant tenant) {
+        int deptCount = creationMapper.countDeptByTenantId(tenant);
+        int postCount = creationMapper.countPostByTenantId(tenant);
+        int userCount = creationMapper.countUserByTenantId(tenant);
+        if (deptCount < 1 || postCount < 1 || userCount < 1) {
+            throw new ServiceException("新租户初始化失败：部门/岗位/管理员账号未正确创建");
+        }
+    }
+
+    private void verifyRoleSeedData(Tenant tenant) {
+        int roleCount = creationMapper.countRoleByTenantId(tenant);
+        int organizeRoleCount = creationMapper.countOrganizeRoleByTenantId(tenant);
+        if (roleCount < 2 || organizeRoleCount < 2) {
+            throw new ServiceException("新租户初始化失败：角色/组织角色关联未正确创建");
+        }
     }
 }

@@ -79,12 +79,12 @@
             </el-tooltip>
             <el-tooltip
               v-if="item.sourceSliceIndex != null"
-              :content="'标记层位：第 ' + (item.sourceSliceIndex + 1) + ' 层'"
+              :content="'标记层位 Instance ' + item.sourceSliceIndex"
               placement="right"
               :open-delay="250"
               popper-class="study-info-tooltip"
             >
-              <div class="info-line">标记层位：第 {{ item.sourceSliceIndex + 1 }} 层</div>
+              <div class="info-line">标记层位 Instance {{ item.sourceSliceIndex }}</div>
             </el-tooltip>
             <el-tooltip
               :content="'原始序列：' + item.sourceDicomId"

@@ -4,6 +4,7 @@ import {Message} from 'element-ui'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import {getToken} from '@utils/auth'
+import {resolveSystemUrl} from 'common/src/utils/systemUrl'
 import {baseSystemUrl} from '@/settings'
 
 NProgress.configure({showSpinner: false})
@@ -51,7 +52,7 @@ router.beforeEach((to, from, next) => {
       next()
     } else {
       if (baseSystemUrl != null && baseSystemUrl !== '') {
-        window.location.href = baseSystemUrl // 否则全部重定向到指定登录页
+        window.location.href = resolveSystemUrl(baseSystemUrl)
       } else {
         next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到当前系统的登录页
       }

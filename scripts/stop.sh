@@ -7,6 +7,13 @@ STOP_DOCKER="${1:-}"   # 传 docker 则同时停中间件
 echo "=== 停止前端 ==="
 pkill -f "local-ui-server.js" 2>/dev/null || true
 
+echo "=== 停止 AI 推理服务 ==="
+pkill -f "ai-service/run.py" 2>/dev/null || true
+pkill -f "ai-service/.conda/bin/python run.py" 2>/dev/null || true
+pkill -f "ai-service/.venv/bin/python run.py" 2>/dev/null || true
+pkill -f "ai-service.*run.py" 2>/dev/null || true
+fuser -k 9810/tcp 2>/dev/null || true
+
 echo "=== 停止后端 JAR ==="
 cd "$PROJECT_ROOT/deploymentServer"
 bash runlocal.sh stop

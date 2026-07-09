@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Generator
+import os
+from typing import Any, Dict, Generator, Optional
 
 from .chest_detector import detect_chest_lesions, gpu_available, is_chest_body_part
 from .config import settings
@@ -10,6 +11,11 @@ from .dicom_volume import _client, _object_key, download_slice, parse_slice
 from .engines import assert_engine_available, normalize_engine
 from .logging_ctx import new_request_id, set_sse_emitter, step_log
 from .schemas import DetectLesionRequest, Lesion
+from .task_runtime import (
+    is_task_cancelled,
+    register_fusion_process,
+    unregister_fusion_process,
+)
 
 DISCLAIMER = "AI 辅助结果仅供临床参考，不能替代医生诊断。"
 
@@ -29,6 +35,18 @@ def _resolve_slice_index(req: DetectLesionRequest) -> int:
     return max(0, int(req.currentSliceIndex))
 
 
+def _target_max_slices(spacing_z: float, z_count: int, engine_id: str) -> int:
+    if engine_id.startswith("scheme-b"):
+        if spacing_z <= 1.0:
+            return min(150, z_count)
+        if spacing_z >= 3.0:
+            return min(250, z_count)
+        return min(200, z_count)
+    if gpu_available() and z_count <= 300:
+        return z_count
+    return min(200 if gpu_available() else settings.series_max_slices_cpu, z_count)
+
+
 def _maybe_subsample_series_volume(
     volume,
     spacing,
@@ -36,14 +54,63 @@ def _maybe_subsample_series_volume(
 ) -> tuple:
     from .volume_subsample import subsample_volume_z
 
-    if gpu_available():
-        identity = {i: i for i in range(volume.shape[0])}
-        return volume, spacing, identity, {"subsampled": False}
+    z_count = int(volume.shape[0])
+    spacing_z = float(spacing[0]) if spacing else 1.0
+    target = _target_max_slices(spacing_z, z_count, engine_id)
 
-    max_slices = settings.series_max_slices_cpu
-    new_volume, new_spacing, slice_remap, info = subsample_volume_z(volume, spacing, max_slices)
+    if z_count <= target:
+        identity = {i: i for i in range(z_count)}
+        return volume, spacing, identity, {"subsampled": False, "target_slices": target}
+
+    new_volume, new_spacing, slice_remap, info = subsample_volume_z(volume, spacing, target)
     info["engine"] = engine_id
+    info["subsample_trigger"] = "scheme_b_dynamic" if engine_id.startswith("scheme-b") else (
+        "gpu_large" if gpu_available() else "cpu"
+    )
+    info["target_slices"] = target
     return new_volume, new_spacing, slice_remap, info
+
+
+def _download_series_bytes(
+    req: DetectLesionRequest,
+    task_id: Optional[str] = None,
+) -> list:
+    """下载全序列 DICOM；层数较多时默认并行。"""
+    use_parallel = os.getenv("MINIO_PARALLEL_DOWNLOAD", "true").lower() in ("1", "true", "yes")
+    if use_parallel and req.imageCount >= 8:
+        from .minio_download import download_series_parallel
+
+        def _cancel() -> bool:
+            return bool(task_id and is_task_cancelled(task_id))
+
+        last_reported = {"n": 0}
+
+        def _progress(done: int, total: int) -> None:
+            last_reported["n"] = done
+
+        raw_list = download_series_parallel(
+            req.bucket,
+            req.studyUid,
+            req.seriesUid,
+            req.imageCount,
+            cancel_check=_cancel,
+            on_progress=_progress,
+        )
+        return raw_list
+
+    client = _client()
+    raw_list = []
+    for i in range(1, req.imageCount + 1):
+        if task_id and is_task_cancelled(task_id):
+            raise RuntimeError("任务已取消")
+        key = _object_key(req.studyUid, req.seriesUid, i)
+        response = client.get_object(req.bucket, key)
+        try:
+            raw_list.append(response.read())
+        finally:
+            response.close()
+            response.release_conn()
+    return raw_list
 
 
 # ---------------------------------------------------------------------------
@@ -57,21 +124,20 @@ def _run_scheme_a_series(
     request_id = new_request_id()
 
     yield _event("progress", percent=5, stage="download", message="正在从 MinIO 下载 DICOM…")
-    client = _client()
+    task_id = getattr(req, "taskId", None)
     raw_list = []
     try:
-        for i in range(1, req.imageCount + 1):
-            key = _object_key(req.studyUid, req.seriesUid, i)
-            response = client.get_object(req.bucket, key)
-            try:
-                raw_list.append(response.read())
-            finally:
-                response.close()
-                response.release_conn()
-            pct = 5 + int(55 * i / max(req.imageCount, 1))
-            yield _event("progress", percent=pct, stage="download",
-                         message=f"正在从 MinIO 下载 DICOM {i}/{req.imageCount}")
+        raw_list = _download_series_bytes(req, task_id=task_id)
+        yield _event(
+            "progress",
+            percent=60,
+            stage="download",
+            message=f"已从 MinIO 下载 DICOM {req.imageCount}/{req.imageCount}",
+        )
     except Exception as exc:
+        if str(exc) == "任务已取消":
+            yield _event("warn", message="任务已取消", progress=0, stage="cancelled")
+            return
         yield _event("error", message=f"无法从 MinIO 读取 DICOM 序列: {exc}", progress=0)
         return
 
@@ -285,6 +351,7 @@ def _run_scheme_b_series(
     import time
 
     request_id = new_request_id()
+    task_id = getattr(req, "taskId", None)
 
     sub_engine = getattr(req, "detectSubEngine", "auto") or "auto"
     if sub_engine not in ("auto", "monai", "nndet"):
@@ -294,103 +361,192 @@ def _run_scheme_b_series(
                  message=f"[方案B] 融合分析，共 {req.imageCount} 层，子引擎: {sub_engine}",
                  progress=1, stage="init")
 
-    yield _event("progress", percent=5, stage="download", message="正在从 MinIO 下载 DICOM…")
-    client = _client()
-    raw_list = []
-    try:
-        for i in range(1, req.imageCount + 1):
-            key = _object_key(req.studyUid, req.seriesUid, i)
-            response = client.get_object(req.bucket, key)
-            try:
-                raw_list.append(response.read())
-            finally:
-                response.close()
-                response.release_conn()
-            pct = 5 + int(55 * i / max(req.imageCount, 1))
-            yield _event("progress", percent=pct, stage="download",
-                         message=f"正在从 MinIO 下载 DICOM {i}/{req.imageCount}")
-    except Exception as exc:
-        yield _event("error", message=f"无法从 MinIO 读取 DICOM 序列: {exc}", progress=0)
-        return
+    from .volume_cache import save_volume_cache, try_load_cached_volume
 
-    yield _event("progress", percent=62, stage="volume", message="正在构建 3D 体数据…")
-    with step_log(request_id, "volume_build", engine=engine_id, detect_mode="series") as metrics:
+    cache_hit = False
+    meta = try_load_cached_volume(req.studyUid, req.seriesUid, req.imageCount)
+    if meta is not None:
+        cache_hit = True
+        yield _event(
+            "progress",
+            percent=55,
+            stage="download",
+            message=f"命中体数据缓存，跳过 MinIO 下载（{meta.slice_count} 层）",
+        )
+    else:
+        yield _event("progress", percent=5, stage="download", message="正在从 MinIO 下载 DICOM…")
+        raw_list = []
+        try:
+            raw_list = _download_series_bytes(req, task_id=task_id)
+            yield _event(
+                "progress",
+                percent=60,
+                stage="download",
+                message=f"已从 MinIO 下载 DICOM {req.imageCount}/{req.imageCount}",
+            )
+        except Exception as exc:
+            if str(exc) == "任务已取消":
+                yield _event("warn", message="任务已取消", progress=0, stage="cancelled")
+                return
+            yield _event("error", message=f"无法从 MinIO 读取 DICOM 序列: {exc}", progress=0)
+            return
+
+        yield _event("progress", percent=62, stage="volume", message="正在构建 3D 体数据…")
         from .robust_ct_loader import load_series_dicoms
         meta = load_series_dicoms(raw_list)
+        save_volume_cache(meta, req.studyUid, req.seriesUid)
+
+    yield _event("progress", percent=62, stage="volume", message="正在加载 3D 体数据…")
+    with step_log(request_id, "volume_build", engine=engine_id, detect_mode="series") as metrics:
         volume = meta.volume
         spacing = meta.spacing
         rows = meta.rows
         cols = meta.cols
         metrics["slice_count"] = meta.slice_count
+        metrics["volume_cache_hit"] = cache_hit
 
     volume, spacing, slice_remap, subsample_info = _maybe_subsample_series_volume(
         volume, spacing, engine_id
     )
     if subsample_info.get("subsampled"):
-        yield _event("warn", code="SERIES_SUBSAMPLED",
-                     message=f"CPU 模式：序列降采样 {subsample_info['original_slices']}→{subsample_info['used_slices']} 层",
-                     progress=70, stage="volume")
+        yield _event(
+            "warn",
+            code="SERIES_SUBSAMPLED",
+            message=(
+                f"序列降采样 {subsample_info['original_slices']}→{subsample_info['used_slices']} 层"
+                f"（目标 {subsample_info.get('target_slices', '?')} 层）"
+            ),
+            progress=70,
+            stage="volume",
+        )
 
-    yield _event("progress", percent=78, stage="detect", message="正在融合分析（肺分割 + MONAI 推理，约需 15–25 分钟）…")
+    if settings.scheme_b_hu_quality_gate:
+        from .volume_quality import check_volume_hu_quality
+        quality = check_volume_hu_quality(volume)
+        if not quality.get("ok"):
+            yield _event(
+                "warn",
+                code=quality.get("reason") or "HU_QUALITY",
+                message=quality.get("message") or "体数据 HU 质量检查未通过，结果仅供参考",
+                progress=72,
+                stage="volume",
+            )
 
-    heartbeat_stop = threading.Event()
-    heartbeat_state = {"pct": 79, "msg_idx": 0}
-    heartbeat_msgs = [
-        "TotalSegmentator 肺叶/血管分割中…",
-        "MONAI RetinaNet 3D 推理中（GPU）…",
-        "候选框坐标映射与融合过滤…",
-    ]
+    fusion_timeout_sec = settings.fusion_timeout_sec
+    timeout_min = max(1, fusion_timeout_sec // 60)
+    yield _event(
+        "progress",
+        percent=78,
+        stage="detect",
+        message=f"正在融合分析（肺分割 + MONAI 推理，最长约 {timeout_min} 分钟）…",
+    )
 
-    def _heartbeat() -> None:
-        while not heartbeat_stop.wait(25):
-            heartbeat_state["pct"] = min(88, heartbeat_state["pct"] + 2)
-            heartbeat_state["msg_idx"] = (heartbeat_state["msg_idx"] + 1) % len(heartbeat_msgs)
+    import threading
+    import time
 
-    hb_thread = threading.Thread(target=_heartbeat, daemon=True)
-    hb_thread.start()
+    FUSION_WAIT_MILESTONES = (
+        (0, 79, "TotalSegmentator 肺叶分割中…"),
+        (30, 82, "深度学习检测推理中…"),
+        (90, 85, "融合过滤与病灶标注…"),
+        (180, 88, "融合分析进行中（耗时较长属正常）…"),
+    )
+
+    def _fusion_wait_progress(elapsed: float) -> tuple[int, str]:
+        pct, msg = FUSION_WAIT_MILESTONES[0][1], FUSION_WAIT_MILESTONES[0][2]
+        for threshold, p, m in FUSION_WAIT_MILESTONES:
+            if elapsed >= threshold:
+                pct, msg = p, m
+        return pct, msg
 
     fusion_done = threading.Event()
     fusion_result: Dict[str, Any] = {}
     fusion_error: list = []
 
-    def _run_fusion() -> None:
-        try:
-            with step_log(request_id, "fusion_filter", engine=engine_id, detect_mode="series") as metrics:
-                from .scheme_b_fusion import detect_fusion
-                detection = detect_fusion(volume, spacing, rows, cols, sub_engine=sub_engine)
-                fusion_result["detection"] = detection
-                metrics.update(detection["stats"])
-        except Exception as exc:
-            fusion_error.append(exc)
-        finally:
-            fusion_done.set()
+    from .fusion_subprocess import start_fusion_process
 
-    fusion_thread = threading.Thread(target=_run_fusion, daemon=True)
-    fusion_thread.start()
+    fusion_process, result_queue, fusion_cancel = start_fusion_process(
+        volume,
+        spacing,
+        rows,
+        cols,
+        sub_engine,
+        request_id,
+        engine_id,
+    )
+    register_fusion_process(task_id, fusion_process)
 
+    fusion_start = time.time()
     while not fusion_done.is_set():
-        fusion_done.wait(timeout=5)
-        if fusion_done.is_set():
+        if not result_queue.empty():
+            kind, payload = result_queue.get()
+            if kind == "ok":
+                fusion_result["detection"] = payload
+            else:
+                fusion_error.append(RuntimeError(payload))
+            fusion_done.set()
             break
+        if not fusion_process.is_alive():
+            if not fusion_done.is_set():
+                code = fusion_process.exitcode
+                if code not in (0, None) and not fusion_error and result_queue.empty():
+                    fusion_error.append(
+                        RuntimeError(f"融合子进程异常退出 (exitcode={code})")
+                    )
+                fusion_done.set()
+            break
+        if is_task_cancelled(task_id):
+            fusion_cancel.set()
+            if fusion_process.is_alive():
+                fusion_process.terminate()
+                fusion_process.join(timeout=5)
+                if fusion_process.is_alive():
+                    fusion_process.kill()
+                    fusion_process.join(timeout=2)
+            unregister_fusion_process(task_id, fusion_process)
+            yield _event("warn", message="任务已取消", progress=0, stage="cancelled")
+            return
+        elapsed = time.time() - fusion_start
+        if elapsed > fusion_timeout_sec:
+            fusion_cancel.set()
+            if fusion_process.is_alive():
+                fusion_process.terminate()
+                fusion_process.join(timeout=5)
+                if fusion_process.is_alive():
+                    fusion_process.kill()
+                    fusion_process.join(timeout=2)
+            unregister_fusion_process(task_id, fusion_process)
+            yield _event(
+                "error",
+                message=f"融合分析超时（{timeout_min} 分钟）。"
+                        "请尝试减少序列层数或使用方案A。",
+                progress=0,
+            )
+            return
+        fusion_done.wait(timeout=5)
+        wait_pct, wait_msg = _fusion_wait_progress(elapsed)
         yield _event(
             "progress",
-            percent=heartbeat_state["pct"],
+            percent=wait_pct,
             stage="detect",
-            message=heartbeat_msgs[heartbeat_state["msg_idx"]],
+            message=wait_msg,
         )
         yield _event(
             "log",
             level="info",
-            message=f"[方案B] {heartbeat_msgs[heartbeat_state['msg_idx']]}",
-            progress=heartbeat_state["pct"],
+            message=f"[方案B] {wait_msg}",
+            progress=wait_pct,
             stage="detect",
         )
 
-    heartbeat_stop.set()
-    hb_thread.join(timeout=1)
+    if fusion_process.is_alive():
+        fusion_process.join(timeout=1)
+    unregister_fusion_process(task_id, fusion_process)
 
     if fusion_error:
         yield _event("error", message=f"融合分析失败: {fusion_error[0]}", progress=0)
+        return
+    if "detection" not in fusion_result:
+        yield _event("error", message="融合分析未返回结果", progress=0)
         return
 
     detection = fusion_result["detection"]
@@ -408,7 +564,35 @@ def _run_scheme_b_series(
     lesions_raw = map_lesions_to_file_slices(lesions_raw, meta.file_slice_indices)
     ggo_regions = map_ggo_to_file_slices(ggo_regions, meta.file_slice_indices)
 
+    enhanced_uid = getattr(req, "enhancedSeriesUid", None) or None
+    enhanced_count = getattr(req, "enhancedImageCount", None) or req.imageCount
+    if enhanced_uid:
+        yield _event(
+            "progress",
+            percent=88,
+            stage="enhanced",
+            message="正在加载配对增强 CT 并计算 ΔHU…",
+        )
+        try:
+            enh_req = req.model_copy(update={
+                "seriesUid": enhanced_uid,
+                "imageCount": int(enhanced_count),
+            })
+            enh_raw = _download_series_bytes(req=enh_req, task_id=task_id)
+            from .robust_ct_loader import load_series_dicoms
+            from .enhanced_ct_utils import apply_enhancement_to_lesions
+            enh_meta = load_series_dicoms(enh_raw)
+            lesions_raw = apply_enhancement_to_lesions(
+                lesions_raw, volume, enh_meta.volume, rows, cols,
+            )
+            stats = {**stats, "enhancedSeriesUid": enhanced_uid, "enhancementApplied": True}
+        except Exception as exc:
+            yield _event("warn", message=f"增强 CT ΔHU 计算跳过: {exc}", progress=89)
+            stats = {**stats, "enhancementApplied": False, "enhancementError": str(exc)}
+
     candidate_source = stats.get("candidate_source", "unknown")
+    ggo_heuristic = stats.get("ggo_heuristic_count", 0)
+    ggo_merged = stats.get("ggo_merged_count", 0)
     yield _event("log", level="info",
                  message=(f"[方案B] 检测器: {candidate_source} | "
                           f"MONAI原始框={stats.get('nndet_candidates', 0)} "
@@ -416,7 +600,7 @@ def _run_scheme_b_series(
                           f"融合保留={stats.get('fusion_filtered', len(lesions_raw))} "
                           f"肺外过滤={stats.get('filter_lung_rejected', 0)} "
                           f"血管过滤={stats.get('filter_vessel_rejected', 0)} "
-                          f"GGO区域={len(ggo_regions)}"),
+                          f"GGO启发式={ggo_heuristic} 合并入病灶={ggo_merged}"),
                  progress=90, stage="detect")
 
     reason = stats.get("reason", "")
@@ -425,7 +609,7 @@ def _run_scheme_b_series(
                      progress=92, stage="detect")
 
     yield _event("log", level="success",
-                 message=f"[方案B] 融合分析完成：检出 {len(lesions_raw)} 处，GGO {len(ggo_regions)} 区",
+                 message=f"[方案B] 融合分析完成：检出 {len(lesions_raw)} 处（含 GGO 合并 {ggo_merged}）",
                  progress=96, stage="done")
 
     lesions = [Lesion(**item).model_dump() for item in lesions_raw]
@@ -435,10 +619,10 @@ def _run_scheme_b_series(
         "seriesUid": req.seriesUid,
         "engine": f"scheme-b-{'gpu' if gpu_available() else 'cpu'}",
         "gpuAvailable": gpu_available(),
-        "disclaimer": DISCLAIMER,
-        "overlayType": "ggo" if (ggo_regions and len(ggo_regions) > 0) else "bbox",
+        "disclaimer": settings.scheme_b_disclaimer,
+        "overlayType": "bbox",
         "lesions": lesions,
-        "ggoRegions": ggo_regions,
+        "ggoRegions": [],
         "meta": {
             "sliceCount": meta.slice_count,
             "spacingMm": {"z": spacing[0], "y": spacing[1], "x": spacing[2]},
@@ -584,6 +768,8 @@ def run_detection_events(req: DetectLesionRequest) -> Generator[Dict[str, Any], 
             yield from _drain_sse_buffer(sse_buffer)
             yield event
         yield from _drain_sse_buffer(sse_buffer)
+    except Exception as exc:
+        yield _event("error", message=str(exc), progress=0)
     finally:
         set_sse_emitter(None)
 

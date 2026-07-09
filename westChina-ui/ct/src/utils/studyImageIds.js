@@ -1,11 +1,11 @@
-import { minioUrl } from '@/settings'
+import { getMinioUrl } from '@/utils/minioBase'
 
 export function buildSeriesImageIds(series, bucketName, dicomPrefix = 'wadouri:') {
   if (!series || !series.dicomCtPath || !series.dicomCtCount || !bucketName) return []
   const path = series.dicomCtPath.substring(0, series.dicomCtPath.lastIndexOf('/'))
   const ids = []
   for (let i = 1; i <= series.dicomCtCount; i++) {
-    ids.push(`${dicomPrefix}${minioUrl}${bucketName}/${path}/${i}.dcm`)
+    ids.push(`${dicomPrefix}${getMinioUrl()}${bucketName}/${path}/${i}.dcm`)
   }
   return ids
 }

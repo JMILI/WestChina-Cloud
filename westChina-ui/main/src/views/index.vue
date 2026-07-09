@@ -28,6 +28,7 @@
 import {getSystemRoutes} from "@api/menu"
 import {STATUS, VISIBLE} from "common/src/constant/constants"
 import {IS_NEW, SYSTEM_TYPE} from "@constant/authorityContants"
+import {resolveSystemJumpUrl} from "common/src/utils/systemUrl"
 
 export default {
   name: "Index",
@@ -56,9 +57,10 @@ export default {
       if (item.type === SYSTEM_TYPE.INSIDE) {
         this.$router.push(item.route)
       }
-      //外部链接
+      //外部链接（同源相对路径，隧道与本机均可用）
       else if (item.type === SYSTEM_TYPE.EXTERNAL) {
-        item.isNew === IS_NEW.NO ? window.location.href = item.route : window.open(item.route, '_blank')  // 本页打开 : 新页打开
+        const url = resolveSystemJumpUrl(item.route)
+        item.isNew === IS_NEW.NO ? window.location.href = url : window.open(url, '_blank')
       }
     }
   }

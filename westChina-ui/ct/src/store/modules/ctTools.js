@@ -2,7 +2,10 @@ import {
   readStoredEngine,
   readStoredSubEngine,
   writeStoredEngine,
-  writeStoredSubEngine
+  writeStoredSubEngine,
+  normalizeActiveEngine,
+  filterVisibleEngines,
+  DEFAULT_ACTIVE_LESION_ENGINE
 } from '@/utils/lesionEngines'
 
 const ctTools = {
@@ -27,6 +30,7 @@ const ctTools = {
     lesionDetectTick: 0,
     lesionDetectLoading: false,
     lesionDetectPayload: null,
+    lesionDetectQueue: [],
     lesionSeriesDialogVisible: false,
     lesionResultsByDicomId: {},
     lesionDetectLogs: [],
@@ -34,9 +38,16 @@ const ctTools = {
     lesionDetectStage: '',
     lesionDetectStats: null,
     lesionLogPanelVisible: false,
+    activeLesionTaskId: null,
+    activeLesionTaskDicomId: null,
+    lesionShowLogsTick: 0,
+    lesionShowLogsPayload: null,
+    lesionCancelTick: 0,
+    lesionCancelPayload: null,
     lesionDetectEngine: readStoredEngine(),
     lesionDetectSubEngine: readStoredSubEngine(),
     lesionEngineCatalog: [],
+    activeViewerSeriesDicomId: null,
   },
 
   mutations: {
@@ -126,7 +137,7 @@ const ctTools = {
 
     // ── 病灶检测 mutations ──
     SET_LESION_DETECT_ENGINE(state, engine) {
-      const value = engine || 'heuristic'
+      const value = normalizeActiveEngine(engine, state.lesionEngineCatalog)
       state.lesionDetectEngine = value
       writeStoredEngine(value)
     },
@@ -136,10 +147,33 @@ const ctTools = {
       writeStoredSubEngine(value)
     },
     SET_LESION_ENGINE_CATALOG(state, list) {
-      state.lesionEngineCatalog = Array.isArray(list) ? list : []
+      const catalog = filterVisibleEngines(Array.isArray(list) ? list : [])
+      state.lesionEngineCatalog = catalog
+      state.lesionDetectEngine = normalizeActiveEngine(state.lesionDetectEngine, catalog)
+      writeStoredEngine(state.lesionDetectEngine)
     },
     APPEND_LESION_DETECT_LOG(state, log) {
       state.lesionDetectLogs = [...state.lesionDetectLogs, log]
+    },
+    REPLACE_LESION_DETECT_LOGS(state, logs) {
+      state.lesionDetectLogs = Array.isArray(logs) ? [...logs] : []
+    },
+    SET_ACTIVE_LESION_TASK(state, payload) {
+      if (!payload) {
+        state.activeLesionTaskId = null
+        state.activeLesionTaskDicomId = null
+        return
+      }
+      state.activeLesionTaskId = payload.taskId || null
+      state.activeLesionTaskDicomId = payload.dicomId != null ? String(payload.dicomId) : null
+    },
+    REQUEST_LESION_SHOW_LOGS(state, payload) {
+      state.lesionShowLogsPayload = payload || null
+      state.lesionShowLogsTick += 1
+    },
+    REQUEST_LESION_CANCEL(state, payload) {
+      state.lesionCancelPayload = payload || null
+      state.lesionCancelTick += 1
     },
     SET_LESION_DETECT_PROGRESS(state, payload) {
       if (payload.percent != null) state.lesionDetectProgress = payload.percent
@@ -158,8 +192,17 @@ const ctTools = {
       state.lesionLogPanelVisible = visible
     },
     REQUEST_LESION_DETECT(state, payload) {
+      if (!state.lesionDetectQueue) state.lesionDetectQueue = []
+      state.lesionDetectQueue.push(payload || null)
       state.lesionDetectPayload = payload || null
       state.lesionDetectTick += 1
+    },
+    DRAIN_LESION_DETECT_QUEUE(state) {
+      state.lesionDetectQueue = []
+      state.lesionDetectPayload = null
+    },
+    CLEAR_LESION_DETECT_QUEUE(state) {
+      state.lesionDetectQueue = []
     },
     CLEAR_LESION_DETECT_PAYLOAD(state) {
       state.lesionDetectPayload = null
@@ -176,6 +219,9 @@ const ctTools = {
     },
     SET_LESION_SERIES_DIALOG(state, visible) {
       state.lesionSeriesDialogVisible = !!visible
+    },
+    SET_ACTIVE_VIEWER_SERIES(state, dicomId) {
+      state.activeViewerSeriesDicomId = dicomId != null ? String(dicomId) : null
     },
   },
 
@@ -209,16 +255,11 @@ const ctTools = {
     requestLesionDetectCurrentSlice({ commit, state }) {
       commit('REQUEST_LESION_DETECT', {
         action: 'detect-current-slice',
-        detectEngine: state.lesionDetectEngine || 'heuristic',
+        detectEngine: state.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE,
         detectSubEngine: state.lesionDetectSubEngine || 'auto'
       })
     },
     startLesionDetectForSeries({ commit, state }, item) {
-      commit('SET_LESION_SERIES_DIALOG', false)
-      commit('SET_LESION_RESULT', {
-        dicomId: item.dicomId,
-        result: { status: 'detecting' }
-      })
       commit('REQUEST_LESION_DETECT', {
         action: 'detect',
         dicomId: item.dicomId,
@@ -226,8 +267,24 @@ const ctTools = {
         series: item.series,
         bodyPart: item.bodyPart,
         imageCount: item.imageCount,
-        detectEngine: item.detectEngine || state.lesionDetectEngine || 'heuristic',
-        detectSubEngine: item.detectSubEngine || state.lesionDetectSubEngine || 'auto'
+        detectEngine: item.detectEngine || state.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE,
+        detectSubEngine: item.detectSubEngine || state.lesionDetectSubEngine || 'auto',
+        enhancedSeriesUid: item.enhancedSeriesUid || null,
+        enhancedImageCount: item.enhancedImageCount || null
+      })
+    },
+    openLesionDetectLogs({ commit }, payload) {
+      commit('REQUEST_LESION_SHOW_LOGS', payload || null)
+    },
+    cancelLesionDetectTask({ commit }, payload) {
+      commit('REQUEST_LESION_CANCEL', payload || null)
+    },
+    viewSeriesInViewer({ commit }, item) {
+      commit('SET_LESION_SERIES_DIALOG', false)
+      commit('REQUEST_LESION_DETECT', {
+        action: 'view-series',
+        dicomId: item.dicomId,
+        series: item.series
       })
     },
   }

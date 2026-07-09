@@ -1,7 +1,13 @@
 import { streamDetectChestLesion } from '@/utils/lesionDetectStream'
 import {
+  submitDetectChestLesionTask,
+  queryDetectChestLesionTask,
+  cancelDetectChestLesionTask
+} from '@/api/ct/ai'
+import {
   clearLesionOverlays,
   findSeriesMeta,
+  formatDisclaimer,
   getImageInstanceUid,
   getSyncedStackIndex,
   isChestBodyPart,
@@ -9,7 +15,12 @@ import {
   syncCornerstoneStackState
 } from '@/utils/lesionDetect'
 import { buildLesionResultPayload } from '@/utils/aiLesionSeries'
-import { engineSupportsMode, getEngineLabel } from '@/utils/lesionEngines'
+import {
+  fileIndexToStackIndex,
+  stackIndexToFileIndex,
+  mapLesionsToStackIndices
+} from '@/utils/dicomSeriesOrder'
+import { engineSupportsMode, getEngineLabel, DEFAULT_ACTIVE_LESION_ENGINE } from '@/utils/lesionEngines'
 import { saveAiLesionResult } from '@/api/ct/aiLesion'
 import * as cornerstone from 'cornerstone-core'
 
@@ -26,6 +37,54 @@ function formatUserError(message) {
   }
   if (message.includes('未收到识别结果')) return message
   return message
+}
+
+function inferColorKey(lesion) {
+  if (lesion.colorKey) return lesion.colorKey
+  const dc = lesion.detectionClass
+  if (dc === 'mixed_ggo') return 'mixed'
+  if (dc === 'ggo') return 'ggo'
+  if (dc === 'calcified') return 'calcified'
+  if (dc === 'solid' || dc === 'solid_suspicious') return 'solid'
+  if (lesion.subType === 'mixedGGO') return 'mixed'
+  if (lesion.subType === 'pureGGO' || lesion.type === '磨玻璃结节') return 'ggo'
+  if (lesion.subType === 'calcified' || lesion.type === '高密度结节') return 'calcified'
+  if (lesion.subType === 'solid' || lesion.type === '肺结节') return 'solid'
+  return 'unknown'
+}
+
+function inferMarkerType(lesion) {
+  if (lesion.markerType) return lesion.markerType
+  const ck = inferColorKey(lesion)
+  if (ck === 'solid') return 'circle'
+  if (ck === 'calcified') return 'diamond'
+  if (ck === 'mixed') return 'contour+circle'
+  return 'contour'
+}
+
+function enrichLesionsForViewer(lesions) {
+  return (lesions || []).map((l, i) => ({
+    ...l,
+    id: l.id || `L${i + 1}`,
+    markerVisible: l.markerVisible !== false,
+    colorKey: inferColorKey(l),
+    markerType: inferMarkerType(l),
+    detectionConfidence: l.detectionConfidence != null ? l.detectionConfidence : l.confidence,
+    classificationConfidence: l.classificationConfidence != null ? l.classificationConfidence : undefined,
+    detectionClassLabel: l.detectionClassLabel || l.label || l.type || undefined,
+    instanceNumber: l.instanceNumber != null
+      ? l.instanceNumber
+      : (l.sliceIndex != null ? l.sliceIndex + 1 : null)
+  }))
+}
+
+function enrichGgoForViewer(regions) {
+  return (regions || []).map((r, i) => ({
+    ...r,
+    id: r.id || `GGO${i + 1}`,
+    label: r.label || '疑似磨玻璃区域',
+    markerVisible: r.markerVisible !== false
+  }))
 }
 
 export default {
@@ -70,14 +129,35 @@ export default {
     lesionDetectStage() {
       return this.$store.getters.lesionDetectStage
     },
+    lesionDetectEngine() {
+      return this.$store.getters.lesionDetectEngine
+    },
     lesionDetectStats() {
       return this.$store.getters.lesionDetectStats
+    },
+    lesionShowLogsTick() {
+      return this.$store.getters.lesionShowLogsTick
+    },
+    lesionCancelTick() {
+      return this.$store.getters.lesionCancelTick
     }
   },
   watch: {
     lesionDetectTick() {
       this.handleLesionAction()
+    },
+    lesionShowLogsTick() {
+      this.handleShowLogsRequest()
+    },
+    lesionCancelTick() {
+      this.handleCancelRequest()
     }
+  },
+  mounted() {
+    this.startLesionTaskPoller()
+  },
+  beforeDestroy() {
+    this.stopLesionTaskPoller()
   },
   methods: {
     getLesionViewerContext() {
@@ -120,22 +200,36 @@ export default {
       await this.$nextTick()
     },
     handleLesionAction() {
-      const payload = this.$store.getters.lesionDetectPayload
-      if (!payload || !payload.action) return
-      const action = payload.action
-      this.$store.commit('CLEAR_LESION_DETECT_PAYLOAD')
+      let payloads = [...(this.$store.state.ctTools.lesionDetectQueue || [])]
+      if (payloads.length) {
+        this.$store.commit('DRAIN_LESION_DETECT_QUEUE')
+      } else {
+        const single = this.$store.getters.lesionDetectPayload
+        if (single && single.action) {
+          payloads = [single]
+          this.$store.commit('CLEAR_LESION_DETECT_PAYLOAD')
+        }
+      }
 
-      if (action === 'view') {
-        this.viewLesionResultForSeries(payload)
-        return
-      }
-      if (action === 'detect') {
-        this.runLesionDetectForSeries(payload)
-        return
-      }
-      if (action === 'detect-current-slice') {
-        this.runLesionDetectForCurrentSlice(payload)
-      }
+      payloads.forEach((payload) => {
+        if (!payload || !payload.action) return
+        const action = payload.action
+        if (action === 'view-series') {
+          this.switchToSeriesForLesion(payload.series)
+          return
+        }
+        if (action === 'view') {
+          this.viewLesionResultForSeries(payload)
+          return
+        }
+        if (action === 'detect') {
+          this.runLesionDetectForSeries(payload)
+          return
+        }
+        if (action === 'detect-current-slice') {
+          this.runLesionDetectForCurrentSlice(payload)
+        }
+      })
     },
     appendDetectLog(message, level = 'info') {
       this.$store.commit('APPEND_LESION_DETECT_LOG', {
@@ -143,6 +237,240 @@ export default {
         message,
         level
       })
+    },
+    startLesionTaskPoller() {
+      if (this._lesionTaskPoller) return
+      this._lesionTaskPoller = setInterval(() => {
+        this.pollAllActiveLesionTasks()
+      }, 1000)
+    },
+    stopLesionTaskPoller() {
+      if (this._lesionTaskPoller) {
+        clearInterval(this._lesionTaskPoller)
+        this._lesionTaskPoller = null
+      }
+    },
+    pollAllActiveLesionTasks() {
+      const results = this.$store.getters.lesionResultsByDicomId || {}
+      const now = Date.now()
+      Object.keys(results).forEach((dicomId) => {
+        const row = results[dicomId]
+        if (!row || row.status !== 'detecting') return
+        if (!row.taskId) {
+          const since = row._detectingSince || 0
+          if (!since) {
+            this.$store.commit('SET_LESION_RESULT', {
+              dicomId,
+              result: { ...row, _detectingSince: now }
+            })
+            return
+          }
+          if (now - since > 90000) {
+            this.$store.commit('SET_LESION_RESULT', {
+              dicomId,
+              result: {
+                status: 'error',
+                errorMsg: '任务未能启动，请重试'
+              }
+            })
+          }
+          return
+        }
+        queryDetectChestLesionTask(row.taskId)
+          .then((res) => {
+            if (res && res.code === 200 && res.data) {
+              this.syncTaskStatusFromPoll(res.data, dicomId)
+            }
+          })
+          .catch(() => {})
+      })
+    },
+    async submitLesionDetectTask(req, dicomId) {
+      const submitRes = await submitDetectChestLesionTask(req)
+      if (!submitRes || submitRes.code !== 200 || !submitRes.data) {
+        throw new Error((submitRes && submitRes.msg) || '提交识别任务失败')
+      }
+      const taskId = submitRes.data
+      this.$store.commit('SET_LESION_RESULT', {
+        dicomId,
+        result: {
+          status: 'detecting',
+          progress: 0,
+          stage: 'queued',
+          taskId,
+          _detectingSince: Date.now()
+        }
+      })
+      return taskId
+    },
+    async waitLesionDetectTask(taskId, dicomId) {
+      const startAt = Date.now()
+      const timeoutMs = 7200000
+      const intervalMs = 1000
+      while (Date.now() - startAt < timeoutMs) {
+        // eslint-disable-next-line no-await-in-loop
+        const statusRes = await queryDetectChestLesionTask(taskId)
+        if (!statusRes || statusRes.code !== 200 || !statusRes.data) {
+          throw new Error((statusRes && statusRes.msg) || '查询识别任务状态失败')
+        }
+        const statusData = statusRes.data
+        this.syncTaskStatusFromPoll(statusData, dicomId)
+        const status = statusData.status
+        if (status === 'DONE') {
+          return statusData.result
+        }
+        if (status === 'FAILED') {
+          throw new Error(statusData.message || '任务执行失败')
+        }
+        if (status === 'CANCELLED') {
+          return null
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => setTimeout(resolve, intervalMs))
+      }
+      throw new Error('识别任务超时，请稍后查看结果')
+    },
+    async runDetectByTask(req, options = {}) {
+      const dicomId = options.dicomId
+      const taskId = await this.submitLesionDetectTask(req, dicomId)
+      this.$store.commit('SET_ACTIVE_LESION_TASK', { taskId, dicomId })
+      try {
+        const result = await this.waitLesionDetectTask(taskId, dicomId)
+        this.$store.commit('SET_ACTIVE_LESION_TASK', null)
+        return result
+      } catch (err) {
+        this.$store.commit('SET_ACTIVE_LESION_TASK', null)
+        throw err
+      }
+    },
+    syncTaskStatusFromPoll(statusData, dicomId) {
+      if (!statusData) return
+      const taskId = statusData.taskId
+      const activeTaskId = this.$store.getters.activeLesionTaskId
+      const activeDicomId = this.$store.getters.activeLesionTaskDicomId
+      const panelVisible = this.$store.getters.lesionLogPanelVisible
+      const backendLogs = Array.isArray(statusData.logs) ? statusData.logs : []
+      const progress = statusData.progress != null ? Number(statusData.progress) : 0
+      let stage = statusData.stage || ''
+      if (statusData.status === 'PENDING') {
+        stage = 'queued'
+      } else if (statusData.status === 'RUNNING' && (!stage || stage === 'queued')) {
+        stage = 'connect'
+      }
+
+      if (dicomId != null && (statusData.status === 'RUNNING' || statusData.status === 'PENDING')) {
+        const prev = this.lesionResultsByDicomId[String(dicomId)] || {}
+        this.$store.commit('SET_LESION_RESULT', {
+          dicomId,
+          result: {
+            status: 'detecting',
+            progress,
+            stage,
+            taskId: taskId || prev.taskId,
+            queueMessage: statusData.message || prev.queueMessage || '',
+            detectLogs: backendLogs.length ? backendLogs : (prev.detectLogs || [])
+          }
+        })
+      }
+
+      if (dicomId != null && statusData.status === 'FAILED') {
+        this.$store.commit('SET_LESION_RESULT', {
+          dicomId,
+          result: {
+            status: 'error',
+            errorMsg: statusData.message || '识别失败',
+            taskId
+          }
+        })
+      }
+
+      if (dicomId != null && statusData.status === 'CANCELLED') {
+        this.$store.commit('SET_LESION_RESULT', {
+          dicomId,
+          result: {
+            status: 'cancelled',
+            taskId,
+            errorMsg: statusData.message || '任务已取消'
+          }
+        })
+      }
+
+      const viewingThisTask = panelVisible && (
+        (taskId && activeTaskId && taskId === activeTaskId) ||
+        (dicomId != null && activeDicomId && String(dicomId) === String(activeDicomId))
+      )
+
+      if (viewingThisTask) {
+        if (taskId && taskId !== activeTaskId) {
+          this.$store.commit('SET_ACTIVE_LESION_TASK', { taskId, dicomId })
+        }
+        if (backendLogs.length > 0) {
+          this.$store.commit('REPLACE_LESION_DETECT_LOGS', backendLogs)
+        }
+        this.$store.commit('SET_LESION_DETECT_PROGRESS', { percent: progress, stage })
+        if (statusData.stats) {
+          this.$store.commit('SET_LESION_DETECT_STATS', statusData.stats)
+        }
+        const running = statusData.status === 'RUNNING' || statusData.status === 'PENDING'
+        this.$store.commit('SET_LESION_DETECT_LOADING', running)
+        if (statusData.status === 'CANCELLED') {
+          this.$store.commit('SET_LESION_DETECT_LOADING', false)
+        }
+      }
+    },
+    async openLesionLogPanelForTask({ taskId, dicomId }) {
+      this.$store.commit('SET_ACTIVE_LESION_TASK', { taskId: taskId || null, dicomId })
+      const row = (this.$store.getters.lesionResultsByDicomId || {})[String(dicomId)]
+      if (row && Array.isArray(row.detectLogs) && row.detectLogs.length) {
+        this.$store.commit('REPLACE_LESION_DETECT_LOGS', row.detectLogs)
+        this.$store.commit('SET_LESION_DETECT_PROGRESS', {
+          percent: row.progress != null ? row.progress : 0,
+          stage: row.stage || ''
+        })
+      } else {
+        this.$store.commit('RESET_LESION_DETECT_LOGS')
+        this.$store.commit('SET_LESION_DETECT_PROGRESS', { percent: 2, stage: 'queued' })
+      }
+      this.$store.commit('SET_LESION_DETECT_STATS', null)
+      if (taskId) {
+        try {
+          const statusRes = await queryDetectChestLesionTask(taskId)
+          if (statusRes && statusRes.code === 200 && statusRes.data) {
+            this.syncTaskStatusFromPoll(statusRes.data, dicomId)
+          }
+        } catch (e) {
+          // 打开日志面板时拉取失败不影响展示
+        }
+      }
+      this.$store.commit('SET_LESION_LOG_PANEL', true)
+    },
+    handleShowLogsRequest() {
+      const payload = this.$store.state.ctTools.lesionShowLogsPayload
+      if (!payload) return
+      this.openLesionLogPanelForTask(payload)
+    },
+    async handleCancelRequest() {
+      const payload = this.$store.state.ctTools.lesionCancelPayload
+      if (!payload || !payload.taskId) return
+      const { taskId, dicomId } = payload
+      try {
+        const res = await cancelDetectChestLesionTask(taskId)
+        if (res && res.code === 200) {
+          this.$message.success(res.msg || '任务已取消')
+          const statusRes = await queryDetectChestLesionTask(taskId)
+          if (statusRes && statusRes.code === 200 && statusRes.data) {
+            this.syncTaskStatusFromPoll(statusRes.data, dicomId)
+          }
+          if (this.$store.getters.activeLesionTaskId === taskId) {
+            this.$store.commit('SET_ACTIVE_LESION_TASK', null)
+            this.$store.commit('SET_LESION_DETECT_LOADING', false)
+          }
+        } else {
+          this.$message.warning((res && res.msg) || '取消失败')
+        }
+      } catch (e) {
+        this.$message.error('取消任务失败')
+      }
     },
     handleStreamEvent(event, dicomId, detectLogs) {
       if (!event || !event.type) return null
@@ -233,11 +561,12 @@ export default {
         return
       }
 
-      const sliceIndex = ctx.stack.currentImageIdIndex
+      const stackIndex = ctx.stack.currentImageIdIndex
+      const fileIndex = stackIndexToFileIndex(stackIndex, series)
       const total = imageCount || ctx.stack.imageIds.length
-      const currentImageId = ctx.stack.imageIds[sliceIndex] || ctx.stack.currentImageId || null
+      const currentImageId = ctx.stack.imageIds[stackIndex] || ctx.stack.currentImageId || null
       const instanceUid = getImageInstanceUid(ctx.canvas)
-      const detectEngine = payload.detectEngine || this.$store.getters.lesionDetectEngine || 'scheme-a'
+      const detectEngine = payload.detectEngine || this.$store.getters.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE
 
       // 检查引擎是否支持当前层识别
       const catalog = this.$store.getters.lesionEngineCatalog
@@ -257,8 +586,8 @@ export default {
         studyUid,
         seriesUid,
         bodyPart,
-        currentSliceIndex: sliceIndex,
-        sliceIndex,
+        currentSliceIndex: stackIndex,
+        sliceIndex: fileIndex,
         currentImageId,
         imageCount: total,
         detectMode: 'single',
@@ -272,8 +601,9 @@ export default {
       this.$store.commit('RESET_LESION_DETECT_LOGS')
       this.$store.commit('SET_LESION_LOG_PANEL', true)
       this.$store.commit('SET_LESION_DETECT_LOADING', true)
+      this.$store.commit('SET_LESION_DETECT_PROGRESS', { percent: 3, stage: 'init' })
       const engineLabel = getEngineLabel(req.detectEngine, catalog)
-      this.appendDetectLog(`[前端] 当前层识别：第 ${sliceIndex + 1}/${total} 层，算法：${engineLabel}`, 'info')
+      this.appendDetectLog(`[前端] 当前层识别：Instance ${stackIndex + 1}/${total}，算法：${engineLabel}`, 'info')
       if (instanceUid) {
         this.appendDetectLog(`[前端] Instance UID：${instanceUid}`, 'info')
       }
@@ -281,29 +611,30 @@ export default {
 
       let resultData = null
       try {
-        await streamDetectChestLesion(req, (event) => {
-          const data = this.handleStreamEvent(event, dicomId)
-          if (data) resultData = data
-        })
+        resultData = await this.runDetectByTask(req, { dicomId })
 
         if (!resultData) {
           throw new Error('未收到识别结果')
         }
 
-        const lesions = resultData.lesions || []
+        const lesions = enrichLesionsForViewer(
+          mapLesionsToStackIndices(resultData.lesions || [], series)
+        )
         const overlayType = resultData.overlayType || 'bbox'
         this.aiOverlayType = overlayType
         this.aiHeatmapData = resultData.heatmap || null
         this.aiHeatmapSliceIndex = (resultData.meta && resultData.meta.sliceIndex != null)
-          ? resultData.meta.sliceIndex
-          : sliceIndex
+          ? fileIndexToStackIndex(resultData.meta.sliceIndex, series)
+          : stackIndex
         this.aiScreeningData = resultData.screening || null
-        this.aiGgoRegions = resultData.ggoRegions || []
+        this.aiGgoRegions = enrichGgoForViewer(
+          mapLesionsToStackIndices(resultData.ggoRegions || [], series)
+        )
         this.aiInstanceUid = instanceUid
         this.aiDetectMode = 'single'
-        this.aiSliceIndex = sliceIndex
+        this.aiSliceIndex = stackIndex
         const isHeatmap = overlayType === 'heatmap'
-        const cacheKey = this.sliceLesionCacheKey(dicomId, sliceIndex)
+        const cacheKey = this.sliceLesionCacheKey(dicomId, stackIndex)
         const sliceResult = {
           status: lesions.length || isHeatmap ? 'done' : 'empty',
           lesions,
@@ -311,7 +642,8 @@ export default {
           disclaimer: resultData.disclaimer || 'AI 辅助结果仅供临床参考，不能替代医生诊断。',
           engine: resultData.engine || '',
           detectedAt: Date.now(),
-          sliceIndex,
+          sliceIndex: stackIndex,
+          instanceNumber: stackIndex + 1,
           detectMode: 'single',
           instanceUid,
           overlayType,
@@ -335,15 +667,15 @@ export default {
             : null
           this.$message.success(
             conf != null
-              ? `第 ${sliceIndex + 1} 层筛查完成（${this.aiScreeningData.label || '倾向分析'} ${conf}%）`
-              : `第 ${sliceIndex + 1} 层筛查完成，已生成热力图`
+              ? `Instance ${stackIndex + 1} 筛查完成（${this.aiScreeningData.label || '倾向分析'} ${conf}%）`
+              : `Instance ${stackIndex + 1} 筛查完成，已生成热力图`
           )
         } else if (!lesions.length) {
           const msg = (resultData.meta && resultData.meta.stats && resultData.meta.stats.message)
-            || `第 ${sliceIndex + 1} 层未检测到疑似病灶`
+            || `Instance ${stackIndex + 1} 未检测到疑似病灶`
           this.$message.info(msg)
         } else {
-          this.$message.success(`第 ${sliceIndex + 1} 层识别完成，共 ${lesions.length} 处疑似病灶`)
+          this.$message.success(`Instance ${stackIndex + 1} 识别完成，共 ${lesions.length} 处疑似病灶`)
         }
 
         await this.persistAiLesionResult(dicomId, resultData, req, {
@@ -353,7 +685,7 @@ export default {
           screening: this.aiScreeningData,
           ggoRegions: this.aiGgoRegions,
           detectMode: 'single',
-          sliceIndex,
+          sliceIndex: stackIndex,
           instanceUid,
           heatmapSliceIndex: this.aiHeatmapSliceIndex
         })
@@ -364,8 +696,33 @@ export default {
         this.$store.commit('SET_LESION_DETECT_LOADING', false)
       }
     },
+    buildSeriesDetectRequest(payload) {
+      const { series, studyUid, dicomId, bodyPart, imageCount, detectEngine, detectSubEngine,
+        enhancedSeriesUid, enhancedImageCount } = payload
+      const count = imageCount ||
+        (series && series.imageIds && series.imageIds.length) ||
+        Number(series && series.dicomCtCount) || 0
+      const req = {
+        patCardId: this.$store.getters.patCardId,
+        dicomId,
+        studyUid,
+        seriesUid: series.dicomCtSeriesUid,
+        bodyPart,
+        currentSliceIndex: 0,
+        sliceIndex: 0,
+        imageCount: count,
+        detectMode: 'series',
+        detectEngine: detectEngine || this.$store.getters.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE,
+        detectSubEngine: detectSubEngine || this.$store.getters.lesionDetectSubEngine || 'auto'
+      }
+      if (enhancedSeriesUid) {
+        req.enhancedSeriesUid = enhancedSeriesUid
+        req.enhancedImageCount = enhancedImageCount || count
+      }
+      return req
+    },
     async runLesionDetectForSeries(payload) {
-      const { series, studyUid, dicomId, bodyPart, imageCount, detectEngine } = payload
+      const { series, dicomId, bodyPart } = payload
       if (!isChestBodyPart(bodyPart)) {
         this.$message.warning(`序列检查部位为「${bodyPart || '未知'}」，不支持识别`)
         this.$store.commit('SET_LESION_RESULT', {
@@ -375,80 +732,89 @@ export default {
         return
       }
 
-      // 检查引擎是否支持全序列识别
       const catalog = this.$store.getters.lesionEngineCatalog
-      const engine = detectEngine || this.$store.getters.lesionDetectEngine || 'scheme-a'
+      const engine = payload.detectEngine || this.$store.getters.lesionDetectEngine || DEFAULT_ACTIVE_LESION_ENGINE
       if (!engineSupportsMode(engine, 'series', catalog)) {
         this.$message.warning('当前引擎不支持全序列识别，请切换识别算法')
         return
       }
 
-      await this.switchToSeriesForLesion(series)
-      const ctx = this.getLesionViewerContext()
-      if (!ctx.canvas || !ctx.stack || !ctx.stack.imageIds || !ctx.stack.imageIds.length) {
-        this.$message.warning('序列图像未加载，无法识别')
-        this.$store.commit('SET_LESION_RESULT', {
-          dicomId,
-          result: { status: 'error', errorMsg: '图像未加载' }
-        })
+      const existing = (this.$store.getters.lesionResultsByDicomId || {})[String(dicomId)]
+      if (existing && existing.status === 'detecting') {
+        this.$message.info('该序列已在识别队列中，请查看右侧日志面板')
         return
       }
 
-      const seriesInstanceUid = getImageInstanceUid(ctx.canvas)
-      const req = {
-        patCardId: this.$store.getters.patCardId,
+      const req = this.buildSeriesDetectRequest(payload)
+      const engineLabel = getEngineLabel(req.detectEngine, catalog)
+
+      this.$store.commit('SET_LESION_RESULT', {
         dicomId,
-        studyUid,
-        seriesUid: series.dicomCtSeriesUid,
-        bodyPart,
-        currentSliceIndex: ctx.stack.currentImageIdIndex,
-        sliceIndex: ctx.stack.currentImageIdIndex,
-        currentImageId: ctx.stack.imageIds[ctx.stack.currentImageIdIndex] || null,
-        imageCount: imageCount || ctx.stack.imageIds.length,
-        detectMode: 'series',
-        instanceUid: seriesInstanceUid,
-        detectEngine: detectEngine || this.$store.getters.lesionDetectEngine || 'scheme-a',
-        detectSubEngine: this.$store.getters.lesionDetectSubEngine || 'auto'
+        result: { status: 'detecting', progress: 0, stage: 'queued', taskId: null, _detectingSince: Date.now() }
+      })
+      const panelAlreadyOpen = this.$store.getters.lesionLogPanelVisible
+      if (!panelAlreadyOpen) {
+        this.$store.commit('RESET_LESION_DETECT_LOGS')
+        this.$store.commit('SET_LESION_LOG_PANEL', true)
       }
-
-      const engineLabel = getEngineLabel(req.detectEngine, this.$store.getters.lesionEngineCatalog)
-      this.appendDetectLog(`[前端] 识别方式: ${engineLabel}`, 'info')
-      if (seriesInstanceUid) {
-        this.appendDetectLog(`[前端] 起始层 Instance UID：${seriesInstanceUid}`, 'info')
-      }
-
-      this.$store.commit('RESET_LESION_DETECT_LOGS')
-      this.$store.commit('SET_LESION_LOG_PANEL', true)
+      this.$store.commit('SET_LESION_DETECT_PROGRESS', { percent: 2, stage: 'queued' })
+      this.$store.commit('SET_ACTIVE_LESION_TASK', { taskId: null, dicomId: String(dicomId) })
       this.$store.commit('SET_LESION_DETECT_LOADING', true)
-      this.appendDetectLog('[Java] 已提交识别任务，连接 Python 推理服务…', 'info')
+      this.appendDetectLog(`[前端] 提交全序列识别：${engineLabel}`, 'info')
 
-      const detectLogs = []
-      let resultData = null
-
+      let taskId = null
       try {
-        await streamDetectChestLesion(req, (event) => {
-          detectLogs.push({
-            time: formatLogTime(),
-            message: event.message || JSON.stringify(event),
-            level: event.level || (event.type === 'error' ? 'error' : 'info')
-          })
-          const data = this.handleStreamEvent(event, dicomId, detectLogs)
-          if (data) resultData = data
+        taskId = await this.submitLesionDetectTask(req, dicomId)
+        this.$store.commit('SET_ACTIVE_LESION_TASK', { taskId, dicomId: String(dicomId) })
+        const statusRes = await queryDetectChestLesionTask(taskId)
+        if (statusRes && statusRes.code === 200 && statusRes.data) {
+          this.syncTaskStatusFromPoll(statusRes.data, dicomId)
+        }
+      } catch (submitErr) {
+        const msg = formatUserError((submitErr && submitErr.message) || '提交识别任务失败')
+        this.$store.commit('SET_LESION_RESULT', {
+          dicomId,
+          result: { status: 'error', errorMsg: msg }
         })
+        this.$message.error(msg)
+        this.$store.commit('SET_LESION_DETECT_LOADING', false)
+        return
+      }
+
+      this.completeLesionDetectSeriesInBackground({
+        req,
+        dicomId,
+        taskId,
+        series,
+        engineLabel
+      })
+    },
+    async completeLesionDetectSeriesInBackground({ req, dicomId, taskId, series, engineLabel }) {
+      let resultData = null
+      try {
+        resultData = await this.waitLesionDetectTask(taskId, dicomId)
 
         if (!resultData) {
-          throw new Error('未收到识别结果')
+          return
         }
 
-        const lesions = resultData.lesions || []
+        await this.switchToSeriesForLesion(series)
+        const ctx = this.getLesionViewerContext()
+        const seriesInstanceUid = (ctx.canvas && getImageInstanceUid(ctx.canvas)) || series.dicomCtSeriesUid
+
+        const lesions = enrichLesionsForViewer(
+          mapLesionsToStackIndices(resultData.lesions || [], series)
+        )
         const overlayType = resultData.overlayType || 'bbox'
         this.aiOverlayType = overlayType
         this.aiHeatmapData = resultData.heatmap || null
         this.aiHeatmapSliceIndex = (resultData.meta && resultData.meta.sliceIndex != null)
-          ? resultData.meta.sliceIndex
-          : (req.sliceIndex != null ? req.sliceIndex : ctx.stack.currentImageIdIndex)
+          ? fileIndexToStackIndex(resultData.meta.sliceIndex, series)
+          : 0
         this.aiScreeningData = resultData.screening || null
-        this.aiGgoRegions = resultData.ggoRegions || []
+        this.aiGgoRegions = enrichGgoForViewer(
+          mapLesionsToStackIndices(resultData.ggoRegions || [], series)
+        )
         this.aiInstanceUid = seriesInstanceUid
         this.aiDetectMode = 'series'
         this.aiSliceIndex = req.sliceIndex
@@ -492,12 +858,17 @@ export default {
           result: {
             status: 'error',
             errorMsg: msg,
+            taskId,
             detectLogs: [...this.lesionDetectLogs]
           }
         })
         this.$message.error(msg)
       } finally {
-        this.$store.commit('SET_LESION_DETECT_LOADING', false)
+        const activeId = this.$store.getters.activeLesionTaskId
+        const activeDicom = this.$store.getters.activeLesionTaskDicomId
+        if (!activeId || String(activeDicom) === String(dicomId)) {
+          this.$store.commit('SET_LESION_DETECT_LOADING', false)
+        }
       }
     },
     viewLesionResultForSeries(payload) {
@@ -520,7 +891,9 @@ export default {
       const ctx = this.getLesionViewerContext()
       if (!ctx.canvas || !ctx.stack) return
 
-      const jumpSlice = this.resolveLesionJumpSlice(cached)
+      const meta = this.resolveCurrentSeriesMeta()
+      const series = meta && meta.series
+      const jumpSlice = this.resolveLesionJumpSlice(cached, series)
       if (jumpSlice != null && jumpSlice !== ctx.stack.currentImageIdIndex) {
         ctx.stack.currentImageIdIndex = Math.max(
           0,
@@ -536,7 +909,7 @@ export default {
       this.activeLesionDicomId = String(dicomId)
       this.lesionOverlayMode = cached.detectMode === 'single' ? 'slice' : 'series'
       this.aiLesionList = cached.lesions || []
-      this.aiLesionDisclaimer = cached.disclaimer || ''
+      this.aiLesionDisclaimer = formatDisclaimer(cached.disclaimer || '')
       this.aiEngine = cached.engine || ''
       this.aiOverlayType = cached.overlayType || 'bbox'
       this.aiHeatmapData = cached.heatmap || null
@@ -552,17 +925,19 @@ export default {
         : cached.sourceSliceIndex
       this.aiLesionPanelVisible = true
     },
-    resolveLesionJumpSlice(cached) {
+    resolveLesionJumpSlice(cached, series) {
+      const mapIdx = (idx) => fileIndexToStackIndex(idx, series)
       if (cached.overlayType === 'heatmap') {
-        return cached.heatmapSliceIndex != null
+        const raw = cached.heatmapSliceIndex != null
           ? cached.heatmapSliceIndex
           : cached.sliceIndex
+        return raw != null ? mapIdx(raw) : null
       }
       if (cached.lesions && cached.lesions.length) {
         const first = cached.lesions.find((l) => l.sliceIndex != null)
         return first ? first.sliceIndex : null
       }
-      return cached.sliceIndex
+      return cached.sliceIndex != null ? mapIdx(cached.sliceIndex) : null
     },
     onSeriesSwitchedForLesion(series, options = {}) {
       if (!series || options.fromLesion) return
@@ -688,8 +1063,22 @@ export default {
         this.syncLesionOverlaysForCurrentSlice()
       })
     },
+    toggleLesionMarker(lesion) {
+      if (!lesion || !lesion.id) return
+      const flip = (list) => {
+        if (!list || !list.length) return false
+        const idx = list.findIndex((l) => l.id === lesion.id)
+        if (idx < 0) return false
+        const next = list[idx].markerVisible === false
+        this.$set(list[idx], 'markerVisible', next)
+        return true
+      }
+      if (!flip(this.aiLesionList) && !flip(this.aiGgoRegions)) return
+      this.syncLesionOverlaysForCurrentSlice()
+    },
     closeLesionLogPanel() {
       this.$store.commit('SET_LESION_LOG_PANEL', false)
+      this.$store.commit('SET_LESION_DETECT_LOADING', false)
     },
     closeLesionPanel() {
       this.aiLesionPanelVisible = false

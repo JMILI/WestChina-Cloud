@@ -459,6 +459,7 @@
       :loading="lesionDetectLoading"
       :progress="lesionDetectProgress"
       :stage="lesionDetectStage"
+      :engine="lesionDetectEngine"
       :logs="lesionDetectLogs"
       :stats="lesionDetectStats"
       @close="closeLesionLogPanel"
@@ -498,6 +499,8 @@ import StudySidePanel from '../ct2/components/StudySidePanel'
 import LesionResultPanel from '../ct2/components/LesionResultPanel'
 import LesionDetectLogPanel from '../ct2/components/LesionDetectLogPanel'
 import lesionDetectMixin from '@/mixins/lesionDetect'
+import { syncCornerstoneStackState } from '@/utils/lesionDetect'
+import { buildSeriesImageIds } from '@/utils/studyImageIds'
 
 cornerstoneTools.external.cornerstone = cornerstone
 cornerstoneTools.external.cornerstoneMath = cornerstoneMath
@@ -690,12 +693,22 @@ export default {
   },
 
   created() {
-    let that = this
-    //这里可以拿到数据
-    let studyList = that.$store.getters.studySeriesList
-    for (let studyListKey in studyList) {
-      for (let studyListKeyKey in studyList[studyListKey]) {
-        that.studyCanvasList[studyList[studyListKey][studyListKeyKey].dicomId] = studyList[studyListKey][studyListKeyKey].imageIds[0]
+    const studyList = this.$store.getters.studySeriesList
+    if (!studyList) return
+    const bucketName = this.$store.getters.bucketName
+    for (const studyKey in studyList) {
+      const study = studyList[studyKey]
+      if (!study) continue
+      for (const seriesKey in study) {
+        const series = study[seriesKey]
+        if (!series || series.dicomId == null) continue
+        let imageIds = series.imageIds
+        if (!imageIds || !imageIds.length) {
+          imageIds = buildSeriesImageIds(series, bucketName)
+        }
+        if (imageIds && imageIds[0]) {
+          this.studyCanvasList[series.dicomId] = imageIds[0]
+        }
       }
     }
   },
@@ -1191,23 +1204,32 @@ export default {
       this.$nextTick(() => this.initListCanvas())
     },
     changeCurrentImagesIds(row, options = {}) {
+      if (!row) return
       this.activeSeriesDicomId = row.dicomId
-      if (!options.fromLesion) {
-        this.inEffectCanvas = 1
+      this.$store.commit('SET_ACTIVE_VIEWER_SERIES', row.dicomId)
+
+      let imageIds = row.imageIds
+      if (!imageIds || !imageIds.length) {
+        imageIds = buildSeriesImageIds(row, this.$store.getters.bucketName)
+        row.imageIds = imageIds
       }
-      if (this.inEffectCanvas == 1) {
-        this.canvasStack1.imageIds = row.imageIds
-        this.canvasStack1.currentImageIdIndex = 0
-        this.canvasStack1.currentImageId = row.imageIds[0]
-        this.inEffectImageId = row.imageIds[0]
-        this.displayCanvas()
-      } else if (this.inEffectCanvas == 2) {
-        this.canvasStack2.imageIds = row.imageIds
-        this.canvasStack2.currentImageIdIndex = 0
-        this.canvasStack2.currentImageId = row.imageIds[0]
-        this.inEffectImageId = row.imageIds[0]
-        this.displayCanvas()
+      if (!imageIds || !imageIds.length) return
+
+      const canvasNum = this.inEffectCanvas || 1
+      const stack = canvasNum === 2 ? this.canvasStack2 : this.canvasStack1
+      const canvas = canvasNum === 2 ? this.$refs.canvas2 : this.$refs.canvas1
+
+      stack.imageIds = imageIds
+      stack.currentImageIdIndex = 0
+      stack.currentImageId = imageIds[0]
+      stack.isUPOrDown = 0
+      stack.isInvertAboutUpAndDown = 0
+      this.inEffectImageId = imageIds[0]
+
+      if (canvas) {
+        syncCornerstoneStackState(canvas, stack)
       }
+      this.displayCanvas()
       this.onSeriesSwitchedForLesion(row, options)
     },
     initTwoCanvas() {
@@ -1242,10 +1264,15 @@ export default {
     collectAllSeries() {
       const items = []
       const studyList = this.studySeriesList || {}
+      const bucketName = this.$store.getters.bucketName
       for (const studyKey in studyList) {
         for (const seriesKey in studyList[studyKey]) {
           const item = studyList[studyKey][seriesKey]
-          if (item && item.imageIds && item.imageIds.length > 0) {
+          if (!item) continue
+          if (!item.imageIds || !item.imageIds.length) {
+            item.imageIds = buildSeriesImageIds(item, bucketName)
+          }
+          if (item.imageIds && item.imageIds.length > 0) {
             items.push(item)
           }
         }
@@ -1253,15 +1280,14 @@ export default {
       return items
     },
     initTools() {
-      //stack滚动工具
-      let that = this
       const canvas1 = this.$refs.canvas1
       const canvas2 = this.$refs.canvas2
-      // console.log("设置默认工具")
-      const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
-      cornerstoneTools.addTool(StackScrollMouseWheelTool)
-      cornerstoneTools.setToolActive('StackScrollMouseWheel', {})
-      that.styleOfCanvas()
+      // 滚轮由 handleScroll 统一处理，避免与 StackScroll 双触发导致层位错乱
+      cornerstoneTools.addStackStateManager(canvas1, ['stack'])
+      cornerstoneTools.addStackStateManager(canvas2, ['stack'])
+      cornerstoneTools.addToolState(canvas1, 'stack', this.canvasStack1)
+      cornerstoneTools.addToolState(canvas2, 'stack', this.canvasStack2)
+      this.styleOfCanvas()
     },
     styleOfCanvas() {
       //可以设置激活工具的颜色，也就是鼠标覆盖在上面的颜色
@@ -1283,8 +1309,14 @@ export default {
     displayCanvas1() {
       let that = this
       const canvas1 = this.$refs.canvas1
-      let tempIndex = that.canvasStack1.currentImageIdIndex
-      cornerstone.loadAndCacheImage(that.canvasStack1.imageIds[tempIndex])
+      const len = (that.canvasStack1.imageIds && that.canvasStack1.imageIds.length) || 0
+      if (!len) return
+      let tempIndex = that.canvasStack1.currentImageIdIndex || 0
+      tempIndex = Math.max(0, Math.min(len - 1, tempIndex))
+      that.canvasStack1.currentImageIdIndex = tempIndex
+      const imageId = that.canvasStack1.imageIds[tempIndex]
+      if (!imageId) return
+      cornerstone.loadAndCacheImage(imageId)
         .then(function (image) {
           let dealImageInfo = new Promise((resolve, reject) => {
             // 图像信息显示
@@ -1304,10 +1336,6 @@ export default {
             cornerstone.displayImage(canvas1, image, viewport)
           })
         })
-
-      cornerstoneTools.addStackStateManager(canvas1, ['stack'])
-      cornerstoneTools.addToolState(canvas1, 'stack', that.canvasStack1)
-
     },
     /**
      * 1.加载图像，2.处理图像信息，3，显示图像，4.保存图像
@@ -1315,8 +1343,14 @@ export default {
     displayCanvas2() {
       let that = this
       const canvas2 = this.$refs.canvas2
-      let tempIndex = that.canvasStack2.currentImageIdIndex
-      cornerstone.loadAndCacheImage(that.canvasStack2.imageIds[tempIndex])
+      const len = (that.canvasStack2.imageIds && that.canvasStack2.imageIds.length) || 0
+      if (!len) return
+      let tempIndex = that.canvasStack2.currentImageIdIndex || 0
+      tempIndex = Math.max(0, Math.min(len - 1, tempIndex))
+      that.canvasStack2.currentImageIdIndex = tempIndex
+      const imageId = that.canvasStack2.imageIds[tempIndex]
+      if (!imageId) return
+      cornerstone.loadAndCacheImage(imageId)
         .then(function (image) {
           let dealImageInfo = new Promise((resolve, reject) => {
             // 图像信息显示
@@ -1340,8 +1374,6 @@ export default {
             cornerstone.displayImage(canvas2, image, viewport)
           })
         })
-      cornerstoneTools.addStackStateManager(canvas2, ['stack'])
-      cornerstoneTools.addToolState(canvas2, 'stack', that.canvasStack2)
     },
     saveMakerNeed(image) {
       //  当前图像的一些信息，有利于标记工具的使用
@@ -1520,6 +1552,7 @@ export default {
       let that = this
       //改变当前正在作用的canavs对象id
       that.inEffectCanvas = id
+      that.inEffectWheelCanvas = id
       //改变颜色
       let boxs1 = document.getElementsByClassName("overlay1");
       let boxs2 = document.getElementsByClassName("overlay2")
@@ -1567,59 +1600,32 @@ export default {
      * @param e
      */
     handleScroll(e) {
-      //滚动 展示一个图像
-      let up = -1
-      let down = 1
-      let upOrDown = e.detail.direction
-      // 滚动，展示当前选中的视图下一张图像。
-      if (this.inEffectCanvas === 1) {
-        let isUPOrDown = this.canvasStack1.isUPOrDown
-        let currentIndex = this.canvasStack1.currentImageIdIndex
-        if (isUPOrDown === 0 && upOrDown === up) {
-          //想要看上一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，还是展示第一张
-        } else if (isUPOrDown === 0 && upOrDown === down) {
-          //想要看下一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，展示下一张
-          this.canvasStack1.isUPOrDown = down
-          this.canvasStack1.currentImageIdIndex = currentIndex + down
-        } else if (isUPOrDown === down && upOrDown === up) {
-          //想要看上一张，发现isUPOrDown===1，也就是上次也是鼠标滚轮下移操作，，展示上一张
-          this.canvasStack1.isUPOrDown = up
-          this.canvasStack1.currentImageIdIndex = currentIndex + up + up
-        } else if (isUPOrDown === down && upOrDown === down) {
+      const direction = e.detail && e.detail.direction
+      if (direction !== 1 && direction !== -1) return
 
-        } else if (isUPOrDown === up && upOrDown === up) {
+      const canvasNum = this.inEffectWheelCanvas || this.inEffectCanvas || 1
+      const stack = canvasNum === 2 ? this.canvasStack2 : this.canvasStack1
+      const len = (stack.imageIds && stack.imageIds.length) || 0
+      if (!len) return
 
-        } else if (isUPOrDown === up && upOrDown === down) {
-          this.canvasStack1.isUPOrDown = down
-          this.canvasStack1.currentImageIdIndex = currentIndex + down
-        }
-        this.displayCanvas1()
-        //设置，翻转，像素翻转的标志变量
-        this.canvasStack1.isInvertAboutUpAndDown = this.canvasStack1.isUPOrDown
-      } else if (this.inEffectCanvas === 2) {
-        let isUPOrDown = this.canvasStack2.isUPOrDown
-        let currentIndex = this.canvasStack2.currentImageIdIndex
-        if (isUPOrDown === 0 && upOrDown === up) {
-          //想要看上一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，还是展示第一张
-        } else if (isUPOrDown === 0 && upOrDown === down) {
-          //想要看下一张，发现isUPOrDown===0，也就是，初始化状态，之前没有使用鼠标滚轮，展示下一张
-          this.canvasStack2.isUPOrDown = down
-          this.canvasStack2.currentImageIdIndex = currentIndex + down
-        } else if (isUPOrDown === down && upOrDown === up) {
-          //想要看上一张，发现isUPOrDown===1，也就是上次也是鼠标滚轮下移操作，，展示上一张
-          this.canvasStack2.isUPOrDown = up
-          this.canvasStack2.currentImageIdIndex = currentIndex + up + up
-        } else if (isUPOrDown === down && upOrDown === down) {
+      const current = stack.currentImageIdIndex || 0
+      const next = Math.max(0, Math.min(len - 1, current + direction))
+      if (next === current) return
 
-        } else if (isUPOrDown === up && upOrDown === up) {
+      stack.currentImageIdIndex = next
+      stack.currentImageId = stack.imageIds[next]
+      stack.isUPOrDown = 0
+      stack.isInvertAboutUpAndDown = 0
 
-        } else if (isUPOrDown === up && upOrDown === down) {
-          this.canvasStack2.isUPOrDown = down
-          this.canvasStack2.currentImageIdIndex = currentIndex + down
-        }
+      const canvas = canvasNum === 2 ? this.$refs.canvas2 : this.$refs.canvas1
+      if (canvas) {
+        syncCornerstoneStackState(canvas, stack)
+      }
+
+      if (canvasNum === 2) {
         this.displayCanvas2()
-        //设置，翻转，像素翻转的标志变量
-        this.canvasStack2.isInvertAboutUpAndDown = this.canvasStack2.isUPOrDown
+      } else {
+        this.displayCanvas1()
       }
     },
     //提供下面的监视变量的使用，getInvert，getHflip，getVflip，getPixelReplication

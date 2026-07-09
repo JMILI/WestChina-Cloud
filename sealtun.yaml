@@ -1,0 +1,5 @@
+version: v1
+tunnels:
+  - name: westchina-ui
+    localPort: 5000
+    protocol: https

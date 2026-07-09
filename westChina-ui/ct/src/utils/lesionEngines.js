@@ -3,6 +3,12 @@ import { listDetectEngines } from '@/api/ct/ai'
 export const ENGINE_STORAGE_KEY = 'ct_lesion_detect_engine'
 export const SUB_ENGINE_STORAGE_KEY = 'ct_lesion_sub_engine'
 
+/** 前端暂不开放选择的引擎（仍可查看历史识别结果） */
+export const HIDDEN_LESION_ENGINE_IDS = ['scheme-a']
+
+/** 屏蔽方案 A 后的默认引擎 */
+export const DEFAULT_ACTIVE_LESION_ENGINE = 'scheme-b'
+
 export const DEFAULT_LESION_ENGINES = [
   {
     id: 'scheme-a',
@@ -10,7 +16,8 @@ export const DEFAULT_LESION_ENGINES = [
     description: '肺区分割 + 形态学筛查，支持全序列与当前层',
     available: false,
     supportedModes: ['series', 'single'],
-    installHint: 'pip install -r requirements-totalsegmentator.txt'
+    installHint: 'pip install -r requirements-totalsegmentator.txt',
+    hidden: true
   },
   {
     id: 'scheme-b',
@@ -36,24 +43,65 @@ export const DEFAULT_LESION_ENGINES = [
   }
 ]
 
+export function isHiddenLesionEngine(engineId) {
+  return HIDDEN_LESION_ENGINE_IDS.includes(engineId)
+}
+
+/** 过滤掉前端屏蔽的引擎选项 */
+export function filterVisibleEngines(list) {
+  if (!list || !list.length) return []
+  return list.filter((item) => !isHiddenLesionEngine(item.id))
+}
+
+export function pickDefaultEngine(catalog) {
+  const visible = filterVisibleEngines(
+    catalog && catalog.length ? catalog : DEFAULT_LESION_ENGINES
+  )
+  const preferred = visible.find((o) => o.id === DEFAULT_ACTIVE_LESION_ENGINE && o.available)
+  if (preferred) return preferred.id
+  const anyAvailable = visible.find((o) => o.available)
+  if (anyAvailable) return anyAvailable.id
+  return visible.length ? visible[0].id : DEFAULT_ACTIVE_LESION_ENGINE
+}
+
+export function normalizeActiveEngine(engineId, catalog) {
+  if (!engineId || isHiddenLesionEngine(engineId)) {
+    return pickDefaultEngine(catalog)
+  }
+  const visible = filterVisibleEngines(
+    catalog && catalog.length ? catalog : DEFAULT_LESION_ENGINES
+  )
+  const opt = visible.find((o) => o.id === engineId)
+  if (!opt) return pickDefaultEngine(catalog)
+  if (!opt.available) return pickDefaultEngine(catalog)
+  return engineId
+}
+
 export function readStoredEngine() {
   try {
     const v = localStorage.getItem(ENGINE_STORAGE_KEY)
     if (v === 'monai-nnunet' || v === 'heuristic' || v === 'totalsegmentator') {
-      writeStoredEngine('scheme-a')
-      return 'scheme-a'
+      writeStoredEngine(DEFAULT_ACTIVE_LESION_ENGINE)
+      return DEFAULT_ACTIVE_LESION_ENGINE
     }
-    const known = DEFAULT_LESION_ENGINES.map(e => e.id)
-    if (v && known.includes(v)) return v
-    return 'scheme-a'
+    if (v && isHiddenLesionEngine(v)) {
+      writeStoredEngine(DEFAULT_ACTIVE_LESION_ENGINE)
+      return DEFAULT_ACTIVE_LESION_ENGINE
+    }
+    const visibleIds = filterVisibleEngines(DEFAULT_LESION_ENGINES).map((e) => e.id)
+    if (v && visibleIds.includes(v)) return v
+    return DEFAULT_ACTIVE_LESION_ENGINE
   } catch (e) {
-    return 'scheme-a'
+    return DEFAULT_ACTIVE_LESION_ENGINE
   }
 }
 
 export function writeStoredEngine(engineId) {
   try {
-    localStorage.setItem(ENGINE_STORAGE_KEY, engineId || 'scheme-a')
+    const id = engineId && !isHiddenLesionEngine(engineId)
+      ? engineId
+      : DEFAULT_ACTIVE_LESION_ENGINE
+    localStorage.setItem(ENGINE_STORAGE_KEY, id)
   } catch (e) {
     // ignore
   }
@@ -85,7 +133,7 @@ export function normalizeEngineList(res) {
     list = res
   }
   if (!list || !list.length) return null
-  return list.map((item) => ({
+  return filterVisibleEngines(list.map((item) => ({
     id: item.id,
     label: item.label,
     description: item.description,
@@ -95,13 +143,13 @@ export function normalizeEngineList(res) {
     installHint: item.installHint,
     requiresGpu: !!item.requiresGpu,
     subEngines: item.subEngines || null
-  }))
+  })))
 }
 
 export function fetchLesionEngines() {
   return listDetectEngines()
-    .then((res) => normalizeEngineList(res) || [...DEFAULT_LESION_ENGINES])
-    .catch(() => [...DEFAULT_LESION_ENGINES])
+    .then((res) => normalizeEngineList(res) || filterVisibleEngines([...DEFAULT_LESION_ENGINES]))
+    .catch(() => filterVisibleEngines([...DEFAULT_LESION_ENGINES]))
 }
 
 export function getEngineLabel(engineId, catalog) {

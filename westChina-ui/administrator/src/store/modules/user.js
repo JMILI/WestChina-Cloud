@@ -1,5 +1,6 @@
 import { login, logout, getInfo, refreshToken, getEnterpriseProfile } from '@api/login'
 import { getToken, setToken, setExpiresIn, removeToken } from '@utils/auth'
+import { resolveSystemUrl } from 'common/src/utils/systemUrl'
 
 const user = {
   state: {
@@ -70,7 +71,7 @@ const user = {
       return new Promise((resolve, reject) => {
         getInfo().then(res => {
           const user = res.data.user
-          const avatar = user.avatar === "" ? require("@assets/images/profile.jpg") : user.avatar;
+          const avatar = user.avatar === "" ? require("@assets/images/profile.jpg") : resolveSystemUrl(user.avatar)
           if (res.data.roles && res.data.roles.length > 0) { // 验证返回的roles是否是一个非空数组
             commit('SET_ROLES', res.data.roles)
             commit('SET_PERMISSIONS', res.data.permissions)
@@ -86,7 +87,7 @@ const user = {
         getEnterpriseProfile().then(res => {
           const enterprise = res.data
           const systemName = enterprise.enterpriseSystemName === "" ? "华西管理系统" : enterprise.enterpriseSystemName;
-          const logo = enterprise.logo === "" ? require("@assets/images/logo.jpg") : enterprise.logo;
+          const logo = enterprise.logo === "" ? require("@assets/images/logo.jpg") : resolveSystemUrl(enterprise.logo)
           commit('SET_ENTERPRISENAME', enterprise.enterpriseName)
           commit('SET_ENTERPRISESYSTEMNAME', systemName)
           commit('SET_LOGO', logo)

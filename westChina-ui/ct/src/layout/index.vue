@@ -101,7 +101,7 @@ export default {
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 9;
+  z-index: 1002;
   width: calc(100% - #{$base-sidebar-width});
   transition: width 0.28s;
 }

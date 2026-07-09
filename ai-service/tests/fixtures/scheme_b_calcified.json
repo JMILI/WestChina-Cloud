@@ -1,0 +1,19 @@
+{
+  "engine": "scheme-b-gpu",
+  "overlayType": "bbox",
+  "disclaimer": "AI 辅助结果仅供临床参考，不能替代医生诊断。",
+  "ggoRegions": [],
+  "lesions": [
+    {
+      "id": "C1",
+      "label": "高密度结节",
+      "type": "高密度结节",
+      "subType": "calcified",
+      "colorKey": "calcified",
+      "markerType": "diamond",
+      "detectionConfidence": 0.9,
+      "huMean": 180,
+      "sliceIndex": 55
+    }
+  ]
+}

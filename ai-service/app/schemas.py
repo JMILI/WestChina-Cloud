@@ -6,6 +6,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 class DetectLesionRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    taskId: str | None = None
     bucket: str
     studyUid: str
     seriesUid: str
@@ -31,6 +32,22 @@ class DetectLesionRequest(BaseModel):
             validation_alias=AliasChoices("detectSubEngine", "detect_sub_engine"),
         ),
     ] = "auto"
+    # 可选：配对增强 CT 序列（用于 ΔHU 分析，7-P2-01）
+    enhancedSeriesUid: Annotated[
+        str | None,
+        Field(
+            default=None,
+            validation_alias=AliasChoices("enhancedSeriesUid", "enhanced_series_uid"),
+        ),
+    ] = None
+    enhancedImageCount: Annotated[
+        int | None,
+        Field(
+            default=None,
+            ge=1,
+            validation_alias=AliasChoices("enhancedImageCount", "enhanced_image_count"),
+        ),
+    ] = None
 
 
 class Bbox(BaseModel):
@@ -54,6 +71,28 @@ class Lesion(BaseModel):
     areaMm2: float
     volumeMm3: Optional[float] = None
     hu: Optional[float] = None
+    huMin: Optional[float] = None
+    huMax: Optional[float] = None
+    huMean: Optional[float] = None
+    subType: Optional[str] = None
+    markerType: Optional[str] = None
+    colorKey: Optional[str] = None
+    detectionConfidence: Optional[float] = None
+    classificationConfidence: Optional[float] = None
+    source: Optional[str] = None
+    lobeLabel: Optional[str] = None
+    positionHint: Optional[str] = None
+    lobulationHint: Optional[str] = None
+    spiculationHint: Optional[str] = None
+    cavitationHint: Optional[str] = None
+    morphology: Optional[Dict[str, Any]] = None
+    detectionClass: Optional[str] = None
+    detectionClassLabel: Optional[str] = None
+    pleuralDistanceMm: Optional[float] = None
+    pleuralHint: Optional[str] = None
+    dlModelClass: Optional[str] = None
+    deltaHu: Optional[float] = None
+    enhancementHint: Optional[str] = None
 
 
 class DetectLesionResponse(BaseModel):

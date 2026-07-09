@@ -1,4 +1,4 @@
-import { minioUrl } from '@/settings'
+import { getMinioUrl } from '@/utils/minioBase'
 import { findSeriesMeta } from '@/utils/lesionDetect'
 
 export function buildAiLesionImageIds(record, bucketName, dicomPrefix = 'wadouri:') {
@@ -8,7 +8,7 @@ export function buildAiLesionImageIds(record, bucketName, dicomPrefix = 'wadouri
   const folder = record.aiSeriesPath.substring(0, record.aiSeriesPath.lastIndexOf('/'))
   const ids = []
   for (let i = 1; i <= record.imageCount; i++) {
-    ids.push(`${dicomPrefix}${minioUrl}${bucketName}/${folder}/${i}.dcm`)
+    ids.push(`${dicomPrefix}${getMinioUrl()}${bucketName}/${folder}/${i}.dcm`)
   }
   return ids
 }

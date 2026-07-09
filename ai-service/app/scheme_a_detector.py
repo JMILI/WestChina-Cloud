@@ -202,6 +202,9 @@ def detect_series(
             continue
 
         mean_hu = mean_hu_in_mask(volume[slice_index, y0:y1, x0:x1], sl_mask)
+        roi_hu = volume[slice_index, y0:y1, x0:x1][sl_mask]
+        hu_min = float(roi_hu.min()) if roi_hu.size else mean_hu
+        hu_max = float(roi_hu.max()) if roi_hu.size else mean_hu
         lesion_type, label_cn, hu_ok = classify_nodule_hu(mean_hu)
         if not hu_ok:
             hu_rejected += 1
@@ -265,6 +268,9 @@ def detect_series(
             "areaMm2": round(area_mm2, 1),
             "volumeMm3": round(vol_mm3, 1),
             "hu": round(mean_hu, 1),
+            "huMean": round(mean_hu, 1),
+            "huMin": round(hu_min, 1),
+            "huMax": round(hu_max, 1),
         })
 
     lesions.sort(key=lambda x: x["confidence"], reverse=True)
@@ -355,6 +361,9 @@ def detect_single_slice(
             continue
 
         mean_hu = mean_hu_in_mask(slice_hu[min_row:max_row, min_col:max_col], sl_mask)
+        roi_hu = slice_hu[min_row:max_row, min_col:max_col][sl_mask]
+        hu_min = float(roi_hu.min()) if roi_hu.size else mean_hu
+        hu_max = float(roi_hu.max()) if roi_hu.size else mean_hu
         lesion_type, label_cn, hu_ok = classify_nodule_hu(mean_hu)
         if not hu_ok:
             hu_rejected += 1
@@ -405,6 +414,9 @@ def detect_single_slice(
             "shortAxisMm": round(short_axis, 1),
             "areaMm2": round(area_mm2, 1),
             "hu": round(mean_hu, 1),
+            "huMean": round(mean_hu, 1),
+            "huMin": round(hu_min, 1),
+            "huMax": round(hu_max, 1),
         })
 
     lesions.sort(key=lambda x: x["confidence"], reverse=True)
