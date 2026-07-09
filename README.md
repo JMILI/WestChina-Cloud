@@ -34,7 +34,8 @@ bash scripts/status.sh
 
 浏览器访问 http://127.0.0.1:5000/main/ ，账号 **superadmin / superadmin**。
 
-同事远程访问（Sealtun 隧道 `westchina-ui`）：https://sealtun-westchina-ui-ns-km83ebvo.sealosgzg.site/main/（详见 [docs/12-sealtun-remote-access.md](docs/12-sealtun-remote-access.md)）
+同事远程访问（Sealtun 隧道 `westchina-ui`）：https://sealtun-westchina-ui-ns-km83ebvo.sealosgzg.site/main/
+（详见 [docs/12-sealtun-remote-access.md](docs/12-sealtun-remote-access.md)）
 
 ## 文档索引
 
