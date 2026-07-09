@@ -73,7 +73,7 @@ flowchart TB
   Root --> docs["docs/ 文档"]
 ```
 
-> **说明**：`bin/` 下为历史 Windows 批处理脚本，Linux/WSL 请使用 `scripts/` 与根目录 `*_all.sh`。`deploymentServer/logs` 是指向 `logs/java/` 的符号链接。
+> **说明**：Linux/WSL 请使用 `scripts/` 与根目录 `*_all.sh`。`deploymentServer/logs` 是指向 `logs/java/` 的符号链接。
 
 ## 致谢
 
