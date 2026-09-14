@@ -3,12 +3,12 @@
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">后台管理系统</h3>
       <el-form-item prop="enterpriseName">
-        <el-input v-model="loginForm.enterpriseName" type="text" auto-complete="off" placeholder="企业账号">
+        <el-input v-model="loginForm.enterpriseName" type="text" auto-complete="off" placeholder="企业账号（superadmin）">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon"/>
         </el-input>
       </el-form-item>
       <el-form-item prop="userName">
-        <el-input v-model="loginForm.userName" type="text" auto-complete="off" placeholder="员工账号">
+        <el-input v-model="loginForm.userName" type="text" auto-complete="off" placeholder="员工账号（superadmin）">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon"/>
         </el-input>
       </el-form-item>
@@ -17,7 +17,7 @@
           v-model="loginForm.password"
           type="password"
           auto-complete="off"
-          placeholder="密码"
+          placeholder="密码（superadmin）"
           @keyup.enter.native="handleLogin"
         >
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon"/>
